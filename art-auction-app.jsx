@@ -577,6 +577,7 @@ const saveOoh     = (id) => { const s = getOohedSet(); s.add(id); try { localSto
 const getOohCount = (store, id) => (store.oohs?.[id]) || 0;
 
 const COLLECTOR_SESSION_KEY = "atelier_collector_session";
+const INVITE_CODE = "ATELIER2025"; // change this to update the invite code
 const getCollectorSession = () => { try { const r = sessionStorage.getItem(COLLECTOR_SESSION_KEY); return r ? JSON.parse(r) : null; } catch { return null; } };
 const saveCollectorSession = (d) => { try { d ? sessionStorage.setItem(COLLECTOR_SESSION_KEY, JSON.stringify(d)) : sessionStorage.removeItem(COLLECTOR_SESSION_KEY); } catch {} };
 
@@ -765,7 +766,7 @@ const ConfirmModal = ({ title, message, confirmLabel, confirmClass = "btn-danger
 const AuthPage = ({ store, updateStore, onLogin, onCollectorLogin, initialMode }) => {
   const [mode, setMode] = useState(initialMode || "login");
   const [loginType, setLoginType] = useState("artist"); // "artist" | "collector"
-  const [f, setF] = useState({ name: "", email: "", password: "", avatar: "🎨", bio: "" });
+  const [f, setF] = useState({ name: "", email: "", password: "", avatar: "🎨", bio: "", inviteCode: "" });
   const [error, setError] = useState("");
   const [busy, setBusy] = useState(false);
   const set = (k, v) => setF((p) => ({ ...p, [k]: v }));
@@ -792,6 +793,7 @@ const AuthPage = ({ store, updateStore, onLogin, onCollectorLogin, initialMode }
     if (!f.name.trim()) { setError("Enter your artist name."); return; }
     if (!f.email.includes("@")) { setError("Enter a valid email address."); return; }
     if (f.password.length < 6) { setError("Password must be at least 6 characters."); return; }
+    if (f.inviteCode.trim().toUpperCase() !== INVITE_CODE) { setError("Invalid invite code. Ask your host for access."); return; }
     if (Object.values(store.artists).find((a) => a.email.toLowerCase() === f.email.toLowerCase())) { setError("An account with this email already exists."); return; }
     setBusy(true);
     setTimeout(() => {
@@ -807,6 +809,7 @@ const AuthPage = ({ store, updateStore, onLogin, onCollectorLogin, initialMode }
     if (!f.name.trim()) { setError("Enter your display name."); return; }
     if (!f.email.includes("@")) { setError("Enter a valid email address."); return; }
     if (f.password.length < 6) { setError("Password must be at least 6 characters."); return; }
+    if (f.inviteCode.trim().toUpperCase() !== INVITE_CODE) { setError("Invalid invite code. Ask your host for access."); return; }
     if (Object.values(store.collectors || {}).find((c) => c.email.toLowerCase() === f.email.toLowerCase())) { setError("An account with this email already exists."); return; }
     setBusy(true);
     setTimeout(() => {
@@ -858,6 +861,7 @@ const AuthPage = ({ store, updateStore, onLogin, onCollectorLogin, initialMode }
             <div className="form-group"><label className="form-label">Email *</label><input className="form-input" type="email" placeholder="your@email.com" value={f.email} onChange={(e) => set("email", e.target.value)} /></div>
             <div className="form-group"><label className="form-label">Password *</label><input className="form-input" type="password" placeholder="At least 6 characters" value={f.password} onChange={(e) => set("password", e.target.value)} /></div>
             <div className="form-group"><label className="form-label">Short Bio (optional)</label><textarea className="form-textarea" rows={2} placeholder="Tell collectors about yourself and your art…" value={f.bio} onChange={(e) => set("bio", e.target.value)} /></div>
+            <div className="form-group"><label className="form-label">Invite Code *</label><input className="form-input" type="text" placeholder="Enter invite code" value={f.inviteCode} onChange={(e) => set("inviteCode", e.target.value)} autoComplete="off" /></div>
             <button className="btn btn-primary" style={{ width: "100%", justifyContent: "center" }} onClick={signup} disabled={busy}>{busy ? "Creating account…" : "Create Artist Account"}</button>
             <div className="auth-switch">Already have an account? <button onClick={() => { setMode("login"); setError(""); }}>Sign in →</button></div>
             <div className="auth-switch" style={{ marginTop:"0.5rem" }}>Want to collect? <button onClick={() => { setMode("collector-signup"); setError(""); }}>Join as Collector →</button></div>
@@ -877,6 +881,7 @@ const AuthPage = ({ store, updateStore, onLogin, onCollectorLogin, initialMode }
             <div className="form-group"><label className="form-label">Email *</label><input className="form-input" type="email" placeholder="your@email.com" value={f.email} onChange={(e) => set("email", e.target.value)} /></div>
             <div className="form-group"><label className="form-label">Password *</label><input className="form-input" type="password" placeholder="At least 6 characters" value={f.password} onChange={(e) => set("password", e.target.value)} /></div>
             <div className="form-group"><label className="form-label">Short Bio (optional)</label><textarea className="form-textarea" rows={2} placeholder="Tell us what kind of art you love…" value={f.bio} onChange={(e) => set("bio", e.target.value)} /></div>
+            <div className="form-group"><label className="form-label">Invite Code *</label><input className="form-input" type="text" placeholder="Enter invite code" value={f.inviteCode} onChange={(e) => set("inviteCode", e.target.value)} autoComplete="off" /></div>
             <button className="btn" style={{ width: "100%", justifyContent: "center", background:"var(--grad-cool)", color:"white", boxShadow:"0 4px 16px rgba(102,126,234,0.35)" }} onClick={signupCollector} disabled={busy}>{busy ? "Creating account…" : "Create Collector Account"}</button>
             <div className="auth-switch">Already have an account? <button onClick={() => { setMode("login"); setLoginType("collector"); setError(""); }}>Sign in →</button></div>
             <div className="auth-switch" style={{ marginTop:"0.5rem" }}>Are you an artist? <button onClick={() => { setMode("signup"); setError(""); }}>Join as Artist →</button></div>
@@ -2087,18 +2092,20 @@ export default function App() {
       {view.page === "home" && (
         isLoggedIn
           ? <FeedPage onNavigate={go} store={store} updateStore={updateStore} me={me} meCollector={meCollector} />
-          : <HomePage onNavigate={go} store={store} updateStore={updateStore} />
+          : <AuthPage store={store} updateStore={updateStore} onLogin={onLogin} onCollectorLogin={onCollectorLogin} initialMode="login" />
       )}
       {(view.page === "login" || view.page === "signup" || view.page === "collector-signup") && (
-        <AuthPage store={store} updateStore={updateStore} onLogin={onLogin} onCollectorLogin={onCollectorLogin}
-          initialMode={view.page === "signup" ? "signup" : view.page === "collector-signup" ? "collector-signup" : "login"} />
+        isLoggedIn
+          ? <FeedPage onNavigate={go} store={store} updateStore={updateStore} me={me} meCollector={meCollector} />
+          : <AuthPage store={store} updateStore={updateStore} onLogin={onLogin} onCollectorLogin={onCollectorLogin}
+              initialMode={view.page === "signup" ? "signup" : view.page === "collector-signup" ? "collector-signup" : "login"} />
       )}
       {view.page === "dashboard"           && me          && <DashboardPage artist={me} onNavigate={go} store={store} updateStore={updateStore} />}
       {view.page === "create"              && me          && <CreatePage    artist={me} onNavigate={go} store={store} updateStore={updateStore} />}
-      {view.page === "auction"             && <AuctionPage auctionId={view.id} onNavigate={go} store={store} updateStore={updateStore} artist={me} meCollector={meCollector} bidderName={bidderName} setBidderName={setBidderName} bidderEmail={bidderEmail} setBidderEmail={setBidderEmail} />}
-      {view.page === "payment"             && <PaymentPage auctionId={view.id} onNavigate={go} store={store} updateStore={updateStore} bidderName={bidderName} bidderEmail={bidderEmail} />}
+      {view.page === "auction"             && (isLoggedIn ? <AuctionPage auctionId={view.id} onNavigate={go} store={store} updateStore={updateStore} artist={me} meCollector={meCollector} bidderName={bidderName} setBidderName={setBidderName} bidderEmail={bidderEmail} setBidderEmail={setBidderEmail} /> : <AuthPage store={store} updateStore={updateStore} onLogin={onLogin} onCollectorLogin={onCollectorLogin} initialMode="login" />)}
+      {view.page === "payment"             && (isLoggedIn ? <PaymentPage auctionId={view.id} onNavigate={go} store={store} updateStore={updateStore} bidderName={bidderName} bidderEmail={bidderEmail} /> : <AuthPage store={store} updateStore={updateStore} onLogin={onLogin} onCollectorLogin={onCollectorLogin} initialMode="login" />)}
       {view.page === "edit"                && me          && <EditPage auctionId={view.id} artist={me} onNavigate={go} store={store} updateStore={updateStore} />}
-      {view.page === "artist"              && <ArtistPage artistId={view.id} onNavigate={go} store={store} updateStore={updateStore} me={me} meCollector={meCollector} />}
+      {view.page === "artist"              && (isLoggedIn ? <ArtistPage artistId={view.id} onNavigate={go} store={store} updateStore={updateStore} me={me} meCollector={meCollector} /> : <AuthPage store={store} updateStore={updateStore} onLogin={onLogin} onCollectorLogin={onCollectorLogin} initialMode="login" />)}
       {view.page === "collector-dashboard" && meCollector && <CollectorDashboardPage meCollector={meCollector} onNavigate={go} store={store} updateStore={updateStore} />}
     </>
   );
