@@ -577,7 +577,7 @@ const saveOoh     = (id) => { const s = getOohedSet(); s.add(id); try { localSto
 const getOohCount = (store, id) => (store.oohs?.[id]) || 0;
 
 const COLLECTOR_SESSION_KEY = "atelier_collector_session";
-const INVITE_CODE = "ATELIER2025"; // change this to update the invite code
+const INVITE_CODE = "ATELIER2026"; // change this to update the invite code
 const getCollectorSession = () => { try { const r = sessionStorage.getItem(COLLECTOR_SESSION_KEY); return r ? JSON.parse(r) : null; } catch { return null; } };
 const saveCollectorSession = (d) => { try { d ? sessionStorage.setItem(COLLECTOR_SESSION_KEY, JSON.stringify(d)) : sessionStorage.removeItem(COLLECTOR_SESSION_KEY); } catch {} };
 
