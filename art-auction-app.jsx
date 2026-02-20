@@ -326,7 +326,8 @@ const STYLES = `
     .auction-detail { padding: 1.5rem 1.25rem 4rem; overflow-x: hidden; }
     .payment-page { padding: 2rem 1.25rem 4rem; }
     .auth-card { padding: 1.75rem 1.5rem; }
-    .artist-mgmt-actions { gap: 0.4rem; }
+    .artist-mgmt-actions { gap: 0.35rem; }
+    .artist-mgmt-bar { flex-direction: column; align-items: flex-start; gap: 0.6rem; }
     .bid-input-row { flex-direction: column; }
     .bid-input-row .btn { width: 100%; justify-content: center; }
     .modal-actions { flex-direction: column; }
@@ -356,6 +357,8 @@ const STYLES = `
     .feed-filter-input { width: 72px; }
     .artist-dropdown { min-width: 180px; }
     .countdown-num { font-size: clamp(1.1rem, 4vw, 1.6rem); }
+    .auction-grid { grid-template-columns: 1fr; }
+    .feed-grid { grid-template-columns: 1fr; }
   }
 
   /* ── Ooh reaction ────────────────────────────────────────────────────────── */
