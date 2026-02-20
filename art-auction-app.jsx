@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef, useCallback } from "react";
+import { supabase } from "./src/supabase.js";
 
 // ─────────────────────────────────────────────────────────────────────────────
 // STYLES
@@ -569,36 +570,102 @@ const getStatus = (a) => {
 };
 
 // ─────────────────────────────────────────────────────────────────────────────
-// STORAGE
+// STORAGE / DATA
 // ─────────────────────────────────────────────────────────────────────────────
-const STORE_KEY = "atelier_v4";
-const getStore = () => { try { const r = localStorage.getItem(STORE_KEY); if (r) return JSON.parse(r); } catch {} return { artists: {}, collectors: {}, auctions: [], bids: {}, payments: {}, oohs: {} }; };
-const setStore = (d) => { try { localStorage.setItem(STORE_KEY, JSON.stringify(d)); } catch {} };
-const useStore = () => {
-  const [store, setState] = useState(getStore);
-  const update = useCallback((fn) => {
-    setState((prev) => { const next = fn(JSON.parse(JSON.stringify(prev))); setStore(next); return next; });
-  }, []);
-  return [store, update];
-};
-const SESSION_KEY = "atelier_session";
-const getSession = () => { try { const r = sessionStorage.getItem(SESSION_KEY); return r ? JSON.parse(r) : null; } catch { return null; } };
-const saveSession = (d) => { try { d ? sessionStorage.setItem(SESSION_KEY, JSON.stringify(d)) : sessionStorage.removeItem(SESSION_KEY); } catch {} };
 
+// Bidder identity is still stored locally (anonymous bidders don't have accounts)
 const BIDDER_KEY = "atelier_bidder";
 const getBidderIdentity = () => { try { const r = localStorage.getItem(BIDDER_KEY); return r ? JSON.parse(r) : { name: "", email: "" }; } catch { return { name: "", email: "" }; } };
 const saveBidderIdentity = (name, email) => { try { localStorage.setItem(BIDDER_KEY, JSON.stringify({ name, email })); } catch {} };
 
-const OOHS_KEY    = "atelier_oohs";
+// Ooh tracking: one ooh per browser per auction
+const OOHS_KEY    = "artdrop_oohs";
 const getOohedSet = () => { try { const r = localStorage.getItem(OOHS_KEY); return new Set(r ? JSON.parse(r) : []); } catch { return new Set(); } };
 const hasOohed    = (id) => getOohedSet().has(id);
 const saveOoh     = (id) => { const s = getOohedSet(); s.add(id); try { localStorage.setItem(OOHS_KEY, JSON.stringify([...s])); } catch {} };
 const getOohCount = (store, id) => (store.oohs?.[id]) || 0;
 
-const COLLECTOR_SESSION_KEY = "atelier_collector_session";
-const INVITE_CODE = "ATELIER2026"; // change this to update the invite code
-const getCollectorSession = () => { try { const r = sessionStorage.getItem(COLLECTOR_SESSION_KEY); return r ? JSON.parse(r) : null; } catch { return null; } };
-const saveCollectorSession = (d) => { try { d ? sessionStorage.setItem(COLLECTOR_SESSION_KEY, JSON.stringify(d)) : sessionStorage.removeItem(COLLECTOR_SESSION_KEY); } catch {} };
+const INVITE_CODE = "ARTDROP2026"; // change this to update the invite code
+
+// ── Supabase data hook ────────────────────────────────────────────────────────
+// Returns [store, loadAll] where loadAll() re-fetches all data from Supabase.
+// The store shape is kept compatible with the old localStorage shape so that
+// all components (AuctionPage, DashboardPage, etc.) need minimal changes.
+const useSupabaseStore = () => {
+  const [store, setStoreState] = useState({
+    artists: {}, collectors: {}, auctions: [], bids: {}, payments: {}, oohs: {}
+  });
+
+  const loadAll = useCallback(async () => {
+    try {
+      const [
+        { data: auctions },
+        { data: bids },
+        { data: oohs },
+        { data: payments },
+        { data: profiles },
+      ] = await Promise.all([
+        supabase.from("auctions").select("*").order("created_at", { ascending: false }),
+        supabase.from("bids").select("*").order("placed_at", { ascending: true }),
+        supabase.from("oohs").select("*"),
+        supabase.from("payments").select("*"),
+        supabase.from("profiles").select("*"),
+      ]);
+
+      // Build bids map { auctionId: [bid, ...] }
+      const bidsMap = {};
+      (bids || []).forEach(b => {
+        if (!bidsMap[b.auction_id]) bidsMap[b.auction_id] = [];
+        bidsMap[b.auction_id].push({
+          id: b.id, bidder: b.bidder, email: b.email, amount: b.amount, placedAt: b.placed_at
+        });
+      });
+
+      // Build oohs map { auctionId: count }
+      const oohsMap = {};
+      (oohs || []).forEach(o => { oohsMap[o.auction_id] = Number(o.count); });
+
+      // Build payments map { auctionId: paymentObj }
+      const paymentsMap = {};
+      (payments || []).forEach(p => {
+        paymentsMap[p.auction_id] = {
+          selPay: p.sel_pay, submitted: true, submittedAt: p.submitted_at,
+          sh: { name: p.name, email: p.email, address: p.address, city: p.city, state: p.state, zip: p.zip, country: p.country, notes: p.notes }
+        };
+      });
+
+      // Build artists + collectors maps from profiles
+      const artistsMap = {};
+      const collectorsMap = {};
+      (profiles || []).forEach(p => {
+        const user = { id: p.id, name: p.name, avatar: p.avatar, bio: p.bio, createdAt: p.created_at, following: p.following || [] };
+        if (p.type === "artist") artistsMap[p.id] = user;
+        else collectorsMap[p.id] = user;
+      });
+
+      // Normalize auction rows to legacy camelCase shape
+      const auctionList = (auctions || []).filter(a => !a.removed).map(a => ({
+        id: a.id, published: true, paused: a.paused, removed: a.removed,
+        artistId: a.artist_id, artistName: a.artist_name, artistAvatar: a.artist_avatar,
+        title: a.title, description: a.description, medium: a.medium, dimensions: a.dimensions,
+        startingPrice: Number(a.starting_price), minIncrement: Number(a.min_increment),
+        endDate: a.end_date, durationDays: a.duration_days,
+        paymentMethods: a.payment_methods || [],
+        venmoHandle: a.venmo_handle, paypalEmail: a.paypal_email, cashappHandle: a.cashapp_handle,
+        imageUrl: a.image_url, emoji: a.emoji, createdAt: a.created_at,
+        remainingMs: a.remaining_ms ? Number(a.remaining_ms) : undefined,
+      }));
+
+      setStoreState({ artists: artistsMap, collectors: collectorsMap, auctions: auctionList, bids: bidsMap, oohs: oohsMap, payments: paymentsMap });
+    } catch (err) {
+      console.error("loadAll error:", err);
+    }
+  }, []);
+
+  useEffect(() => { loadAll(); }, [loadAll]);
+
+  return [store, loadAll];
+};
 
 // ─────────────────────────────────────────────────────────────────────────────
 // SHARED COMPONENTS
@@ -620,9 +687,21 @@ const ImagePicker = ({ imageUrl, emoji, onImageUrl, onEmoji }) => {
     if (!file?.type.startsWith("image/")) return;
     try {
       const compressed = await compressImage(file);
+      // Try to upload to Supabase Storage; fall back to base64 data URI if unavailable
+      try {
+        const res = await fetch(compressed);
+        const blob = await res.blob();
+        const path = `${Date.now()}-${file.name.replace(/[^a-zA-Z0-9._-]/g, "_")}`;
+        const { error: uploadErr } = await supabase.storage.from("artworks").upload(path, blob, { contentType: "image/jpeg", upsert: true });
+        if (!uploadErr) {
+          const { data: { publicUrl } } = supabase.storage.from("artworks").getPublicUrl(path);
+          onImageUrl(publicUrl);
+          return;
+        }
+      } catch {}
+      // Fallback: store as base64 data URI
       onImageUrl(compressed);
     } catch {
-      // fallback: raw data URL
       const r = new FileReader();
       r.onload = (e) => onImageUrl(e.target.result);
       r.readAsDataURL(file);
@@ -706,18 +785,20 @@ const OohButton = ({ auctionId, store, updateStore }) => {
   const [justOohed, setJustOohed] = useState(false);
   const count = getOohCount(store, auctionId);
 
-  const handleOoh = (e) => {
+  const handleOoh = async (e) => {
     e.stopPropagation();
     if (oohed) return;
     saveOoh(auctionId);
     setOohed(true);
     setJustOohed(true);
     setTimeout(() => setJustOohed(false), 500);
-    updateStore((s) => {
-      if (!s.oohs) s.oohs = {};
-      s.oohs[auctionId] = (s.oohs[auctionId] || 0) + 1;
-      return s;
-    });
+    const newCount = (store.oohs?.[auctionId] || 0) + 1;
+    try {
+      await supabase.from("oohs").upsert({ auction_id: auctionId, count: newCount }, { onConflict: "auction_id" });
+      updateStore(); // refresh store from Supabase
+    } catch {
+      // Optimistic update fallback already shown via local state
+    }
   };
 
   return (
@@ -790,53 +871,58 @@ const AuthPage = ({ store, updateStore, onLogin, onCollectorLogin, initialMode }
   const [busy, setBusy] = useState(false);
   const set = (k, v) => setF((p) => ({ ...p, [k]: v }));
 
-  const login = () => {
+  const login = async () => {
     setError("");
     if (!f.email || !f.password) { setError("Enter your email and password."); return; }
     setBusy(true);
-    setTimeout(() => {
-      if (loginType === "artist") {
-        const found = Object.values(store.artists).find((a) => a.email.toLowerCase() === f.email.toLowerCase() && a.password === f.password);
-        if (!found) { setError("Incorrect email or password."); setBusy(false); return; }
-        onLogin(found); setBusy(false);
-      } else {
-        const found = Object.values(store.collectors || {}).find((c) => c.email.toLowerCase() === f.email.toLowerCase() && c.password === f.password);
-        if (!found) { setError("Incorrect email or password."); setBusy(false); return; }
-        onCollectorLogin(found); setBusy(false);
-      }
-    }, 450);
+    const { data, error: authErr } = await supabase.auth.signInWithPassword({
+      email: f.email.toLowerCase(), password: f.password
+    });
+    if (authErr) { setError("Incorrect email or password."); setBusy(false); return; }
+    const { data: profile } = await supabase.from("profiles").select("*").eq("id", data.user.id).single();
+    if (!profile) { setError("Account not found. Please sign up."); setBusy(false); return; }
+    const user = { id: data.user.id, name: profile.name, email: data.user.email, avatar: profile.avatar, bio: profile.bio, createdAt: profile.created_at };
+    if (profile.type === "artist") onLogin(user);
+    else onCollectorLogin(user);
+    setBusy(false);
   };
 
-  const signup = () => {
+  const signup = async () => {
     setError("");
     if (!f.name.trim()) { setError("Enter your artist name."); return; }
     if (!f.email.includes("@")) { setError("Enter a valid email address."); return; }
     if (f.password.length < 6) { setError("Password must be at least 6 characters."); return; }
     if (f.inviteCode.trim().toUpperCase() !== INVITE_CODE) { setError("Invalid invite code. Ask your host for access."); return; }
-    if (Object.values(store.artists).find((a) => a.email.toLowerCase() === f.email.toLowerCase())) { setError("An account with this email already exists."); return; }
     setBusy(true);
-    setTimeout(() => {
-      const id = generateId();
-      const artist = { id, name: f.name.trim(), email: f.email.toLowerCase(), password: f.password, avatar: f.avatar, bio: f.bio, createdAt: new Date().toISOString() };
-      updateStore((s) => { s.artists[id] = artist; return s; });
-      onLogin(artist); setBusy(false);
-    }, 550);
+    const { data, error: authErr } = await supabase.auth.signUp({
+      email: f.email.toLowerCase(), password: f.password,
+      options: { data: { name: f.name.trim(), avatar: f.avatar, bio: f.bio, type: "artist" } }
+    });
+    if (authErr) { setError(authErr.message); setBusy(false); return; }
+    // Profile row is created automatically by the handle_new_user trigger
+    const artist = { id: data.user.id, name: f.name.trim(), email: f.email.toLowerCase(), avatar: f.avatar, bio: f.bio, createdAt: new Date().toISOString() };
+    updateStore(); // refresh global store
+    onLogin(artist);
+    setBusy(false);
   };
 
-  const signupCollector = () => {
+  const signupCollector = async () => {
     setError("");
     if (!f.name.trim()) { setError("Enter your display name."); return; }
     if (!f.email.includes("@")) { setError("Enter a valid email address."); return; }
     if (f.password.length < 6) { setError("Password must be at least 6 characters."); return; }
     if (f.inviteCode.trim().toUpperCase() !== INVITE_CODE) { setError("Invalid invite code. Ask your host for access."); return; }
-    if (Object.values(store.collectors || {}).find((c) => c.email.toLowerCase() === f.email.toLowerCase())) { setError("An account with this email already exists."); return; }
     setBusy(true);
-    setTimeout(() => {
-      const id = generateId();
-      const collector = { id, name: f.name.trim(), email: f.email.toLowerCase(), password: f.password, avatar: f.avatar, bio: f.bio, createdAt: new Date().toISOString(), type: "collector" };
-      updateStore((s) => { if (!s.collectors) s.collectors = {}; s.collectors[id] = collector; return s; });
-      onCollectorLogin(collector); setBusy(false);
-    }, 550);
+    const { data, error: authErr } = await supabase.auth.signUp({
+      email: f.email.toLowerCase(), password: f.password,
+      options: { data: { name: f.name.trim(), avatar: f.avatar, bio: f.bio, type: "collector" } }
+    });
+    if (authErr) { setError(authErr.message); setBusy(false); return; }
+    // Profile row is created automatically by the handle_new_user trigger
+    const collector = { id: data.user.id, name: f.name.trim(), email: f.email.toLowerCase(), avatar: f.avatar, bio: f.bio, createdAt: new Date().toISOString(), type: "collector" };
+    updateStore(); // refresh global store
+    onCollectorLogin(collector);
+    setBusy(false);
   };
 
   return (
@@ -1117,16 +1203,15 @@ const ArtistPage = ({ artistId, onNavigate, store, updateStore, me, meCollector 
   const following = meCollector ? (store.collectors?.[meCollector.id]?.following || []) : [];
   const isFollowing = following.includes(artistId);
 
-  const toggleFollow = () => {
+  const toggleFollow = async () => {
     if (!meCollector) { onNavigate("collector-signup"); return; }
-    updateStore((s) => {
-      const c = s.collectors[meCollector.id];
-      if (!c.following) c.following = [];
-      const idx = c.following.indexOf(artistId);
-      if (idx === -1) c.following.push(artistId);
-      else c.following.splice(idx, 1);
-      return s;
-    });
+    const currentFollowing = store.collectors?.[meCollector.id]?.following || [];
+    const idx = currentFollowing.indexOf(artistId);
+    const newFollowing = idx === -1
+      ? [...currentFollowing, artistId]
+      : currentFollowing.filter((_, i) => i !== idx);
+    await supabase.from("profiles").update({ following: newFollowing }).eq("id", meCollector.id);
+    updateStore(); // refresh
   };
 
   const auctions = store.auctions.filter(
@@ -1353,17 +1438,22 @@ const DashboardPage = ({ artist, onNavigate, store, updateStore }) => {
     }, 0),
   };
 
-  const act = (type, id) => {
-    updateStore((s) => {
-      const i = s.auctions.findIndex((a) => a.id === id);
-      if (i < 0) return s;
-      if (type === "pause") { s.auctions[i].remainingMs = Math.max(0, new Date(s.auctions[i].endDate) - Date.now()); s.auctions[i].paused = true; }
-      if (type === "resume") { s.auctions[i].paused = false; s.auctions[i].endDate = new Date(Date.now() + (s.auctions[i].remainingMs || 86400000)).toISOString(); delete s.auctions[i].remainingMs; }
-      if (type === "end") { s.auctions[i].endDate = new Date(Date.now() - 1000).toISOString(); s.auctions[i].paused = false; }
-      if (type === "remove") s.auctions[i].removed = true;
-      return s;
-    });
+  const act = async (type, id) => {
+    const auction = store.auctions.find((a) => a.id === id);
+    if (!auction) { setConfirm(null); return; }
+    if (type === "pause") {
+      const remainingMs = Math.max(0, new Date(auction.endDate) - Date.now());
+      await supabase.from("auctions").update({ paused: true, remaining_ms: remainingMs }).eq("id", id);
+    } else if (type === "resume") {
+      const endDate = new Date(Date.now() + (auction.remainingMs || 86400000)).toISOString();
+      await supabase.from("auctions").update({ paused: false, end_date: endDate, remaining_ms: null }).eq("id", id);
+    } else if (type === "end") {
+      await supabase.from("auctions").update({ end_date: new Date(Date.now() - 1000).toISOString(), paused: false }).eq("id", id);
+    } else if (type === "remove") {
+      await supabase.from("auctions").update({ removed: true }).eq("id", id);
+    }
     setConfirm(null);
+    updateStore(); // refresh
   };
 
   const confirmCfg = {
@@ -1466,16 +1556,24 @@ const CreatePage = ({ artist, onNavigate, store, updateStore }) => {
 
   const togglePay = (m) => set("paymentMethods", f.paymentMethods.includes(m) ? f.paymentMethods.filter((x) => x !== m) : [...f.paymentMethods, m]);
 
-  const publish = () => {
+  const publish = async () => {
     setBusy(true);
-    setTimeout(() => {
-      const id = generateId();
-      const endDate = new Date(Date.now() + parseInt(f.durationDays) * 86400000).toISOString();
-      const auction = { id, published: true, paused: false, removed: false, artistId: artist.id, artistName: artist.name, artistAvatar: artist.avatar, title: f.title, description: f.description, medium: f.medium, dimensions: f.dimensions, startingPrice: parseFloat(f.startingPrice) || 50, minIncrement: parseFloat(f.minIncrement) || 25, endDate, durationDays: parseInt(f.durationDays), paymentMethods: f.paymentMethods, venmoHandle: f.venmoHandle, paypalEmail: f.paypalEmail, cashappHandle: f.cashappHandle, imageUrl: f.imageUrl, emoji: f.emoji, createdAt: new Date().toISOString() };
-      updateStore((s) => { s.auctions.push(auction); s.bids[id] = []; return s; });
-      setBusy(false);
-      onNavigate("auction", id);
-    }, 750);
+    const id = generateId();
+    const endDate = new Date(Date.now() + parseInt(f.durationDays) * 86400000).toISOString();
+    const auctionRow = {
+      id, artist_id: artist.id, artist_name: artist.name, artist_avatar: artist.avatar,
+      title: f.title, description: f.description, medium: f.medium, dimensions: f.dimensions,
+      starting_price: parseFloat(f.startingPrice) || 50, min_increment: parseFloat(f.minIncrement) || 25,
+      end_date: endDate, duration_days: parseInt(f.durationDays),
+      payment_methods: f.paymentMethods, venmo_handle: f.venmoHandle,
+      paypal_email: f.paypalEmail, cashapp_handle: f.cashappHandle,
+      image_url: f.imageUrl, emoji: f.emoji, paused: false, removed: false,
+    };
+    const { error: insertErr } = await supabase.from("auctions").insert(auctionRow);
+    if (insertErr) { console.error("publish error:", insertErr); setBusy(false); return; }
+    await updateStore(); // refresh store so new auction is visible
+    setBusy(false);
+    onNavigate("auction", id);
   };
 
   const STEPS = ["Artwork", "Details", "Pricing", "Payment", "Publish"];
@@ -1620,33 +1718,50 @@ const AuctionPage = ({ auctionId, onNavigate, store, updateStore, artist, meColl
     if (m === "facebook") window.open(`https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(shareUrl)}`);
   };
 
-  const placeBid = () => {
+  // Realtime: refresh store when bids or oohs change on this auction
+  useEffect(() => {
+    const channel = supabase
+      .channel(`auction-${auctionId}`)
+      .on("postgres_changes", { event: "INSERT", schema: "public", table: "bids", filter: `auction_id=eq.${auctionId}` }, () => updateStore())
+      .on("postgres_changes", { event: "*", schema: "public", table: "oohs", filter: `auction_id=eq.${auctionId}` }, () => updateStore())
+      .subscribe();
+    return () => { supabase.removeChannel(channel); };
+  }, [auctionId, updateStore]);
+
+  const placeBid = async () => {
     if (!localName.trim() || !bidEmail.trim()) { setBidMsg({ type:"error", text:"Enter your name and email." }); return; }
     const amt = parseFloat(bidAmt);
     if (!amt || amt < minBid) { setBidMsg({ type:"error", text:`Bid must be at least ${fmt$(minBid)}.` }); return; }
     const trimmedName = localName.trim();
     const trimmedEmail = bidEmail.trim();
-    updateStore((s) => { s.bids[auctionId] = [...(s.bids[auctionId]||[]), { id:generateId(), bidder:trimmedName, email:trimmedEmail, amount:amt, placedAt:new Date().toISOString() }]; return s; });
+    const { error: bidErr } = await supabase.from("bids").insert({
+      id: generateId(), auction_id: auctionId, bidder: trimmedName, email: trimmedEmail, amount: amt
+    });
+    if (bidErr) { setBidMsg({ type:"error", text:"Failed to place bid. Please try again." }); return; }
     setBidderName(trimmedName);
     setBidderEmail(trimmedEmail);
     saveBidderIdentity(trimmedName, trimmedEmail);
     setBidAmt("");
     setBidMsg({ type:"success", text:`Bid of ${fmt$(amt)} placed!` });
     setShowModal(false);
+    updateStore(); // also refresh immediately
     setTimeout(() => setBidMsg(null), 4000);
   };
 
-  const doManage = (type) => {
-    updateStore((s) => {
-      const i = s.auctions.findIndex((a) => a.id === auctionId);
-      if (i < 0) return s;
-      if (type === "pause") { s.auctions[i].remainingMs = Math.max(0, new Date(s.auctions[i].endDate) - Date.now()); s.auctions[i].paused = true; }
-      if (type === "resume") { s.auctions[i].paused = false; s.auctions[i].endDate = new Date(Date.now() + (s.auctions[i].remainingMs || 86400000)).toISOString(); delete s.auctions[i].remainingMs; }
-      if (type === "end") { s.auctions[i].endDate = new Date(Date.now() - 1000).toISOString(); s.auctions[i].paused = false; }
-      if (type === "remove") s.auctions[i].removed = true;
-      return s;
-    });
+  const doManage = async (type) => {
+    if (type === "pause") {
+      const remainingMs = Math.max(0, new Date(auction.endDate) - Date.now());
+      await supabase.from("auctions").update({ paused: true, remaining_ms: remainingMs }).eq("id", auctionId);
+    } else if (type === "resume") {
+      const endDate = new Date(Date.now() + (auction.remainingMs || 86400000)).toISOString();
+      await supabase.from("auctions").update({ paused: false, end_date: endDate, remaining_ms: null }).eq("id", auctionId);
+    } else if (type === "end") {
+      await supabase.from("auctions").update({ end_date: new Date(Date.now() - 1000).toISOString(), paused: false }).eq("id", auctionId);
+    } else if (type === "remove") {
+      await supabase.from("auctions").update({ removed: true }).eq("id", auctionId);
+    }
     setConfirm(null);
+    updateStore();
     if (type === "remove") onNavigate("dashboard");
   };
 
@@ -1815,13 +1930,19 @@ const PaymentPage = ({ auctionId, onNavigate, store, updateStore, bidderName }) 
     contact: { name:"Contact Artist", icon:"📧", instruction:"The artist will reach out to arrange payment directly." },
   };
 
-  const submit = () => {
+  const submit = async () => {
     if (!selPay || !sh.name || !sh.address || !sh.city || !sh.zip) return;
     setBusy(true);
-    setTimeout(() => {
-      updateStore((s) => { s.payments = s.payments||{}; s.payments[auctionId] = { selPay, sh, submittedAt:new Date().toISOString(), submitted:true }; return s; });
-      setSubmitted(true); setBusy(false);
-    }, 850);
+    const { error: payErr } = await supabase.from("payments").upsert({
+      auction_id: auctionId, sel_pay: selPay,
+      name: sh.name, email: sh.email, address: sh.address,
+      city: sh.city, state: sh.state, zip: sh.zip,
+      country: sh.country, notes: sh.notes,
+    }, { onConflict: "auction_id" });
+    if (payErr) { console.error("payment error:", payErr); setBusy(false); return; }
+    updateStore();
+    setSubmitted(true);
+    setBusy(false);
   };
 
   if (submitted) return (
@@ -1900,29 +2021,20 @@ const EditPage = ({ auctionId, artist, onNavigate, store, updateStore }) => {
   const set = (k, v) => setF((p) => ({ ...p, [k]: v }));
   const togglePay = (m) => set("paymentMethods", f.paymentMethods.includes(m) ? f.paymentMethods.filter((x) => x !== m) : [...f.paymentMethods, m]);
 
-  const save = () => {
+  const save = async () => {
     if (!f.title.trim()) return;
     setBusy(true);
-    setTimeout(() => {
-      updateStore((s) => {
-        const i = s.auctions.findIndex((a) => a.id === auctionId);
-        if (i < 0) return s;
-        s.auctions[i].title = f.title.trim();
-        s.auctions[i].description = f.description;
-        s.auctions[i].medium = f.medium;
-        s.auctions[i].dimensions = f.dimensions;
-        s.auctions[i].paymentMethods = f.paymentMethods;
-        s.auctions[i].venmoHandle = f.venmoHandle;
-        s.auctions[i].paypalEmail = f.paypalEmail;
-        s.auctions[i].cashappHandle = f.cashappHandle;
-        s.auctions[i].imageUrl = f.imageUrl;
-        s.auctions[i].emoji    = f.emoji;
-        return s;
-      });
-      setBusy(false);
-      setSaved(true);
-      setTimeout(() => { setSaved(false); onNavigate("auction", auctionId); }, 1200);
-    }, 500);
+    const { error: saveErr } = await supabase.from("auctions").update({
+      title: f.title.trim(), description: f.description, medium: f.medium, dimensions: f.dimensions,
+      payment_methods: f.paymentMethods, venmo_handle: f.venmoHandle,
+      paypal_email: f.paypalEmail, cashapp_handle: f.cashappHandle,
+      image_url: f.imageUrl, emoji: f.emoji,
+    }).eq("id", auctionId);
+    if (saveErr) { console.error("save error:", saveErr); setBusy(false); return; }
+    await updateStore();
+    setBusy(false);
+    setSaved(true);
+    setTimeout(() => { setSaved(false); onNavigate("auction", auctionId); }, 1200);
   };
 
   return (
@@ -1996,9 +2108,9 @@ const EditPage = ({ auctionId, artist, onNavigate, store, updateStore }) => {
 // APP SHELL
 // ─────────────────────────────────────────────────────────────────────────────
 export default function App() {
-  const [store, updateStore] = useStore();
-  const [artist, setArtist] = useState(getSession);
-  const [collector, setCollector] = useState(getCollectorSession);
+  const [store, updateStore] = useSupabaseStore();
+  const [artist, setArtist] = useState(null);
+  const [collector, setCollector] = useState(null);
   const [view, setView] = useState({ page: "home", id: null });
   const [bidderName, setBidderName] = useState(() => getBidderIdentity().name);
   const [bidderEmail, setBidderEmail] = useState(() => getBidderIdentity().email);
@@ -2007,8 +2119,17 @@ export default function App() {
   const dropRef = useRef();
   const collectorDropRef = useRef();
 
-  useEffect(() => { saveSession(artist); }, [artist]);
-  useEffect(() => { saveCollectorSession(collector); }, [collector]);
+  // Restore session from Supabase auth on mount
+  useEffect(() => {
+    supabase.auth.getSession().then(async ({ data: { session } }) => {
+      if (!session) return;
+      const { data: profile } = await supabase.from("profiles").select("*").eq("id", session.user.id).single();
+      if (!profile) return;
+      const user = { id: session.user.id, name: profile.name, email: session.user.email, avatar: profile.avatar, bio: profile.bio, createdAt: profile.created_at };
+      if (profile.type === "artist") setArtist(user);
+      else setCollector(user);
+    });
+  }, []);
 
   useEffect(() => {
     const hash = window.location.hash;
@@ -2038,11 +2159,11 @@ export default function App() {
   };
 
   const onLogin = (a) => { setArtist(a); setView({ page: "dashboard", id: null }); };
-  const onLogout = () => { setArtist(null); setDropOpen(false); setView({ page: "home", id: null }); };
+  const onLogout = async () => { await supabase.auth.signOut(); setArtist(null); setDropOpen(false); setView({ page: "home", id: null }); };
   const onCollectorLogin = (c) => { setCollector(c); setView({ page: "home", id: null }); };
-  const onCollectorLogout = () => { setCollector(null); setCollectorDropOpen(false); setView({ page: "home", id: null }); };
+  const onCollectorLogout = async () => { await supabase.auth.signOut(); setCollector(null); setCollectorDropOpen(false); setView({ page: "home", id: null }); };
 
-  // Always read fresh data from store
+  // Use fresh profile data from store if available, fall back to session state
   const me = artist ? (store.artists[artist.id] || artist) : null;
   const meCollector = collector ? (store.collectors?.[collector.id] || collector) : null;
   const isLoggedIn = !!(me || meCollector);
