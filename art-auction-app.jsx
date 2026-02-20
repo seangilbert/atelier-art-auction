@@ -843,7 +843,7 @@ const AuthPage = ({ store, updateStore, onLogin, onCollectorLogin, initialMode }
     <div className="auth-page">
       <div className="auth-bg" /><div className="auth-grid" />
       <div className="auth-card">
-        <div className="auth-logo">Atelier</div>
+        <div className="auth-logo">ArtDrop</div>
         <div className="auth-logo-sub">Art Auction House</div>
 
         {mode === "login" && (
@@ -870,7 +870,7 @@ const AuthPage = ({ store, updateStore, onLogin, onCollectorLogin, initialMode }
         {mode === "signup" && (
           <>
             <div className="auth-title">Create your account</div>
-            <div className="auth-sub">Join Atelier to list and auction your original artwork.</div>
+            <div className="auth-sub">Join ArtDrop to list and auction your original artwork.</div>
             {error && <div className="alert alert-error">{error}</div>}
             <div className="form-group"><label className="form-label">Artist Name *</label><input className="form-input" placeholder="e.g. Maria Chen" value={f.name} onChange={(e) => set("name", e.target.value)} /></div>
             <div className="form-group">
@@ -2067,7 +2067,7 @@ export default function App() {
       <style>{STYLES}</style>
 
       <nav className="nav">
-        <div className="nav-logo" onClick={() => go("home")}>Atelier<span>Art Auction House</span></div>
+        <div className="nav-logo" onClick={() => go("home")}>ArtDrop<span>Art Auction House</span></div>
         <div className="nav-actions">
           {liveCount > 0 && <span className="live-pip"><span className="pulse" style={{ background:"var(--rouge)" }} />{liveCount} live</span>}
           <button className="nav-link" onClick={() => go("home")}>{isLoggedIn ? "Feed" : "Browse"}</button>
