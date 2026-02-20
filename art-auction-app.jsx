@@ -338,7 +338,7 @@ const STYLES = `
     .countdown-block { padding: 1rem 1.1rem; }
   }
 
-  @media (max-width: 480px) {
+  @media (max-width: 550px) {
     .publish-summary-grid { grid-template-columns: 1fr 1fr; }
     .nav-actions .nav-link:not(:last-of-type) { display: none; }
     .features-inner { grid-template-columns: 1fr; }
