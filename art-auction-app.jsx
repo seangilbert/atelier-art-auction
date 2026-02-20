@@ -220,6 +220,7 @@ const STYLES = `
   /* Auction detail */
   .auction-detail { max-width: 1100px; margin: 0 auto; padding: 2.5rem 2rem 5rem; }
   .auction-layout { display: grid; grid-template-columns: 1.2fr 1fr; gap: 3rem; align-items: start; margin-top: 1.5rem; }
+  .auction-layout > div { min-width: 0; }
   .auction-art-frame { border-radius: var(--radius-xl); box-shadow: var(--shadow-lg); position: sticky; top: 84px; background: var(--parchment); overflow: hidden; }
   .auction-art-frame img { width: 100%; max-width: 100%; height: auto; display: block; }
   .auction-art-placeholder { aspect-ratio: 4/5; display: flex; align-items: center; justify-content: center; font-size: 6rem; background: var(--parchment); }
