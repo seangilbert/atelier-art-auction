@@ -221,7 +221,7 @@ const STYLES = `
   .auction-detail { max-width: 1100px; margin: 0 auto; padding: 2.5rem 2rem 5rem; }
   .auction-layout { display: grid; grid-template-columns: 1.2fr 1fr; gap: 3rem; align-items: start; margin-top: 1.5rem; }
   .auction-art-frame { border-radius: var(--radius-xl); box-shadow: var(--shadow-lg); position: sticky; top: 84px; background: var(--parchment); overflow: hidden; }
-  .auction-art-frame img { width: 100%; display: block; }
+  .auction-art-frame img { width: 100%; max-width: 100%; height: auto; display: block; }
   .auction-art-placeholder { aspect-ratio: 4/5; display: flex; align-items: center; justify-content: center; font-size: 6rem; background: var(--parchment); }
   .auction-eyebrow { font-size: 0.72rem; font-weight: 600; color: var(--mist); letter-spacing: 0.06em; text-transform: uppercase; margin-bottom: 0.5rem; }
   .auction-title { font-size: 1.9rem; color: var(--ink); font-weight: 700; line-height: 1.15; margin-bottom: 0.25rem; letter-spacing: -0.03em; }
@@ -314,7 +314,7 @@ const STYLES = `
     .features-inner { grid-template-columns: 1fr 1fr; padding: 1.5rem 1.25rem; gap: 1rem; }
     .section { padding: 2.5rem 1.25rem; }
     .auction-layout { grid-template-columns: 1fr; }
-    .auction-art-frame { position: static; }
+    .auction-art-frame { position: static; max-width: 100%; overflow: hidden; }
     .dash-stats { grid-template-columns: 1fr 1fr; }
     .dashboard { padding: 2rem 1.25rem 4rem; }
     .collector-dashboard { padding: 2rem 1.25rem 4rem; }
@@ -323,7 +323,7 @@ const STYLES = `
     .payment-options { grid-template-columns: 1fr; }
     .mgmt-card { flex-wrap: wrap; }
     .page-container { padding: 2rem 1.25rem 4rem; }
-    .auction-detail { padding: 1.5rem 1.25rem 4rem; }
+    .auction-detail { padding: 1.5rem 1.25rem 4rem; overflow-x: hidden; }
     .payment-page { padding: 2rem 1.25rem 4rem; }
     .auth-card { padding: 1.75rem 1.5rem; }
     .artist-mgmt-actions { gap: 0.4rem; }
@@ -354,6 +354,8 @@ const STYLES = `
     .winner-banner { padding: 1.5rem 1.25rem; }
     .bid-current-amount { font-size: 2rem; }
     .feed-filter-input { width: 72px; }
+    .artist-dropdown { min-width: 180px; }
+    .countdown-num { font-size: clamp(1.1rem, 4vw, 1.6rem); }
   }
 
   /* ── Ooh reaction ────────────────────────────────────────────────────────── */
