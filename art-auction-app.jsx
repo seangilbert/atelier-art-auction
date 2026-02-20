@@ -1322,6 +1322,7 @@ const CollectorDashboardPage = ({ meCollector, onNavigate, store, updateStore })
 const DashboardPage = ({ artist, onNavigate, store, updateStore }) => {
   const my = store.auctions.filter((a) => a.artistId === artist.id && !a.removed);
   const [confirm, setConfirm] = useState(null);
+  const [copiedId, setCopiedId] = useState(null);
 
   const stats = {
     total: my.length,
@@ -1408,6 +1409,10 @@ const DashboardPage = ({ artist, onNavigate, store, updateStore }) => {
                   </div>
                 </div>
                 <div className="mgmt-actions">
+                  <button className="btn btn-ghost btn-sm" onClick={() => {
+                    const url = `${window.location.origin}${window.location.pathname}#auction-${auction.id}`;
+                    navigator.clipboard.writeText(url).then(() => { setCopiedId(auction.id); setTimeout(() => setCopiedId(null), 2500); });
+                  }}>{copiedId === auction.id ? "✓ Copied!" : "🔗 Copy Link"}</button>
                   <button className="btn btn-ghost btn-sm" onClick={() => onNavigate("auction", auction.id)}>View</button>
                   {(status === "live" || status === "paused") && (
                     <button className="btn btn-ghost btn-sm" onClick={() => onNavigate("edit", auction.id)}>Edit</button>
@@ -1645,6 +1650,7 @@ const AuctionPage = ({ auctionId, onNavigate, store, updateStore, artist, meColl
             {status === "live" && <><button className="btn btn-warning btn-sm" onClick={() => setConfirm("pause")}>⏸ Pause</button><button className="btn btn-danger btn-sm" onClick={() => setConfirm("end")}>End Early</button></>}
             {status === "paused" && <><button className="btn btn-success btn-sm" onClick={() => setConfirm("resume")}>▶ Resume</button><button className="btn btn-danger btn-sm" onClick={() => setConfirm("end")}>End</button></>}
             {(status === "live" || status === "paused" || status === "ended") && <button className="btn btn-ghost btn-sm" style={{ color:"var(--rouge)" }} onClick={() => setConfirm("remove")}>Remove</button>}
+            <button className="btn btn-ghost btn-sm" onClick={copyLink}>{copied ? "✓ Copied!" : "🔗 Copy Link"}</button>
             <button className="btn btn-dark btn-sm" onClick={() => onNavigate("dashboard")}>Dashboard</button>
           </div>
         </div>
