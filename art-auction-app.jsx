@@ -329,6 +329,7 @@ const STYLES = `
     .auth-card { padding: 1.75rem 1.5rem; }
     .artist-mgmt-actions { gap: 0.35rem; }
     .artist-mgmt-bar { flex-direction: column; align-items: flex-start; gap: 0.6rem; }
+    .mgmt-actions { width: 100%; }
     .bid-input-row { flex-direction: column; }
     .bid-input-row .btn { width: 100%; justify-content: center; }
     .modal-actions { flex-direction: column; }
