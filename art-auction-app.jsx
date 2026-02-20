@@ -83,7 +83,7 @@ const STYLES = `
   .btn-warning:hover { transform: translateY(-1px); }
   .btn-success { background: linear-gradient(135deg, #56ab2f, #38a169); color: white; box-shadow: 0 4px 14px rgba(56,161,105,0.3); }
   .btn-success:hover { transform: translateY(-1px); }
-  .btn-sm { padding: 0.45rem 1rem; font-size: 0.78rem; min-height: 36px; }
+  .btn-sm { padding: 0.45rem 1rem; font-size: 0.78rem; min-height: 44px; }
   .btn-lg { padding: 0.95rem 2.25rem; font-size: 0.95rem; }
   .btn:disabled { opacity: 0.45; cursor: not-allowed; transform: none !important; box-shadow: none !important; }
 
@@ -182,7 +182,7 @@ const STYLES = `
   .mgmt-title { font-weight: 600; font-size: 0.95rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; letter-spacing: -0.01em; }
   .mgmt-meta { font-size: 0.75rem; color: var(--mist); margin-top: 0.2rem; }
   .mgmt-actions { display: flex; gap: 0.4rem; flex-wrap: wrap; flex-shrink: 0; }
-  .status-pill { display: inline-flex; align-items: center; gap: 0.3rem; font-size: 0.66rem; font-weight: 600; padding: 0.22rem 0.65rem; border-radius: 100px; letter-spacing: 0.02em; }
+  .status-pill { display: inline-flex; align-items: center; gap: 0.3rem; font-size: 0.72rem; font-weight: 600; padding: 0.22rem 0.65rem; border-radius: 100px; letter-spacing: 0.02em; }
   .sp-live { background: var(--gold-light); color: var(--gold-dark); }
   .sp-paused { background: rgba(237,137,54,0.12); color: var(--amber); }
   .sp-ended { background: var(--parchment); color: var(--mist); }
@@ -232,7 +232,7 @@ const STYLES = `
   .countdown-digits { display: flex; gap: 0.6rem; align-items: center; }
   .countdown-unit { text-align: center; }
   .countdown-num { font-size: clamp(1.4rem, 5vw, 2rem); font-weight: 700; color: white; line-height: 1; }
-  .countdown-unit-label { font-size: 0.6rem; color: rgba(255,255,255,0.4); letter-spacing: 0.08em; text-transform: uppercase; margin-top: 0.25rem; font-weight: 500; }
+  .countdown-unit-label { font-size: 0.65rem; color: rgba(255,255,255,0.4); letter-spacing: 0.08em; text-transform: uppercase; margin-top: 0.25rem; font-weight: 500; }
   .countdown-sep { font-size: 1.6rem; color: rgba(255,255,255,0.3); padding-bottom: 0.35rem; }
   .countdown-ended { font-size: 1.1rem; font-weight: 500; color: rgba(255,255,255,0.5); }
   .paused-notice { background: rgba(237,137,54,0.08); border: 1.5px solid rgba(237,137,54,0.25); border-radius: var(--radius); padding: 0.85rem 1rem; font-size: 0.88rem; color: var(--amber); margin-bottom: 1.25rem; font-weight: 500; }
@@ -317,6 +317,8 @@ const STYLES = `
     .auction-art-frame { position: static; }
     .dash-stats { grid-template-columns: 1fr 1fr; }
     .dashboard { padding: 2rem 1.25rem 4rem; }
+    .collector-dashboard { padding: 2rem 1.25rem 4rem; }
+    .artist-page { padding: 2rem 1.25rem 4rem; }
     .form-row { grid-template-columns: 1fr; }
     .payment-options { grid-template-columns: 1fr; }
     .mgmt-card { flex-wrap: wrap; }
@@ -351,6 +353,7 @@ const STYLES = `
     .auth-card { padding: 1.5rem 1.25rem; }
     .winner-banner { padding: 1.5rem 1.25rem; }
     .bid-current-amount { font-size: 2rem; }
+    .feed-filter-input { width: 72px; }
   }
 
   /* ── Ooh reaction ────────────────────────────────────────────────────────── */
@@ -443,7 +446,7 @@ const STYLES = `
   .cdash-bid-title { font-weight:600; font-size:0.92rem; color:var(--ink); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
   .cdash-bid-meta { font-size:0.75rem; color:var(--mist); margin-top:0.2rem; }
   .cdash-bid-status { flex-shrink:0; display:flex; flex-direction:column; align-items:flex-end; gap:0.3rem; }
-  .bid-badge { font-size:0.68rem; font-weight:700; padding:0.22rem 0.65rem; border-radius:100px; letter-spacing:0.02em; }
+  .bid-badge { font-size:0.72rem; font-weight:700; padding:0.22rem 0.65rem; border-radius:100px; letter-spacing:0.02em; }
   .bid-badge-winning { background:rgba(56,161,105,0.12); color:var(--success); }
   .bid-badge-outbid  { background:rgba(237,137,54,0.12);  color:var(--amber); }
   .bid-badge-won     { background:rgba(56,161,105,0.15);  color:var(--success); border:1.5px solid rgba(56,161,105,0.3); }
@@ -490,7 +493,16 @@ const STYLES = `
     .artist-profile-card { flex-direction:column; }
     .cdash-bid-card { flex-wrap:wrap; }
     .cdash-bid-status { flex-direction:row; align-items:center; }
+    .sticky-bid-bar { display:flex; }
+    .auction-detail { padding-bottom: 6rem; }
   }
+
+  /* ── Sticky bid bar (mobile only) ───────────────────────────────────────── */
+  .sticky-bid-bar { display:none; position:fixed; bottom:0; left:0; right:0; z-index:150; background:white; border-top:1.5px solid var(--border); padding:0.9rem 1.25rem; align-items:center; justify-content:space-between; gap:0.75rem; box-shadow:0 -4px 20px rgba(26,26,46,0.10); }
+  .sticky-bid-bar-price { display:flex; flex-direction:column; }
+  .sticky-bid-bar-label { font-size:0.68rem; font-weight:600; color:var(--mist); text-transform:uppercase; letter-spacing:0.05em; }
+  .sticky-bid-bar-amount { font-size:1.4rem; font-weight:700; color:var(--ink); letter-spacing:-0.02em; line-height:1.1; }
+  .sticky-bid-bar .btn { flex-shrink:0; }
 
   /* ── Outbid notification ─────────────────────────────────────────────────── */
   .notif-badge { position:absolute; top:-3px; right:-3px; background:var(--rouge); color:white; border-radius:50%; width:18px; height:18px; font-size:0.62rem; font-weight:700; display:flex; align-items:center; justify-content:center; pointer-events:none; border:2px solid var(--cream); line-height:1; }
@@ -1756,6 +1768,18 @@ const AuctionPage = ({ auctionId, onNavigate, store, updateStore, artist, meColl
       )}
 
       {confirm && <ConfirmModal {...mgmtCfg[confirm]} onConfirm={() => doManage(confirm)} onCancel={() => setConfirm(null)} />}
+
+      {isLive && !isOwner && (
+        <div className="sticky-bid-bar">
+          <div className="sticky-bid-bar-price">
+            <span className="sticky-bid-bar-label">{topBid ? "Current Bid" : "Starting at"}</span>
+            <span className="sticky-bid-bar-amount">{fmt$(currentTop)}</span>
+          </div>
+          <button className="btn btn-primary" onClick={() => setShowModal(true)}>
+            Place Bid →
+          </button>
+        </div>
+      )}
     </div>
   );
 };
