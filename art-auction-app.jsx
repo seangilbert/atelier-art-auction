@@ -586,6 +586,19 @@ const STYLES = `
     .page-shell, .feed-shell, .dashboard-shell, .collector-dash-shell, .create-shell, .auth-shell { padding-bottom:calc(56px + env(safe-area-inset-bottom,0px) + 1rem); }
     .auction-detail { padding-bottom:calc(6rem + 56px); }
   }
+
+  /* ── Gallery ───────────────────────────────────────────────────────────── */
+  .gallery-grid { display:grid; grid-template-columns:repeat(auto-fill, minmax(200px, 1fr)); gap:1rem; }
+  .gallery-card { background:white; border:1.5px solid var(--border); border-radius:var(--radius-lg); overflow:hidden; box-shadow:var(--shadow-sm); display:flex; flex-direction:column; }
+  .gallery-card-image { position:relative; aspect-ratio:1; background:var(--parchment); display:flex; align-items:center; justify-content:center; font-size:3rem; cursor:pointer; overflow:hidden; flex-shrink:0; }
+  .gallery-card-image img { width:100%; height:100%; object-fit:cover; }
+  .gallery-card-body { padding:0.85rem 1rem; display:flex; flex-direction:column; flex:1; }
+  .gallery-card-title { font-weight:700; font-size:0.92rem; color:var(--ink); margin-bottom:0.25rem; }
+  .gallery-card-meta { font-size:0.75rem; color:var(--mist); margin-bottom:0.4rem; }
+  .gallery-card-actions { display:flex; gap:0.4rem; flex-wrap:wrap; margin-top:auto; padding-top:0.75rem; }
+  .gallery-drop-history { margin:0.4rem 0 0.5rem; display:flex; flex-direction:column; gap:0.25rem; }
+  .gallery-drop-row { display:flex; align-items:center; gap:0.5rem; font-size:0.78rem; cursor:pointer; padding:0.2rem 0; }
+  .gallery-drop-row:hover { opacity:0.75; }
 `;
 
 
@@ -661,7 +674,7 @@ const useSupabaseStore = () => {
   const [store, setStoreState] = useState({
     artists: {}, collectors: {}, auctions: [], bids: {}, payments: {}, oohs: {}, myInvite: null,
     comments: {}, commentReactions: {}, myReactions: {},
-    bidSummaries: {}, commentCounts: {},
+    bidSummaries: {}, commentCounts: {}, gallery: {},
   });
 
   const loadAll = useCallback(async (userId = null) => {
@@ -674,6 +687,7 @@ const useSupabaseStore = () => {
         { data: profiles },
         { data: bidRows },
         { data: commentRows },
+        { data: galleryRows },
       ] = await Promise.all([
         supabase.from("auctions").select("*").order("created_at", { ascending: false }),
         supabase.from("oohs").select("*"),
@@ -681,6 +695,7 @@ const useSupabaseStore = () => {
         supabase.from("profiles").select("*"),
         supabase.from("bids").select("auction_id, amount"),             // summaries only
         supabase.from("comments").select("id, auction_id"),             // counts only
+        supabase.from("gallery").select("*").order("created_at", { ascending: false }),
       ]);
 
       // Build bid summaries map { auctionId: { count, topAmount } }
@@ -717,7 +732,7 @@ const useSupabaseStore = () => {
       const collectorsMap = {};
       (profiles || []).forEach(p => {
         const user = { id: p.id, name: p.name, avatar: p.avatar, bio: p.bio, email: p.email, createdAt: p.created_at, following: p.following || [] };
-        if (p.type === "artist") artistsMap[p.id] = user;
+        if (p.type === "artist") artistsMap[p.id] = { ...user, galleryPublic: p.gallery_public || false };
         else collectorsMap[p.id] = user;
       });
 
@@ -732,6 +747,7 @@ const useSupabaseStore = () => {
         venmoHandle: a.venmo_handle, paypalEmail: a.paypal_email, cashappHandle: a.cashapp_handle,
         imageUrl: a.image_url, emoji: a.emoji, createdAt: a.created_at,
         remainingMs: a.remaining_ms ? Number(a.remaining_ms) : undefined,
+        galleryItemId: a.gallery_item_id || null,
       }));
 
       // Fetch this user's personal invite row (if logged in)
@@ -753,12 +769,22 @@ const useSupabaseStore = () => {
         }
       }
 
+      // Normalize gallery rows
+      const galleryMap = {};
+      (galleryRows || []).forEach(g => {
+        galleryMap[g.id] = {
+          id: g.id, artistId: g.artist_id, title: g.title,
+          description: g.description, medium: g.medium, dimensions: g.dimensions,
+          imageUrl: g.image_url, emoji: g.emoji || "🎨", createdAt: g.created_at,
+        };
+      });
+
       // Use spread so per-auction bids/comments/reactions loaded by loadAuctionDetail survive refreshes
       setStoreState(prev => ({
         ...prev,
         artists: artistsMap, collectors: collectorsMap, auctions: auctionList,
         oohs: oohsMap, payments: paymentsMap, myInvite,
-        bidSummaries: bidSummariesMap, commentCounts: commentCountsMap,
+        bidSummaries: bidSummariesMap, commentCounts: commentCountsMap, gallery: galleryMap,
       }));
     } catch (err) {
       console.error("loadAll error:", err);
@@ -1468,6 +1494,45 @@ const ArtistPage = ({ artistId, onNavigate, store, updateStore, me, meCollector 
           })}
         </div>
       )}
+
+      {/* Public gallery — shown when artist has enabled it */}
+      {(() => {
+        if (!artist.galleryPublic) return null;
+        const galleryItems = Object.values(store.gallery || {}).filter(g => g.artistId === artistId);
+        if (galleryItems.length === 0) return null;
+        return (
+          <div style={{ marginTop:"3rem" }}>
+            <div className="dash-section-title" style={{ marginBottom:"1.25rem" }}>
+              <i className="fa-solid fa-images"></i> Gallery
+            </div>
+            <div className="gallery-grid">
+              {galleryItems.map(item => {
+                const linkedDrops = store.auctions.filter(a => a.galleryItemId === item.id && !a.removed);
+                const liveDrops = linkedDrops.filter(a => getStatus(a) === "live");
+                return (
+                  <div key={item.id} className="gallery-card">
+                    <div className="gallery-card-image">
+                      {item.imageUrl ? <img src={item.imageUrl} alt={item.title} /> : <span>{item.emoji}</span>}
+                      {liveDrops.length > 0 && <div className="badge badge-live"><div className="pulse" style={{ background:"white" }} /> Live</div>}
+                    </div>
+                    <div className="gallery-card-body">
+                      <div className="gallery-card-title">{item.title}</div>
+                      {item.medium && <div className="gallery-card-meta">{item.medium}</div>}
+                      {liveDrops.length > 0 && (
+                        <div className="gallery-card-actions">
+                          <button className="btn btn-primary btn-sm" onClick={() => onNavigate("auction", liveDrops[0].id)}>
+                            View Live Drop <i className="fa-solid fa-arrow-right"></i>
+                          </button>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+        );
+      })()}
     </div>
   );
 };
@@ -1871,6 +1936,104 @@ const DashboardPage = ({ artist, onNavigate, store, updateStore }) => {
         </div>
       )}
 
+      {/* ── Gallery ─────────────────────────────────────────────────────── */}
+      {(() => {
+        const myGallery = Object.values(store.gallery || {})
+          .filter(g => g.artistId === artist.id)
+          .sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
+
+        const dropsForItem = (itemId) => store.auctions
+          .filter(a => a.galleryItemId === itemId && !a.removed)
+          .sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
+
+        const toggleGalleryPublic = async () => {
+          const newVal = !artist.galleryPublic;
+          await supabase.from("profiles").update({ gallery_public: newVal }).eq("id", artist.id);
+          updateStore();
+        };
+
+        return (
+          <div style={{ marginBottom:"2.5rem" }}>
+            <div style={{ display:"flex", alignItems:"center", justifyContent:"space-between", marginBottom:"1rem", flexWrap:"wrap", gap:"0.75rem" }}>
+              <div className="dash-section-title" style={{ marginBottom:0 }}>
+                <i className="fa-solid fa-images"></i> Gallery
+              </div>
+              <div style={{ display:"flex", gap:"0.5rem", alignItems:"center", flexWrap:"wrap" }}>
+                <span style={{ fontSize:"0.8rem", color:"var(--mist)" }}>
+                  {artist.galleryPublic ? "Public" : "Private"}
+                </span>
+                <button className="btn btn-ghost btn-sm" onClick={toggleGalleryPublic}>
+                  <i className={`fa-solid ${artist.galleryPublic ? "fa-eye-slash" : "fa-eye"}`}></i>
+                  {artist.galleryPublic ? " Make Private" : " Make Public"}
+                </button>
+                <button className="btn btn-primary btn-sm" onClick={() => onNavigate("add-artwork")}>
+                  <i className="fa-solid fa-plus"></i> Add Artwork
+                </button>
+              </div>
+            </div>
+
+            {myGallery.length === 0 ? (
+              <div className="empty-state" style={{ padding:"2rem" }}>
+                <p>Add artworks to your gallery to prepare drops and keep track of your pieces.</p>
+                <button className="btn btn-primary" style={{ marginTop:"1rem" }} onClick={() => onNavigate("add-artwork")}>
+                  <i className="fa-solid fa-plus"></i> Add Artwork
+                </button>
+              </div>
+            ) : (
+              <div className="gallery-grid">
+                {myGallery.map(item => {
+                  const drops = dropsForItem(item.id);
+                  const liveDrops = drops.filter(a => getStatus(a) === "live" || getStatus(a) === "paused");
+                  const isLive = liveDrops.length > 0;
+                  return (
+                    <div key={item.id} className="gallery-card">
+                      <div className="gallery-card-image" onClick={() => onNavigate("edit-artwork", item.id)}>
+                        {item.imageUrl ? <img src={item.imageUrl} alt={item.title} /> : <span>{item.emoji}</span>}
+                        {isLive && <div className="badge badge-live"><div className="pulse" style={{ background:"white" }} /> Live</div>}
+                      </div>
+                      <div className="gallery-card-body">
+                        <div className="gallery-card-title">{item.title}</div>
+                        {item.medium && <div className="gallery-card-meta">{item.medium}</div>}
+                        {drops.length > 0 && (
+                          <div className="gallery-drop-history">
+                            {drops.slice(0, 2).map(a => {
+                              const st = getStatus(a);
+                              const summary = store.bidSummaries[a.id] || {};
+                              return (
+                                <div key={a.id} className="gallery-drop-row" onClick={() => onNavigate("auction", a.id)}>
+                                  <StatusPill status={st} />
+                                  <span style={{ fontSize:"0.78rem", color:"var(--slate)" }}>
+                                    {summary.topAmount ? fmt$(summary.topAmount) : "No bids"}
+                                  </span>
+                                </div>
+                              );
+                            })}
+                          </div>
+                        )}
+                        <div className="gallery-card-actions">
+                          {isLive ? (
+                            <button className="btn btn-ghost btn-sm" onClick={() => onNavigate("auction", liveDrops[0].id)}>
+                              View Drop <i className="fa-solid fa-arrow-right"></i>
+                            </button>
+                          ) : (
+                            <button className="btn btn-primary btn-sm" onClick={() => onNavigate("create", item.id)}>
+                              <i className="fa-solid fa-rocket"></i> Launch Drop
+                            </button>
+                          )}
+                          <button className="btn btn-ghost btn-sm" onClick={() => onNavigate("edit-artwork", item.id)}>
+                            Edit
+                          </button>
+                        </div>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            )}
+          </div>
+        );
+      })()}
+
       <div className="dash-section-title">My Auctions</div>
 
       {my.length === 0 ? (
@@ -1992,9 +2155,92 @@ const DashboardPage = ({ artist, onNavigate, store, updateStore }) => {
 // ─────────────────────────────────────────────────────────────────────────────
 // CREATE PAGE
 // ─────────────────────────────────────────────────────────────────────────────
-const CreatePage = ({ artist, onNavigate, store, updateStore }) => {
-  const [step, setStep] = useState(0);
-  const [f, setF] = useState({ title: "", description: "", medium: "", dimensions: "", startingPrice: "", minIncrement: "25", durationDays: "7", paymentMethods: ["venmo","paypal"], venmoHandle: "", paypalEmail: "", cashappHandle: "", imageUrl: "", emoji: "🎨" });
+// ─────────────────────────────────────────────────────────────────────────────
+// ADD / EDIT ARTWORK (gallery item, no auction settings)
+// ─────────────────────────────────────────────────────────────────────────────
+const AddArtworkPage = ({ artist, store, updateStore, onNavigate, editItemId }) => {
+  const existing = editItemId ? store.gallery[editItemId] : null;
+  const [f, setF] = useState({
+    title: existing?.title || "",
+    description: existing?.description || "",
+    medium: existing?.medium || "",
+    dimensions: existing?.dimensions || "",
+    imageUrl: existing?.imageUrl || "",
+    emoji: existing?.emoji || "🎨",
+  });
+  const [busy, setBusy] = useState(false);
+  const set = (k, v) => setF(p => ({ ...p, [k]: v }));
+
+  const save = async () => {
+    if (!f.title.trim()) return;
+    setBusy(true);
+    if (editItemId) {
+      await supabase.from("gallery").update({
+        title: f.title.trim(), description: f.description, medium: f.medium,
+        dimensions: f.dimensions, image_url: f.imageUrl, emoji: f.emoji,
+      }).eq("id", editItemId);
+    } else {
+      await supabase.from("gallery").insert({
+        id: generateId(), artist_id: artist.id,
+        title: f.title.trim(), description: f.description, medium: f.medium,
+        dimensions: f.dimensions, image_url: f.imageUrl, emoji: f.emoji,
+      });
+    }
+    await updateStore();
+    setBusy(false);
+    onNavigate("dashboard");
+  };
+
+  return (
+    <div className="page-container">
+      <button className="btn btn-ghost btn-sm" style={{ marginBottom:"1.5rem" }} onClick={() => onNavigate("dashboard")}>
+        <i className="fa-solid fa-arrow-left"></i> Back
+      </button>
+      <h1 className="page-title">{editItemId ? "Edit" : "Add"} <em>Artwork</em></h1>
+      <p className="page-subtitle">Add artwork to your gallery — set auction details later when you're ready to drop.</p>
+      <div className="form-group">
+        <label className="form-label">Artwork Photo</label>
+        <ImagePicker imageUrl={f.imageUrl} emoji={f.emoji}
+          onImageUrl={url => set("imageUrl", url)} onEmoji={em => set("emoji", em)} />
+      </div>
+      <div className="form-group">
+        <label className="form-label">Title *</label>
+        <input className="form-input" value={f.title} onChange={e => set("title", e.target.value)} placeholder="e.g. Ocean at Dawn" />
+      </div>
+      <div className="form-group">
+        <label className="form-label">Description</label>
+        <textarea className="form-textarea" rows={3} value={f.description} onChange={e => set("description", e.target.value)} placeholder="Tell collectors about the piece — story, technique, inspiration…" />
+      </div>
+      <div className="form-row">
+        <div className="form-group">
+          <label className="form-label">Medium</label>
+          <input className="form-input" value={f.medium} onChange={e => set("medium", e.target.value)} placeholder="Oil on canvas" />
+        </div>
+        <div className="form-group">
+          <label className="form-label">Dimensions</label>
+          <input className="form-input" value={f.dimensions} onChange={e => set("dimensions", e.target.value)} placeholder='24" × 36"' />
+        </div>
+      </div>
+      <div className="form-actions">
+        <button className="btn btn-ghost" onClick={() => onNavigate("dashboard")}>Cancel</button>
+        <button className="btn btn-primary" onClick={save} disabled={!f.title.trim() || busy}>
+          {busy ? "Saving…" : <><i className="fa-solid fa-check"></i> Save Artwork</>}
+        </button>
+      </div>
+    </div>
+  );
+};
+
+const CreatePage = ({ artist, onNavigate, store, updateStore, galleryItemId }) => {
+  const galleryItem = galleryItemId ? store.gallery[galleryItemId] : null;
+  const [step, setStep] = useState(galleryItemId ? 2 : 0);
+  const [f, setF] = useState({
+    title: galleryItem?.title || "", description: galleryItem?.description || "",
+    medium: galleryItem?.medium || "", dimensions: galleryItem?.dimensions || "",
+    imageUrl: galleryItem?.imageUrl || "", emoji: galleryItem?.emoji || "🎨",
+    startingPrice: "", minIncrement: "25", durationDays: "7",
+    paymentMethods: ["venmo","paypal"], venmoHandle: "", paypalEmail: "", cashappHandle: "",
+  });
   const [busy, setBusy] = useState(false);
   const set = (k, v) => setF((p) => ({ ...p, [k]: v }));
 
@@ -2012,6 +2258,7 @@ const CreatePage = ({ artist, onNavigate, store, updateStore }) => {
       payment_methods: f.paymentMethods, venmo_handle: f.venmoHandle,
       paypal_email: f.paypalEmail, cashapp_handle: f.cashappHandle,
       image_url: f.imageUrl, emoji: f.emoji, paused: false, removed: false,
+      gallery_item_id: galleryItemId || null,
     };
     const { error: insertErr } = await supabase.from("auctions").insert(auctionRow);
     if (insertErr) { console.error("publish error:", insertErr); setBusy(false); return; }
@@ -2027,10 +2274,17 @@ const CreatePage = ({ artist, onNavigate, store, updateStore }) => {
       <h1 className="page-title">New <em>Auction</em></h1>
       <p className="page-subtitle">Listing as <strong>{artist.avatar} {artist.name}</strong></p>
 
+      {galleryItem && (
+        <div className="alert alert-info" style={{ marginBottom:"1.5rem" }}>
+          <i className="fa-solid fa-images"></i>
+          Artwork details pre-filled from your gallery: <strong>{galleryItem.title}</strong>
+        </div>
+      )}
+
       <div className="step-indicator">
         {STEPS.map((s, i) => (
           <div key={s} style={{ display: "flex", alignItems: "center", flex: i < STEPS.length - 1 ? 1 : 0 }}>
-            <div className={`step-num ${i === step ? "active" : i < step ? "done" : ""}`}>{i < step ? <i className="fa-solid fa-check"></i> : i + 1}</div>
+            <div className={`step-num ${i === step ? "active" : (i < step || (galleryItemId && i < 2)) ? "done" : ""}`}>{(i < step || (galleryItemId && i < 2)) ? <i className="fa-solid fa-check"></i> : i + 1}</div>
             <span className={`step-label ${i === step ? "active" : ""}`}>{s}</span>
             {i < STEPS.length - 1 && <div className="step-line" />}
           </div>
@@ -2071,7 +2325,10 @@ const CreatePage = ({ artist, onNavigate, store, updateStore }) => {
             <div className="form-group"><label className="form-label">Minimum Increment</label><div className="input-prefix"><span className="input-prefix-sym">$</span><input className="form-input" type="number" min="1" placeholder="25" value={f.minIncrement} onChange={(e) => set("minIncrement", e.target.value)} /></div><p className="form-hint">Each new bid must raise by at least this amount</p></div>
           </div>
           <div className="form-group"><label className="form-label">Auction Duration</label><select className="form-select" value={f.durationDays} onChange={(e) => set("durationDays", e.target.value)}>{[["1","1 day"],["3","3 days"],["5","5 days"],["7","7 days (recommended)"],["14","14 days"],["30","30 days"]].map(([v,l]) => <option key={v} value={v}>{l}</option>)}</select></div>
-          <div className="form-actions"><button className="btn btn-ghost" onClick={() => setStep(1)}><i className="fa-solid fa-arrow-left"></i> Back</button><button className="btn btn-primary" onClick={() => setStep(3)} disabled={!f.startingPrice}>Continue <i className="fa-solid fa-arrow-right"></i></button></div>
+          <div className="form-actions">
+            <button className="btn btn-ghost" onClick={() => galleryItemId ? onNavigate("dashboard") : setStep(1)}><i className="fa-solid fa-arrow-left"></i> Back</button>
+            <button className="btn btn-primary" onClick={() => setStep(3)} disabled={!f.startingPrice}>Continue <i className="fa-solid fa-arrow-right"></i></button>
+          </div>
         </div>
       )}
 
@@ -2996,7 +3253,9 @@ export default function App() {
               initialInviteCode={pendingInviteCode} />
       )}
       {view.page === "dashboard"           && me          && <DashboardPage artist={me} onNavigate={go} store={store} updateStore={updateStore} />}
-      {view.page === "create"              && me          && <CreatePage    artist={me} onNavigate={go} store={store} updateStore={updateStore} />}
+      {view.page === "create"              && me          && <CreatePage    artist={me} onNavigate={go} store={store} updateStore={updateStore} galleryItemId={view.id || null} />}
+      {view.page === "add-artwork"         && me          && <AddArtworkPage artist={me} store={store} updateStore={updateStore} onNavigate={go} />}
+      {view.page === "edit-artwork"        && me          && <AddArtworkPage artist={me} store={store} updateStore={updateStore} onNavigate={go} editItemId={view.id} />}
       {view.page === "auction"             && <AuctionPage auctionId={view.id} onNavigate={go} store={store} updateStore={updateStore} loadAuctionDetail={loadAuctionDetail} artist={me} meCollector={meCollector} bidderName={bidderName} setBidderName={setBidderName} bidderEmail={bidderEmail} setBidderEmail={setBidderEmail} />}
       {view.page === "payment"             && (isLoggedIn ? <PaymentPage auctionId={view.id} onNavigate={go} store={store} updateStore={updateStore} loadAuctionDetail={loadAuctionDetail} bidderName={bidderName} bidderEmail={bidderEmail} meCollector={meCollector} /> : <AuthPage store={store} updateStore={updateStore} onLogin={onLogin} onCollectorLogin={onCollectorLogin} initialMode="login" initialInviteCode={pendingInviteCode} />)}
       {view.page === "edit"                && me          && <EditPage auctionId={view.id} artist={me} onNavigate={go} store={store} updateStore={updateStore} />}
