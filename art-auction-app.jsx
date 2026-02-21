@@ -557,6 +557,34 @@ const STYLES = `
   .comment-delete-btn:hover { color:var(--rouge); background:var(--gold-light); }
   .comment-delete-btn:disabled { opacity:0.5; cursor:not-allowed; }
   @media (max-width:768px) { .comments-block { padding:1rem 1.1rem; } .comment-body,.comment-reactions-row { padding-left:0; margin-top:0.35rem; } }
+
+  /* ── Pending payments ──────────────────────────────────────────────────────── */
+  .pending-payment-card { background:white; border:1.5px solid var(--border); border-radius:var(--radius-lg); padding:1.25rem 1.5rem; margin-bottom:1rem; box-shadow:var(--shadow-sm); }
+  .pending-payment-header { display:flex; align-items:center; gap:1rem; margin-bottom:1rem; flex-wrap:wrap; }
+  .pending-payment-thumb { width:56px; height:56px; border-radius:var(--radius); background:var(--parchment); display:flex; align-items:center; justify-content:center; font-size:1.5rem; flex-shrink:0; overflow:hidden; }
+  .pending-payment-thumb img { width:100%; height:100%; object-fit:cover; }
+  .pending-payment-title { font-weight:700; font-size:0.95rem; color:var(--ink); margin-bottom:0.15rem; }
+  .pending-payment-winner { font-size:0.82rem; color:var(--slate); }
+  .pending-payment-amount { font-size:1.3rem; font-weight:700; color:var(--gold-dark); margin-left:auto; white-space:nowrap; }
+  .pending-payment-details { background:var(--parchment); border-radius:var(--radius); padding:0.85rem 1rem; font-size:0.82rem; color:var(--slate); line-height:1.7; margin-bottom:1rem; }
+  .pending-payment-actions { display:flex; gap:0.6rem; align-items:center; flex-wrap:wrap; }
+  .tracking-input { padding:0.5rem 0.8rem; border:1.5px solid var(--border); border-radius:var(--radius); font-family:var(--font-body); font-size:0.82rem; color:var(--ink); width:180px; }
+  .tracking-input:focus { outline:none; border-color:var(--gold); }
+  .status-badge-paid { display:inline-flex; align-items:center; gap:0.3rem; font-size:0.72rem; font-weight:600; color:var(--success); background:rgba(56,161,105,0.1); padding:0.2rem 0.6rem; border-radius:100px; }
+  .status-badge-shipped { display:inline-flex; align-items:center; gap:0.3rem; font-size:0.72rem; font-weight:600; color:var(--accent2); background:var(--accent2-light); padding:0.2rem 0.6rem; border-radius:100px; }
+
+  /* ── Mobile bottom nav ─────────────────────────────────────────────────── */
+  .mobile-bottom-nav { display:none; position:fixed; bottom:0; left:0; right:0; z-index:200; background:white; border-top:1.5px solid var(--border); box-shadow:0 -4px 20px rgba(26,26,46,0.08); padding:0 0 env(safe-area-inset-bottom,0); }
+  .mobile-bottom-nav-inner { display:flex; align-items:stretch; justify-content:space-around; height:56px; }
+  .mobile-nav-tab { display:flex; flex-direction:column; align-items:center; justify-content:center; flex:1; gap:2px; background:none; border:none; cursor:pointer; padding:0; color:var(--mist); font-size:0.65rem; font-weight:600; letter-spacing:0.03em; text-transform:uppercase; transition:color 0.15s; -webkit-tap-highlight-color:transparent; }
+  .mobile-nav-tab:active { opacity:0.7; }
+  .mobile-nav-tab.active { color:var(--accent); }
+  .mobile-nav-tab-icon { font-size:1.35rem; line-height:1; }
+  @media (max-width:768px) {
+    .mobile-bottom-nav { display:block; }
+    .page-shell, .feed-shell, .dashboard-shell, .collector-dash-shell, .create-shell, .auth-shell { padding-bottom:calc(56px + env(safe-area-inset-bottom,0px) + 1rem); }
+    .auction-detail { padding-bottom:calc(6rem + 56px); }
+  }
 `;
 
 
@@ -631,37 +659,42 @@ const getOohCount = (store, id) => (store.oohs?.[id]) || 0;
 const useSupabaseStore = () => {
   const [store, setStoreState] = useState({
     artists: {}, collectors: {}, auctions: [], bids: {}, payments: {}, oohs: {}, myInvite: null,
-    comments: {}, commentReactions: {}, myReactions: {}
+    comments: {}, commentReactions: {}, myReactions: {},
+    bidSummaries: {}, commentCounts: {},
   });
 
   const loadAll = useCallback(async (userId = null) => {
     try {
-      const queries = [
-        supabase.from("auctions").select("*").order("created_at", { ascending: false }),
-        supabase.from("bids").select("*").order("placed_at", { ascending: true }),
-        supabase.from("oohs").select("*"),
-        supabase.from("payments").select("*"),
-        supabase.from("profiles").select("*"),
-        supabase.from("comments").select("*").order("created_at", { ascending: true }),
-        supabase.from("comment_reactions").select("*"),
-      ];
+      // Tier-1 fetch: lightweight queries only — full bids/comments/reactions loaded per-auction
       const [
         { data: auctions },
-        { data: bids },
         { data: oohs },
         { data: payments },
         { data: profiles },
-        { data: commentsRaw },
-        { data: reactionsRaw },
-      ] = await Promise.all(queries);
+        { data: bidRows },
+        { data: commentRows },
+      ] = await Promise.all([
+        supabase.from("auctions").select("*").order("created_at", { ascending: false }),
+        supabase.from("oohs").select("*"),
+        supabase.from("payments").select("*"),                          // small table, keep full
+        supabase.from("profiles").select("*"),
+        supabase.from("bids").select("auction_id, amount"),             // summaries only
+        supabase.from("comments").select("id, auction_id"),             // counts only
+      ]);
 
-      // Build bids map { auctionId: [bid, ...] }
-      const bidsMap = {};
-      (bids || []).forEach(b => {
-        if (!bidsMap[b.auction_id]) bidsMap[b.auction_id] = [];
-        bidsMap[b.auction_id].push({
-          id: b.id, bidder: b.bidder, email: b.email, amount: b.amount, placedAt: b.placed_at
-        });
+      // Build bid summaries map { auctionId: { count, topAmount } }
+      const bidSummariesMap = {};
+      (bidRows || []).forEach(b => {
+        const s = bidSummariesMap[b.auction_id] || { count: 0, topAmount: 0 };
+        s.count++;
+        if (b.amount > s.topAmount) s.topAmount = b.amount;
+        bidSummariesMap[b.auction_id] = s;
+      });
+
+      // Build comment counts map { auctionId: number }
+      const commentCountsMap = {};
+      (commentRows || []).forEach(c => {
+        commentCountsMap[c.auction_id] = (commentCountsMap[c.auction_id] || 0) + 1;
       });
 
       // Build oohs map { auctionId: count }
@@ -673,6 +706,7 @@ const useSupabaseStore = () => {
       (payments || []).forEach(p => {
         paymentsMap[p.auction_id] = {
           selPay: p.sel_pay, submitted: true, submittedAt: p.submitted_at,
+          paidAt: p.paid_at || null, shippedAt: p.shipped_at || null, tracking: p.tracking || "",
           sh: { name: p.name, email: p.email, address: p.address, city: p.city, state: p.state, zip: p.zip, country: p.country, notes: p.notes }
         };
       });
@@ -686,34 +720,7 @@ const useSupabaseStore = () => {
         else collectorsMap[p.id] = user;
       });
 
-      // Build comments map { auctionId: Comment[] }
-      const commentsMap = {};
-      (commentsRaw || []).forEach(c => {
-        if (!commentsMap[c.auction_id]) commentsMap[c.auction_id] = [];
-        commentsMap[c.auction_id].push({
-          id: c.id, auctionId: c.auction_id, authorId: c.author_id,
-          authorName: c.author_name, authorAvatar: c.author_avatar,
-          body: c.body, createdAt: c.created_at,
-        });
-      });
-
-      // Build reaction counts { commentId: { emoji: count } }
-      const commentReactionsMap = {};
-      (reactionsRaw || []).forEach(r => {
-        if (!commentReactionsMap[r.comment_id]) commentReactionsMap[r.comment_id] = {};
-        commentReactionsMap[r.comment_id][r.emoji] = (commentReactionsMap[r.comment_id][r.emoji] || 0) + 1;
-      });
-
-      // Build myReactions { commentId: Set<emoji> } — only for logged-in user
-      const myReactionsMap = {};
-      if (userId) {
-        (reactionsRaw || []).filter(r => r.user_id === userId).forEach(r => {
-          if (!myReactionsMap[r.comment_id]) myReactionsMap[r.comment_id] = new Set();
-          myReactionsMap[r.comment_id].add(r.emoji);
-        });
-      }
-
-      // Normalize auction rows to legacy camelCase shape
+      // Normalize auction rows to camelCase shape
       const auctionList = (auctions || []).filter(a => !a.removed).map(a => ({
         id: a.id, published: true, paused: a.paused, removed: a.removed,
         artistId: a.artist_id, artistName: a.artist_name, artistAvatar: a.artist_avatar,
@@ -745,15 +752,67 @@ const useSupabaseStore = () => {
         }
       }
 
-      setStoreState({ artists: artistsMap, collectors: collectorsMap, auctions: auctionList, bids: bidsMap, oohs: oohsMap, payments: paymentsMap, myInvite, comments: commentsMap, commentReactions: commentReactionsMap, myReactions: myReactionsMap });
+      // Use spread so per-auction bids/comments/reactions loaded by loadAuctionDetail survive refreshes
+      setStoreState(prev => ({
+        ...prev,
+        artists: artistsMap, collectors: collectorsMap, auctions: auctionList,
+        oohs: oohsMap, payments: paymentsMap, myInvite,
+        bidSummaries: bidSummariesMap, commentCounts: commentCountsMap,
+      }));
     } catch (err) {
       console.error("loadAll error:", err);
     }
   }, []);
 
+  // Per-auction detail loader: full bids + comments + reactions for one auction
+  const loadAuctionDetail = useCallback(async (auctionId, userId = null) => {
+    try {
+      const [{ data: bids }, { data: commentsRaw }] = await Promise.all([
+        supabase.from("bids").select("*").eq("auction_id", auctionId).order("placed_at", { ascending: true }),
+        supabase.from("comments").select("*").eq("auction_id", auctionId).order("created_at", { ascending: true }),
+      ]);
+      // Reactions need comment IDs — fetch sequentially
+      const commentIds = (commentsRaw || []).map(c => c.id);
+      const { data: reactionsRaw } = commentIds.length
+        ? await supabase.from("comment_reactions").select("*").in("comment_id", commentIds)
+        : { data: [] };
+
+      const bidsForAuction = (bids || []).map(b => ({
+        id: b.id, bidder: b.bidder, email: b.email, amount: b.amount, placedAt: b.placed_at
+      }));
+      const commentsForAuction = (commentsRaw || []).map(c => ({
+        id: c.id, auctionId: c.auction_id, authorId: c.author_id,
+        authorName: c.author_name, authorAvatar: c.author_avatar,
+        body: c.body, createdAt: c.created_at,
+      }));
+      const reactionsMap = {};
+      (reactionsRaw || []).forEach(r => {
+        if (!reactionsMap[r.comment_id]) reactionsMap[r.comment_id] = {};
+        reactionsMap[r.comment_id][r.emoji] = (reactionsMap[r.comment_id][r.emoji] || 0) + 1;
+      });
+      const myReactionsMap = {};
+      if (userId) {
+        (reactionsRaw || []).filter(r => r.user_id === userId).forEach(r => {
+          if (!myReactionsMap[r.comment_id]) myReactionsMap[r.comment_id] = new Set();
+          myReactionsMap[r.comment_id].add(r.emoji);
+        });
+      }
+
+      setStoreState(prev => ({
+        ...prev,
+        bids: { ...prev.bids, [auctionId]: bidsForAuction },
+        comments: { ...prev.comments, [auctionId]: commentsForAuction },
+        commentReactions: { ...prev.commentReactions, ...reactionsMap },
+        myReactions: { ...prev.myReactions, ...myReactionsMap },
+      }));
+    } catch (err) {
+      console.error("loadAuctionDetail error:", err);
+    }
+  }, []);
+
   useEffect(() => { loadAll(); }, [loadAll]);
 
-  return [store, loadAll];
+  return [store, loadAll, loadAuctionDetail];
 };
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -1156,8 +1215,8 @@ const HomePage = ({ onNavigate, store, updateStore }) => {
           ) : (
             <div className="auction-grid">
               {topOohs.map((auction) => {
-                const bids = store.bids[auction.id] || [];
-                const topBid = bids.length ? Math.max(...bids.map((b) => b.amount)) : auction.startingPrice;
+                const summary = store.bidSummaries[auction.id] || { count: 0, topAmount: 0 };
+                const topBidAmt = summary.topAmount || auction.startingPrice;
                 return (
                   <div key={auction.id} className="auction-card" onClick={() => onNavigate("auction", auction.id)}>
                     <div className="card-image">
@@ -1168,7 +1227,7 @@ const HomePage = ({ onNavigate, store, updateStore }) => {
                       <div className="card-artist">by {auction.artistName}</div>
                       <div className="card-title">{auction.title}</div>
                       <div className="card-meta">
-                        <div><div className="card-price-label">{bids.length ? "Current Bid" : "Starting at"}</div><div className="card-price">{fmt$(topBid)}</div></div>
+                        <div><div className="card-price-label">{summary.count ? "Current Bid" : "Starting at"}</div><div className="card-price">{fmt$(topBidAmt)}</div></div>
                         <div><div className="card-timer-label">Closes</div><div className="card-timer-val"><CardTimer endDate={auction.endDate} /></div></div>
                       </div>
                       <div className="card-ooh-row">
@@ -1190,10 +1249,15 @@ const HomePage = ({ onNavigate, store, updateStore }) => {
 // FEED PAGE  (authenticated landing)
 // ─────────────────────────────────────────────────────────────────────────────
 const FeedPage = ({ onNavigate, store, updateStore, me, meCollector }) => {
+  const PAGE_SIZE = 12;
   const [sort, setSort] = useState("oohs");
   const [query, setQuery] = useState("");
   const [minPrice, setMinPrice] = useState("");
   const [maxPrice, setMaxPrice] = useState("");
+  const [visibleCount, setVisibleCount] = useState(PAGE_SIZE);
+
+  // Reset pagination when sort/filter changes
+  useEffect(() => { setVisibleCount(PAGE_SIZE); }, [sort, query, minPrice, maxPrice]);
 
   const live = store.auctions.filter((a) => !a.removed && a.published && getStatus(a) === "live");
   const sorted = [...live].sort((a, b) => {
@@ -1206,14 +1270,17 @@ const FeedPage = ({ onNavigate, store, updateStore, me, meCollector }) => {
   const clearFilters = () => { setQuery(""); setMinPrice(""); setMaxPrice(""); };
 
   const filtered = sorted.filter((auction) => {
-    const bids = store.bids[auction.id] || [];
-    const currentPrice = bids.length ? Math.max(...bids.map((b) => b.amount)) : auction.startingPrice;
+    const summary = store.bidSummaries[auction.id] || { count: 0, topAmount: 0 };
+    const currentPrice = summary.topAmount || auction.startingPrice;
     const q = query.trim().toLowerCase();
     if (q && !auction.title.toLowerCase().includes(q) && !auction.artistName.toLowerCase().includes(q)) return false;
     if (minPrice !== "" && currentPrice < parseFloat(minPrice)) return false;
     if (maxPrice !== "" && currentPrice > parseFloat(maxPrice)) return false;
     return true;
   });
+
+  const visibleAuctions = filtered.slice(0, visibleCount);
+  const hasMore = filtered.length > visibleCount;
 
   const activeUser = me || meCollector;
   return (
@@ -1257,9 +1324,11 @@ const FeedPage = ({ onNavigate, store, updateStore, me, meCollector }) => {
         </div>
       ) : (
         <div className="feed-grid">
-          {filtered.map((auction) => {
-            const bids = store.bids[auction.id] || [];
-            const topBid = bids.length ? Math.max(...bids.map((b) => b.amount)) : auction.startingPrice;
+          {visibleAuctions.map((auction) => {
+            const summary = store.bidSummaries[auction.id] || { count: 0, topAmount: 0 };
+            const topBidAmt = summary.topAmount || auction.startingPrice;
+            const bidCount = summary.count;
+            const commentCount = store.commentCounts?.[auction.id] || 0;
             return (
               <div key={auction.id} className="feed-card" onClick={() => onNavigate("auction", auction.id)}>
                 <div
@@ -1279,12 +1348,12 @@ const FeedPage = ({ onNavigate, store, updateStore, me, meCollector }) => {
                 <div className="card-body">
                   <div className="card-title">{auction.title}</div>
                   {auction.description && <div className="feed-desc">{auction.description}</div>}
-                  <div style={{ display:"flex", gap:"0.4rem", flexWrap:"wrap", marginBottom: (bids.length > 0 || (store.comments?.[auction.id]?.length || 0) > 0) ? "0.6rem" : 0 }}>
-                    {bids.length > 0 && <div className="feed-bid-count">🔥 {bids.length} bid{bids.length !== 1 ? "s" : ""}</div>}
-                    {(store.comments?.[auction.id]?.length || 0) > 0 && <div className="feed-comment-count">💬 {store.comments[auction.id].length} comment{store.comments[auction.id].length !== 1 ? "s" : ""}</div>}
+                  <div style={{ display:"flex", gap:"0.4rem", flexWrap:"wrap", marginBottom: (bidCount > 0 || commentCount > 0) ? "0.6rem" : 0 }}>
+                    {bidCount > 0 && <div className="feed-bid-count">🔥 {bidCount} bid{bidCount !== 1 ? "s" : ""}</div>}
+                    {commentCount > 0 && <div className="feed-comment-count">💬 {commentCount} comment{commentCount !== 1 ? "s" : ""}</div>}
                   </div>
                   <div className="card-meta">
-                    <div><div className="card-price-label">{bids.length ? "Current Bid" : "Starting at"}</div><div className="card-price">{fmt$(topBid)}</div></div>
+                    <div><div className="card-price-label">{bidCount ? "Current Bid" : "Starting at"}</div><div className="card-price">{fmt$(topBidAmt)}</div></div>
                     <div><div className="card-timer-label">Closes</div><div className="card-timer-val"><CardTimer endDate={auction.endDate} /></div></div>
                   </div>
                   <div className="card-ooh-row feed-ooh">
@@ -1295,6 +1364,14 @@ const FeedPage = ({ onNavigate, store, updateStore, me, meCollector }) => {
             );
           })}
         </div>
+        {hasMore && (
+          <div style={{ textAlign:"center", padding:"2rem 0" }}>
+            <button className="btn btn-ghost" onClick={() => setVisibleCount(c => c + PAGE_SIZE)}>
+              Load {Math.min(PAGE_SIZE, filtered.length - visibleCount)} more
+              <span style={{ color:"var(--mist)", marginLeft:"0.4rem" }}>({filtered.length - visibleCount} remaining)</span>
+            </button>
+          </div>
+        )}
       )}
     </div>
   );
@@ -1365,8 +1442,8 @@ const ArtistPage = ({ artistId, onNavigate, store, updateStore, me, meCollector 
       ) : (
         <div className="auction-grid">
           {sorted.map((auction) => {
-            const bids = store.bids[auction.id] || [];
-            const topBid = bids.length ? Math.max(...bids.map((b) => b.amount)) : auction.startingPrice;
+            const summary = store.bidSummaries[auction.id] || { count: 0, topAmount: 0 };
+            const topBidAmt = summary.topAmount || auction.startingPrice;
             const status = getStatus(auction);
             return (
               <div key={auction.id} className={`auction-card${status === "paused" ? " is-paused" : ""}`} onClick={() => onNavigate("auction", auction.id)}>
@@ -1379,7 +1456,7 @@ const ArtistPage = ({ artistId, onNavigate, store, updateStore, me, meCollector 
                 <div className="card-body">
                   <div className="card-title">{auction.title}</div>
                   <div className="card-meta">
-                    <div><div className="card-price-label">{bids.length ? "Current Bid" : "Starting at"}</div><div className="card-price">{fmt$(topBid)}</div></div>
+                    <div><div className="card-price-label">{summary.count ? "Current Bid" : "Starting at"}</div><div className="card-price">{fmt$(topBidAmt)}</div></div>
                     {status === "live" && <div><div className="card-timer-label">Closes</div><div className="card-timer-val"><CardTimer endDate={auction.endDate} /></div></div>}
                   </div>
                 </div>
@@ -1465,7 +1542,7 @@ const CollectorDashboardPage = ({ meCollector, onNavigate, store, updateStore })
         ) : (
           <div className="cdash-bid-list">
             {myBidAuctions.map(({ auction, myTop, topBid, badgeLabel, badgeCls }) => {
-              const bids = store.bids[auction.id] || [];
+              const summary = store.bidSummaries[auction.id] || { count: 0, topAmount: 0 };
               const currentTop = topBid ? topBid.amount : auction.startingPrice;
               return (
                 <div key={auction.id} className="cdash-bid-card" onClick={() => onNavigate("auction", auction.id)}>
@@ -1474,7 +1551,7 @@ const CollectorDashboardPage = ({ meCollector, onNavigate, store, updateStore })
                   </div>
                   <div className="cdash-bid-info">
                     <div className="cdash-bid-title">{auction.title}</div>
-                    <div className="cdash-bid-meta">by {auction.artistName} · {bids.length} bid{bids.length !== 1 ? "s" : ""} · Top: {fmt$(currentTop)}</div>
+                    <div className="cdash-bid-meta">by {auction.artistName} · {summary.count} bid{summary.count !== 1 ? "s" : ""} · Top: {fmt$(currentTop)}</div>
                   </div>
                   <div className="cdash-bid-status">
                     {badgeLabel && <span className={`bid-badge ${badgeCls}`}>{badgeLabel}</span>}
@@ -1637,14 +1714,45 @@ const DashboardPage = ({ artist, onNavigate, store, updateStore }) => {
   const my = store.auctions.filter((a) => a.artistId === artist.id && !a.removed);
   const [confirm, setConfirm] = useState(null);
   const [copiedId, setCopiedId] = useState(null);
+  const [markingPaid, setMarkingPaid] = useState(null);
+  const [markingShipped, setMarkingShipped] = useState(null);
+  const [trackingInput, setTrackingInput] = useState({});
+
+  const markPaid = async (auctionId) => {
+    setMarkingPaid(auctionId);
+    await supabase.from("payments").update({ paid_at: new Date().toISOString() }).eq("auction_id", auctionId);
+    updateStore();
+    setMarkingPaid(null);
+  };
+
+  const markShipped = async (auctionId) => {
+    setMarkingShipped(auctionId);
+    await supabase.from("payments")
+      .update({ shipped_at: new Date().toISOString(), tracking: trackingInput[auctionId] || "" })
+      .eq("auction_id", auctionId);
+    updateStore();
+    setMarkingShipped(null);
+  };
+
+  const pendingPayments = my
+    .filter((a) => {
+      if (getStatus(a) !== "ended") return false;
+      const payment = store.payments?.[a.id];
+      return payment?.submitted && !payment?.shippedAt;
+    })
+    .map((a) => {
+      const summary = store.bidSummaries[a.id] || { count: 0, topAmount: 0 };
+      const topBid = summary.topAmount ? { amount: summary.topAmount } : null;
+      const payment = store.payments[a.id];
+      return { auction: a, topBid, payment };
+    });
 
   const stats = {
     total: my.length,
     live: my.filter((a) => getStatus(a) === "live").length,
     ended: my.filter((a) => getStatus(a) === "ended").length,
     revenue: my.filter((a) => getStatus(a) === "ended").reduce((sum, a) => {
-      const b = store.bids[a.id] || [];
-      return sum + (b.length ? Math.max(...b.map((x) => x.amount)) : 0);
+      return sum + (store.bidSummaries[a.id]?.topAmount || 0);
     }, 0),
   };
 
@@ -1697,6 +1805,69 @@ const DashboardPage = ({ artist, onNavigate, store, updateStore }) => {
         ))}
       </div>
 
+      {pendingPayments.length > 0 && (
+        <div style={{ marginBottom: "2.5rem" }}>
+          <div className="dash-section-title">📦 Pending Payments</div>
+          {pendingPayments.map(({ auction, topBid, payment }) => (
+            <div key={auction.id} className="pending-payment-card">
+              <div className="pending-payment-header">
+                <div className="pending-payment-thumb">
+                  {auction.imageUrl ? <img src={auction.imageUrl} alt="" /> : (auction.emoji || "🎨")}
+                </div>
+                <div style={{ flex: 1, minWidth: 0 }}>
+                  <div className="pending-payment-title">{auction.title}</div>
+                  <div className="pending-payment-winner">
+                    Winner: <strong>{payment.sh?.name}</strong>
+                    {payment.sh?.email && <> · <a href={`mailto:${payment.sh.email}`} style={{ color: "var(--gold-dark)" }}>{payment.sh.email}</a></>}
+                  </div>
+                  <div className="pending-payment-winner" style={{ marginTop: "0.15rem" }}>
+                    Payment: <strong>{payment.selPay}</strong>
+                    {" · "}Submitted {new Date(payment.submittedAt).toLocaleDateString("en-US", { month: "short", day: "numeric" })}
+                  </div>
+                </div>
+                <div className="pending-payment-amount">{topBid ? fmt$(topBid.amount) : "—"}</div>
+              </div>
+
+              <div className="pending-payment-details">
+                <strong>Ship to:</strong><br />
+                {payment.sh?.name}<br />
+                {payment.sh?.address}<br />
+                {payment.sh?.city}{payment.sh?.state ? `, ${payment.sh.state}` : ""} {payment.sh?.zip}<br />
+                {payment.sh?.country}
+                {payment.sh?.notes && <><br /><em>Note: {payment.sh.notes}</em></>}
+              </div>
+
+              <div className="pending-payment-actions">
+                {payment.paidAt ? (
+                  <span className="status-badge-paid">✓ Paid {new Date(payment.paidAt).toLocaleDateString("en-US", { month: "short", day: "numeric" })}</span>
+                ) : (
+                  <button
+                    className="btn btn-success btn-sm"
+                    disabled={markingPaid === auction.id}
+                    onClick={() => markPaid(auction.id)}
+                  >
+                    {markingPaid === auction.id ? "Marking…" : "✓ Mark Paid"}
+                  </button>
+                )}
+                <input
+                  className="tracking-input"
+                  placeholder="Tracking number (optional)"
+                  value={trackingInput[auction.id] ?? payment.tracking ?? ""}
+                  onChange={(e) => setTrackingInput((prev) => ({ ...prev, [auction.id]: e.target.value }))}
+                />
+                <button
+                  className="btn btn-primary btn-sm"
+                  disabled={markingShipped === auction.id}
+                  onClick={() => markShipped(auction.id)}
+                >
+                  {markingShipped === auction.id ? "Marking…" : "📦 Mark Shipped"}
+                </button>
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
+
       <div className="dash-section-title">My Auctions</div>
 
       {my.length === 0 ? (
@@ -1709,8 +1880,8 @@ const DashboardPage = ({ artist, onNavigate, store, updateStore }) => {
         <div className="auction-mgmt-list">
           {my.map((auction) => {
             const status = getStatus(auction);
-            const bids = store.bids[auction.id] || [];
-            const topBid = bids.length ? Math.max(...bids.map((b) => b.amount)) : null;
+            const summary = store.bidSummaries[auction.id] || { count: 0, topAmount: 0 };
+            const topBid = summary.topAmount || null;
             return (
               <div key={auction.id} className={`mgmt-card st-${status}`}>
                 <div className="mgmt-thumb">{auction.imageUrl ? <img src={auction.imageUrl} alt="" /> : (auction.emoji || "🎨")}</div>
@@ -1721,7 +1892,7 @@ const DashboardPage = ({ artist, onNavigate, store, updateStore }) => {
                   </div>
                   <div className="mgmt-meta">
                     {topBid ? `Top bid: ${fmt$(topBid)}` : `Starting: ${fmt$(auction.startingPrice)}`}
-                    {" · "}{bids.length} bid{bids.length !== 1 ? "s" : ""}
+                    {" · "}{summary.count} bid{summary.count !== 1 ? "s" : ""}
                     {status === "live" && <> · Ends {fmtDate(auction.endDate)}</>}
                     {status === "ended" && <> · Ended {fmtDate(auction.endDate)}</>}
                     {status === "paused" && <> · Paused</>}
@@ -1789,7 +1960,7 @@ const DashboardPage = ({ artist, onNavigate, store, updateStore }) => {
             <div className="dash-section-title">🏷️ My Bids</div>
             <div className="cdash-bid-list">
               {myBidAuctions.map(({ auction, myTop, topBid, badgeLabel, badgeCls }) => {
-                const bids = store.bids[auction.id] || [];
+                const bidSummary = store.bidSummaries[auction.id] || { count: 0, topAmount: 0 };
                 const currentTop = topBid ? topBid.amount : auction.startingPrice;
                 return (
                   <div key={auction.id} className="cdash-bid-card" onClick={() => onNavigate("auction", auction.id)}>
@@ -1798,7 +1969,7 @@ const DashboardPage = ({ artist, onNavigate, store, updateStore }) => {
                     </div>
                     <div className="cdash-bid-info">
                       <div className="cdash-bid-title">{auction.title}</div>
-                      <div className="cdash-bid-meta">by {auction.artistName} · {bids.length} bid{bids.length !== 1 ? "s" : ""} · Top: {fmt$(currentTop)}</div>
+                      <div className="cdash-bid-meta">by {auction.artistName} · {bidSummary.count} bid{bidSummary.count !== 1 ? "s" : ""} · Top: {fmt$(currentTop)}</div>
                     </div>
                     <div className="cdash-bid-status">
                       {badgeLabel && <span className={`bid-badge ${badgeCls}`}>{badgeLabel}</span>}
@@ -1956,9 +2127,15 @@ const CreatePage = ({ artist, onNavigate, store, updateStore }) => {
 // ─────────────────────────────────────────────────────────────────────────────
 // AUCTION DETAIL
 // ─────────────────────────────────────────────────────────────────────────────
-const AuctionPage = ({ auctionId, onNavigate, store, updateStore, artist, meCollector, bidderName, setBidderName, bidderEmail, setBidderEmail }) => {
+const AuctionPage = ({ auctionId, onNavigate, store, updateStore, loadAuctionDetail, artist, meCollector, bidderName, setBidderName, bidderEmail, setBidderEmail }) => {
   const auction = store.auctions.find((a) => a.id === auctionId);
   const bids = store.bids[auctionId] || [];
+  const currentUserId = artist?.id || meCollector?.id || null;
+
+  // Load full bids + comments + reactions for this auction on mount
+  useEffect(() => {
+    loadAuctionDetail(auctionId, currentUserId);
+  }, [auctionId]);
   const [bidAmt, setBidAmt] = useState("");
   const [localName, setLocalName] = useState(meCollector?.name || bidderName || "");
   const [bidEmail, setBidEmail] = useState(meCollector?.email || bidderEmail || "");
@@ -1980,7 +2157,7 @@ const AuctionPage = ({ auctionId, onNavigate, store, updateStore, artist, meColl
   const [deletingId, setDeletingId]   = useState(null);
   const [localMyReactions, setLocalMyReactions] = useState({});
   const REACTION_EMOJIS = ["❤️", "👏", "🔥"];
-  const currentUserId     = artist?.id || meCollector?.id || null;
+  // currentUserId declared above (before mount effect)
   const currentUserName   = artist?.name || meCollector?.name || "";
   const currentUserAvatar = artist?.avatar || meCollector?.avatar || "";
   const comments = store.comments?.[auctionId] || [];
@@ -1990,17 +2167,17 @@ const AuctionPage = ({ auctionId, onNavigate, store, updateStore, artist, meColl
     return new Set([...serverSet, ...localSet]);
   };
 
-  // Realtime: refresh store when bids or oohs change on this auction
+  // Realtime: refresh per-auction data when bids/comments change; oohs use global refresh
   useEffect(() => {
     const channel = supabase
       .channel(`auction-${auctionId}`)
-      .on("postgres_changes", { event: "INSERT", schema: "public", table: "bids",     filter: `auction_id=eq.${auctionId}` }, () => updateStore())
+      .on("postgres_changes", { event: "INSERT", schema: "public", table: "bids",     filter: `auction_id=eq.${auctionId}` }, () => loadAuctionDetail(auctionId, currentUserId))
       .on("postgres_changes", { event: "*",      schema: "public", table: "oohs",     filter: `auction_id=eq.${auctionId}` }, () => updateStore())
-      .on("postgres_changes", { event: "INSERT", schema: "public", table: "comments", filter: `auction_id=eq.${auctionId}` }, () => updateStore())
-      .on("postgres_changes", { event: "DELETE", schema: "public", table: "comments", filter: `auction_id=eq.${auctionId}` }, () => updateStore())
+      .on("postgres_changes", { event: "INSERT", schema: "public", table: "comments", filter: `auction_id=eq.${auctionId}` }, () => loadAuctionDetail(auctionId, currentUserId))
+      .on("postgres_changes", { event: "DELETE", schema: "public", table: "comments", filter: `auction_id=eq.${auctionId}` }, () => loadAuctionDetail(auctionId, currentUserId))
       .subscribe();
     return () => { supabase.removeChannel(channel); };
-  }, [auctionId, updateStore]);
+  }, [auctionId, updateStore, loadAuctionDetail, currentUserId]);
 
   // Auction-ended email: fire once when the owner is watching and the auction ends
   const status = getStatus(auction || { endDate: new Date(0).toISOString(), paused: false });
@@ -2061,7 +2238,7 @@ const AuctionPage = ({ auctionId, onNavigate, store, updateStore, artist, meColl
     setBidAmt("");
     setBidMsg({ type:"success", text:`Bid of ${fmt$(amt)} placed!` });
     setShowModal(false);
-    updateStore(); // also refresh immediately
+    loadAuctionDetail(auctionId, currentUserId); // refresh bids for this auction
     setTimeout(() => setBidMsg(null), 4000);
     // Fire-and-forget bid notification email to the artist
     const artistProfile = store.artists[auction.artistId];
@@ -2115,13 +2292,13 @@ const AuctionPage = ({ auctionId, onNavigate, store, updateStore, artist, meColl
     setCommentText("");
     setCommentMsg({ type:"success", text:"Comment posted!" });
     setTimeout(() => setCommentMsg(null), 3000);
-    updateStore();
+    loadAuctionDetail(auctionId, currentUserId);
   };
 
   const deleteComment = async (commentId) => {
     setDeletingId(commentId);
     const { error } = await supabase.from("comments").delete().eq("id", commentId);
-    if (!error) updateStore();
+    if (!error) loadAuctionDetail(auctionId, currentUserId);
     setDeletingId(null);
   };
 
@@ -2140,7 +2317,7 @@ const AuctionPage = ({ auctionId, onNavigate, store, updateStore, artist, meColl
       await supabase.from("comment_reactions")
         .upsert({ comment_id: commentId, user_id: currentUserId, emoji }, { onConflict: "comment_id,user_id,emoji" });
     }
-    updateStore();
+    loadAuctionDetail(auctionId, currentUserId);
   };
 
   return (
@@ -2349,11 +2526,18 @@ const AuctionPage = ({ auctionId, onNavigate, store, updateStore, artist, meColl
 // ─────────────────────────────────────────────────────────────────────────────
 // PAYMENT PAGE
 // ─────────────────────────────────────────────────────────────────────────────
-const PaymentPage = ({ auctionId, onNavigate, store, updateStore, bidderName }) => {
+const PaymentPage = ({ auctionId, onNavigate, store, updateStore, loadAuctionDetail, bidderName, bidderEmail, meCollector }) => {
   const auction = store.auctions.find((a) => a.id === auctionId);
   const bids = store.bids[auctionId] || [];
+
+  // Safety guard: load bids if user deep-links to payment page without visiting AuctionPage
+  useEffect(() => {
+    if (!store.bids[auctionId]?.length) {
+      loadAuctionDetail(auctionId);
+    }
+  }, [auctionId]);
   const [selPay, setSelPay] = useState(null);
-  const [sh, setSh] = useState({ name: bidderName||"", email:"", address:"", city:"", state:"", zip:"", country:"US", notes:"" });
+  const [sh, setSh] = useState({ name: meCollector?.name || bidderName || "", email: meCollector?.email || bidderEmail || "", address:"", city:"", state:"", zip:"", country:"US", notes:"" });
   const [submitted, setSubmitted] = useState(store.payments?.[auctionId]?.submitted||false);
   const [busy, setBusy] = useState(false);
   const set = (k, v) => setSh((p) => ({ ...p, [k]: v }));
@@ -2383,6 +2567,28 @@ const PaymentPage = ({ auctionId, onNavigate, store, updateStore, bidderName }) 
     updateStore();
     setSubmitted(true);
     setBusy(false);
+    // Fire confirmation emails to winner + artist (fire-and-forget)
+    const artistProfile = store.artists[auction.artistId];
+    supabase.functions.invoke("send-payment-confirmation", {
+      body: {
+        auctionId,
+        auctionTitle: auction.title,
+        artistName: auction.artistName,
+        artistEmail: artistProfile?.email || "",
+        winnerName: sh.name,
+        winnerEmail: sh.email,
+        winningAmount: topBid?.amount,
+        paymentMethod: pmInfo[selPay]?.name || selPay,
+        paymentInstruction: pmInfo[selPay]?.instruction || "",
+        shippingName: sh.name,
+        shippingAddress: sh.address,
+        shippingCity: sh.city,
+        shippingState: sh.state,
+        shippingZip: sh.zip,
+        shippingCountry: sh.country,
+        shippingNotes: sh.notes,
+      }
+    }).catch(() => {});
   };
 
   if (submitted) return (
@@ -2545,10 +2751,60 @@ const EditPage = ({ auctionId, artist, onNavigate, store, updateStore }) => {
 };
 
 // ─────────────────────────────────────────────────────────────────────────────
+// MOBILE BOTTOM NAV
+// ─────────────────────────────────────────────────────────────────────────────
+function MobileBottomNav({ page, isArtist, isCollector, onNavigate }) {
+  if (!isArtist && !isCollector) return null;
+
+  const artistTabs = [
+    { id: "create",    icon: "✦", label: "New"       },
+    { id: "home",      icon: "◎", label: "Feed"      },
+    { id: "dashboard", icon: "⊞", label: "Dashboard" },
+    { id: "home",      icon: "⌕", label: "Search", searchFocus: true },
+  ];
+
+  const collectorTabs = [
+    { id: "home",                icon: "◎", label: "Feed" },
+    { id: "collector-dashboard", icon: "⊞", label: "Bids" },
+    { id: "home",                icon: "⌕", label: "Search", searchFocus: true },
+  ];
+
+  const tabs = isArtist ? artistTabs : collectorTabs;
+
+  const handleTab = (tab) => {
+    onNavigate(tab.id);
+    if (tab.searchFocus) {
+      window.scrollTo({ top: 0, behavior: "smooth" });
+      setTimeout(() => {
+        const el = document.querySelector(".feed-search-input");
+        if (el) el.focus();
+      }, 150);
+    }
+  };
+
+  return (
+    <div className="mobile-bottom-nav">
+      <div className="mobile-bottom-nav-inner">
+        {tabs.map((tab, i) => (
+          <button
+            key={i}
+            className={`mobile-nav-tab${!tab.searchFocus && tab.id === page ? " active" : ""}`}
+            onClick={() => handleTab(tab)}
+          >
+            <span className="mobile-nav-tab-icon">{tab.icon}</span>
+            <span>{tab.label}</span>
+          </button>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
 // APP SHELL
 // ─────────────────────────────────────────────────────────────────────────────
 export default function App() {
-  const [store, updateStore] = useSupabaseStore();
+  const [store, updateStore, loadAuctionDetail] = useSupabaseStore();
   const [artist, setArtist] = useState(null);
   const [collector, setCollector] = useState(null);
   const [view, setView] = useState({ page: "home", id: null });
@@ -2704,6 +2960,12 @@ export default function App() {
           )}
         </div>
       </nav>
+      <MobileBottomNav
+        page={view.page}
+        isArtist={!!me}
+        isCollector={!!meCollector}
+        onNavigate={go}
+      />
       {meCollector && outbidCount > 0 && !bannerDismissed && (
         <div className="outbid-banner">
           <span>⚠️</span>
@@ -2727,8 +2989,8 @@ export default function App() {
       )}
       {view.page === "dashboard"           && me          && <DashboardPage artist={me} onNavigate={go} store={store} updateStore={updateStore} />}
       {view.page === "create"              && me          && <CreatePage    artist={me} onNavigate={go} store={store} updateStore={updateStore} />}
-      {view.page === "auction"             && <AuctionPage auctionId={view.id} onNavigate={go} store={store} updateStore={updateStore} artist={me} meCollector={meCollector} bidderName={bidderName} setBidderName={setBidderName} bidderEmail={bidderEmail} setBidderEmail={setBidderEmail} />}
-      {view.page === "payment"             && (isLoggedIn ? <PaymentPage auctionId={view.id} onNavigate={go} store={store} updateStore={updateStore} bidderName={bidderName} bidderEmail={bidderEmail} /> : <AuthPage store={store} updateStore={updateStore} onLogin={onLogin} onCollectorLogin={onCollectorLogin} initialMode="login" initialInviteCode={pendingInviteCode} />)}
+      {view.page === "auction"             && <AuctionPage auctionId={view.id} onNavigate={go} store={store} updateStore={updateStore} loadAuctionDetail={loadAuctionDetail} artist={me} meCollector={meCollector} bidderName={bidderName} setBidderName={setBidderName} bidderEmail={bidderEmail} setBidderEmail={setBidderEmail} />}
+      {view.page === "payment"             && (isLoggedIn ? <PaymentPage auctionId={view.id} onNavigate={go} store={store} updateStore={updateStore} loadAuctionDetail={loadAuctionDetail} bidderName={bidderName} bidderEmail={bidderEmail} meCollector={meCollector} /> : <AuthPage store={store} updateStore={updateStore} onLogin={onLogin} onCollectorLogin={onCollectorLogin} initialMode="login" initialInviteCode={pendingInviteCode} />)}
       {view.page === "edit"                && me          && <EditPage auctionId={view.id} artist={me} onNavigate={go} store={store} updateStore={updateStore} />}
       {view.page === "artist"              && (isLoggedIn ? <ArtistPage artistId={view.id} onNavigate={go} store={store} updateStore={updateStore} me={me} meCollector={meCollector} /> : <AuthPage store={store} updateStore={updateStore} onLogin={onLogin} onCollectorLogin={onCollectorLogin} initialMode="login" initialInviteCode={pendingInviteCode} />)}
       {view.page === "collector-dashboard" && meCollector && <CollectorDashboardPage meCollector={meCollector} onNavigate={go} store={store} updateStore={updateStore} />}

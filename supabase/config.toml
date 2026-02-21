@@ -391,3 +391,6 @@ verify_jwt = false
 
 [functions.send-auction-ended]
 verify_jwt = false
+
+[functions.send-payment-confirmation]
+verify_jwt = false
