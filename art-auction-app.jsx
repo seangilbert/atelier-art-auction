@@ -2674,7 +2674,7 @@ const CreatePage = ({ artist, onNavigate, store, updateStore, galleryItemId }) =
   return (
     <div className="page-container">
       <h1 className="page-title">New <em>Drop</em></h1>
-      <p className="page-subtitle">Listing as <strong>{artist.avatar} {artist.name}</strong></p>
+      <p className="page-subtitle">Listing as <strong><span style={{ display:"inline-flex", width:"1.2rem", height:"1.2rem", borderRadius:"50%", overflow:"hidden", verticalAlign:"middle", marginRight:"0.25rem", background:"var(--grad-accent)", fontSize:"0.85rem" }}><AvatarImg avatar={artist.avatar} alt={artist.name} /></span>{artist.name}</strong></p>
 
       {galleryItem && (
         <div className="alert alert-info" style={{ marginBottom:"1.5rem" }}>
