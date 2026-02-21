@@ -1,9 +1,6 @@
 import { serve } from "https://deno.land/std@0.177.0/http/server.ts";
-import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 
 const RESEND_API_KEY = Deno.env.get("RESEND_API_KEY")!;
-const SUPABASE_URL = Deno.env.get("SUPABASE_URL")!;
-const SUPABASE_SERVICE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
 const APP_URL = Deno.env.get("APP_URL") ?? "https://artdrop.com";
 const CORS = {
   "Access-Control-Allow-Origin": "*",
@@ -13,15 +10,6 @@ const CORS = {
 serve(async (req) => {
   if (req.method === "OPTIONS") return new Response(null, { headers: CORS });
   try {
-    const authHeader = req.headers.get("Authorization");
-    if (!authHeader) return new Response("Unauthorized", { status: 401 });
-
-    const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_KEY);
-    const { data: { user }, error: userErr } = await supabase.auth.getUser(
-      authHeader.replace("Bearer ", "")
-    );
-    if (userErr || !user) return new Response("Unauthorized", { status: 401 });
-
     const { recipientEmail, senderName, inviteCode } = await req.json();
     if (!recipientEmail || !senderName || !inviteCode) {
       return new Response("Missing fields", { status: 400 });
