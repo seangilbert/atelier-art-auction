@@ -1323,6 +1323,7 @@ const FeedPage = ({ onNavigate, store, updateStore, me, meCollector }) => {
           <button className="btn btn-ghost" onClick={clearFilters}>✕ Clear Filters</button>
         </div>
       ) : (
+        <>
         <div className="feed-grid">
           {visibleAuctions.map((auction) => {
             const summary = store.bidSummaries[auction.id] || { count: 0, topAmount: 0 };
@@ -1372,6 +1373,7 @@ const FeedPage = ({ onNavigate, store, updateStore, me, meCollector }) => {
             </button>
           </div>
         )}
+        </>
       )}
     </div>
   );
