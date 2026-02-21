@@ -464,6 +464,13 @@ const STYLES = `
   .btn-follow-hint { font-size:0.78rem; color:var(--mist); cursor:pointer; background:none; border:none; font-family:var(--font-body); text-decoration:underline; }
   .btn-follow-hint:hover { color:var(--gold-dark); }
 
+  /* ── Ratings ─────────────────────────────────────────────────────────────── */
+  .star-picker { display:flex; gap:0.25rem; margin:0.5rem 0 0; }
+  .star-btn { background:none; border:none; cursor:pointer; font-size:2rem; line-height:1; padding:0.1rem 0.15rem; transition:transform 0.1s; color:var(--border); font-family:var(--font-body); }
+  .star-btn.star-filled, .star-btn:hover { color:var(--gold); }
+  .star-btn:hover { transform:scale(1.15); }
+  .rate-btn { font-size:0.72rem !important; padding:0.3rem 0.75rem !important; min-height:36px !important; }
+
   /* ── Collector dashboard ─────────────────────────────────────────────────── */
   .collector-dashboard { max-width:1000px; margin:0 auto; padding:3rem 2rem 5rem; }
   .cdash-section { margin-bottom:3rem; }
@@ -707,6 +714,7 @@ const useSupabaseStore = () => {
     artists: {}, collectors: {}, auctions: [], bids: {}, payments: {}, oohs: {}, myInvite: null,
     comments: {}, commentReactions: {}, myReactions: {},
     bidSummaries: {}, commentCounts: {}, gallery: {},
+    ratings: { byRatee: {}, byAuction: {} },
   });
 
   const loadAll = useCallback(async (userId = null) => {
@@ -720,6 +728,7 @@ const useSupabaseStore = () => {
         { data: bidRows },
         { data: commentRows },
         { data: galleryRows },
+        { data: ratingRows },
       ] = await Promise.all([
         supabase.from("auctions").select("*").order("created_at", { ascending: false }),
         supabase.from("oohs").select("*"),
@@ -728,6 +737,7 @@ const useSupabaseStore = () => {
         supabase.from("bids").select("auction_id, amount"),             // summaries only
         supabase.from("comments").select("id, auction_id"),             // counts only
         supabase.from("gallery").select("*").order("created_at", { ascending: false }),
+        supabase.from("ratings").select("id, auction_id, rater_id, ratee_id, rater_type, score, comment, created_at"),
       ]);
 
       // Build bid summaries map { auctionId: { count, topAmount } }
@@ -811,12 +821,29 @@ const useSupabaseStore = () => {
         };
       });
 
+      // Build ratings maps
+      const ratingsByRatee   = {};
+      const ratingsByAuction = {};
+      (ratingRows || []).forEach(r => {
+        if (r.ratee_id) {
+          if (!ratingsByRatee[r.ratee_id]) ratingsByRatee[r.ratee_id] = [];
+          ratingsByRatee[r.ratee_id].push({
+            id: r.id, auctionId: r.auction_id, raterType: r.rater_type,
+            score: r.score, comment: r.comment, createdAt: r.created_at,
+          });
+        }
+        if (!ratingsByAuction[r.auction_id]) ratingsByAuction[r.auction_id] = { collectorRated: false, artistRated: false };
+        if (r.rater_type === 'collector') ratingsByAuction[r.auction_id].collectorRated = true;
+        if (r.rater_type === 'artist')    ratingsByAuction[r.auction_id].artistRated    = true;
+      });
+
       // Use spread so per-auction bids/comments/reactions loaded by loadAuctionDetail survive refreshes
       setStoreState(prev => ({
         ...prev,
         artists: artistsMap, collectors: collectorsMap, auctions: auctionList,
         oohs: oohsMap, payments: paymentsMap, myInvite,
         bidSummaries: bidSummariesMap, commentCounts: commentCountsMap, gallery: galleryMap,
+        ratings: { byRatee: ratingsByRatee, byAuction: ratingsByAuction },
       }));
     } catch (err) {
       console.error("loadAll error:", err);
@@ -1147,6 +1174,50 @@ const ConfirmModal = ({ title, message, confirmLabel, confirmClass = "btn-danger
     </div>
   </div>
 );
+
+// ── StarPicker ────────────────────────────────────────────────────────────────
+const StarPicker = ({ value, onChange }) => {
+  const [hovered, setHovered] = useState(0);
+  return (
+    <div className="star-picker" onMouseLeave={() => setHovered(0)}>
+      {[1,2,3,4,5].map(n => (
+        <button key={n} type="button"
+          className={`star-btn ${n <= (hovered || value) ? "star-filled" : "star-empty"}`}
+          onMouseEnter={() => setHovered(n)}
+          onClick={() => onChange(n)}
+          aria-label={`${n} star${n !== 1 ? "s" : ""}`}>★</button>
+      ))}
+    </div>
+  );
+};
+
+// ── RatingModal ───────────────────────────────────────────────────────────────
+const RatingModal = ({ title, subtitle, onSubmit, onClose, busy }) => {
+  const [score, setScore]     = useState(0);
+  const [comment, setComment] = useState("");
+  return (
+    <div className="modal-overlay" onClick={onClose}>
+      <div className="modal" onClick={e => e.stopPropagation()}>
+        <button className="modal-close" onClick={onClose}><i className="fa-solid fa-xmark"></i></button>
+        <div className="modal-title">{title}</div>
+        <div className="modal-sub">{subtitle}</div>
+        <StarPicker value={score} onChange={setScore} />
+        <textarea className="form-textarea"
+          style={{ marginTop:"1rem", width:"100%", minHeight:"80px" }}
+          placeholder="Leave a comment (optional)"
+          value={comment} onChange={e => setComment(e.target.value)} maxLength={500} />
+        <div className="modal-actions">
+          <button className="btn btn-ghost" style={{ flex:1 }} onClick={onClose} disabled={busy}>Cancel</button>
+          <button className="btn btn-primary" style={{ flex:1 }}
+            onClick={() => score && onSubmit(score, comment.trim())}
+            disabled={!score || busy}>
+            {busy ? "Saving…" : "Submit Rating"}
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+};
 
 // ─────────────────────────────────────────────────────────────────────────────
 // AUTH PAGE
@@ -1557,6 +1628,8 @@ const ArtistPage = ({ artistId, onNavigate, store, updateStore, me, meCollector 
   const followerCount  = Object.values(store.collectors || {}).filter(c => (c.following || []).includes(artistId)).length;
   const followingCount = (artist.following || []).length;
   const dropsCount     = auctions.length;
+  const artistRatings  = (store.ratings?.byRatee?.[artistId] || []).filter(r => r.raterType === 'collector');
+  const avgRating      = artistRatings.length ? (artistRatings.reduce((s, r) => s + r.score, 0) / artistRatings.length).toFixed(1) : null;
 
   return (
     <div className="artist-page">
@@ -1579,6 +1652,10 @@ const ArtistPage = ({ artistId, onNavigate, store, updateStore, me, meCollector 
             <div className="artist-profile-stat">
               <span className="artist-profile-stat-num">{dropsCount}</span>
               <span className="artist-profile-stat-label">{dropsCount === 1 ? "Drop" : "Drops"}</span>
+            </div>
+            <div className="artist-profile-stat">
+              <span className="artist-profile-stat-num">{avgRating ? `★ ${avgRating}` : "—"}</span>
+              <span className="artist-profile-stat-label">Rating</span>
             </div>
           </div>
         </div>
@@ -1674,6 +1751,25 @@ const ArtistPage = ({ artistId, onNavigate, store, updateStore, me, meCollector 
 const CollectorDashboardPage = ({ meCollector, onNavigate, store, updateStore }) => {
   if (!meCollector) return null;
 
+  const [ratingModal, setRatingModal]          = useState(null); // { auctionId, artistName, rateeId }
+  const [submittingRating, setSubmittingRating] = useState(false);
+
+  const submitCollectorRating = async (score, comment) => {
+    if (!ratingModal) return;
+    setSubmittingRating(true);
+    await supabase.from("ratings").insert({
+      auction_id: ratingModal.auctionId,
+      rater_id:   meCollector.id,
+      ratee_id:   ratingModal.rateeId,
+      rater_type: "collector",
+      score,
+      comment: comment || null,
+    });
+    setRatingModal(null);
+    setSubmittingRating(false);
+    updateStore();
+  };
+
   // Section 1: My Bids — scan all auctions for bids by this collector's email
   const myBidAuctions = store.auctions
     .filter((a) => {
@@ -1755,6 +1851,17 @@ const CollectorDashboardPage = ({ meCollector, onNavigate, store, updateStore })
                   <div className="cdash-bid-status">
                     {badgeLabel && <span className={`bid-badge ${badgeCls}`}>{badgeLabel}</span>}
                     <span style={{ fontSize:"0.75rem", color:"var(--mist)" }}>Your bid: {fmt$(myTop)}</span>
+                    {badgeLabel === "Won" && !store.ratings?.byAuction?.[auction.id]?.collectorRated && (
+                      <button className="btn btn-ghost btn-sm rate-btn"
+                        style={{ color:"var(--gold-dark)", borderColor:"rgba(212,175,55,0.4)" }}
+                        onClick={e => { e.stopPropagation(); setRatingModal({
+                          auctionId: auction.id,
+                          artistName: auction.artistName,
+                          rateeId:    auction.artistId,
+                        }); }}>
+                        ★ Rate Artist
+                      </button>
+                    )}
                   </div>
                 </div>
               );
@@ -1806,6 +1913,8 @@ const CollectorDashboardPage = ({ meCollector, onNavigate, store, updateStore })
           </div>
         )}
       </div>
+      {ratingModal && <RatingModal title="Rate this Artist" subtitle={ratingModal.artistName}
+        onSubmit={submitCollectorRating} onClose={() => setRatingModal(null)} busy={submittingRating} />}
     </div>
   );
 };
@@ -2018,6 +2127,8 @@ const DashboardPage = ({ artist, onNavigate, store, updateStore }) => {
   const [markingPaid, setMarkingPaid] = useState(null);
   const [markingShipped, setMarkingShipped] = useState(null);
   const [trackingInput, setTrackingInput] = useState({});
+  const [ratingModal, setRatingModal]          = useState(null); // { auctionId, buyerName, rateeId }
+  const [submittingRating, setSubmittingRating] = useState(false);
 
   const markPaid = async (auctionId) => {
     setMarkingPaid(auctionId);
@@ -2033,6 +2144,22 @@ const DashboardPage = ({ artist, onNavigate, store, updateStore }) => {
       .eq("auction_id", auctionId);
     updateStore();
     setMarkingShipped(null);
+  };
+
+  const submitArtistRating = async (score, comment) => {
+    if (!ratingModal) return;
+    setSubmittingRating(true);
+    await supabase.from("ratings").insert({
+      auction_id: ratingModal.auctionId,
+      rater_id:   artist.id,
+      ratee_id:   ratingModal.rateeId || null,
+      rater_type: "artist",
+      score,
+      comment: comment || null,
+    });
+    setRatingModal(null);
+    setSubmittingRating(false);
+    updateStore();
   };
 
   const pendingPayments = my
@@ -2060,6 +2187,8 @@ const DashboardPage = ({ artist, onNavigate, store, updateStore }) => {
   const followerCount  = Object.values(store.collectors || {}).filter(c => (c.following || []).includes(artist.id)).length;
   const followingCount = (artist.following || []).length;
   const dropsCount     = my.filter(a => a.published).length;
+  const myRatings      = (store.ratings?.byRatee?.[artist.id] || []).filter(r => r.raterType === 'collector');
+  const avgRating      = myRatings.length ? (myRatings.reduce((s, r) => s + r.score, 0) / myRatings.length).toFixed(1) : null;
 
   const act = async (type, id) => {
     const auction = store.auctions.find((a) => a.id === id);
@@ -2104,6 +2233,10 @@ const DashboardPage = ({ artist, onNavigate, store, updateStore }) => {
             <div className="artist-profile-stat">
               <span className="artist-profile-stat-num">{dropsCount}</span>
               <span className="artist-profile-stat-label">{dropsCount === 1 ? "Drop" : "Drops"}</span>
+            </div>
+            <div className="artist-profile-stat">
+              <span className="artist-profile-stat-num">{avgRating ? `★ ${avgRating}` : "—"}</span>
+              <span className="artist-profile-stat-label">Rating</span>
             </div>
           </div>
         </div>
@@ -2330,6 +2463,22 @@ const DashboardPage = ({ artist, onNavigate, store, updateStore }) => {
                   {status === "paused" && (
                     <><button className="btn btn-success btn-sm" onClick={() => setConfirm({ type: "resume", id: auction.id })}><i className="fa-solid fa-play"></i> Resume</button><button className="btn btn-danger btn-sm" onClick={() => setConfirm({ type: "end", id: auction.id })}>End</button></>
                   )}
+                  {status === "ended" && store.payments[auction.id]?.submitted
+                    && !store.ratings?.byAuction?.[auction.id]?.artistRated && (() => {
+                    const payment = store.payments[auction.id];
+                    const winner  = Object.values(store.collectors).find(c => c.email === payment?.sh?.email);
+                    return (
+                      <button className="btn btn-ghost btn-sm rate-btn"
+                        style={{ color:"var(--gold-dark)", borderColor:"rgba(212,175,55,0.4)" }}
+                        onClick={e => { e.stopPropagation(); setRatingModal({
+                          auctionId: auction.id,
+                          buyerName: payment.sh?.name || "the buyer",
+                          rateeId:   winner?.id || null,
+                        }); }}>
+                        ★ Rate Buyer
+                      </button>
+                    );
+                  })()}
                   <button className="btn btn-ghost btn-sm" style={{ color: "var(--rouge)", borderColor: "rgba(139,46,46,0.25)" }} onClick={() => setConfirm({ type: "remove", id: auction.id })}>Remove</button>
                 </div>
               </div>
@@ -2339,6 +2488,8 @@ const DashboardPage = ({ artist, onNavigate, store, updateStore }) => {
       )}
 
       {confirm && <ConfirmModal {...confirmCfg[confirm.type]} onConfirm={() => act(confirm.type, confirm.id)} onCancel={() => setConfirm(null)} />}
+      {ratingModal && <RatingModal title="Rate this Buyer" subtitle={ratingModal.buyerName}
+        onSubmit={submitArtistRating} onClose={() => setRatingModal(null)} busy={submittingRating} />}
 
       {/* My Bids — auctions the artist has bid on as a bidder */}
       {(() => {
