@@ -1847,6 +1847,12 @@ const AuctionPage = ({ auctionId, onNavigate, store, updateStore, artist, meColl
   const [localName, setLocalName] = useState(meCollector?.name || bidderName || "");
   const [bidEmail, setBidEmail] = useState(meCollector?.email || bidderEmail || "");
   const [bidMsg, setBidMsg] = useState(null);
+
+  // Keep bid name/email in sync with collector account (in case store loads after mount)
+  useEffect(() => {
+    if (meCollector?.email) setBidEmail(meCollector.email);
+    if (meCollector?.name)  setLocalName(meCollector.name);
+  }, [meCollector?.email, meCollector?.name]);
   const [copied, setCopied] = useState(false);
   const [showModal, setShowModal] = useState(false);
   const [confirm, setConfirm] = useState(null);
@@ -2071,8 +2077,8 @@ const AuctionPage = ({ auctionId, onNavigate, store, updateStore, artist, meColl
                 Bidding as <strong>{meCollector.name}</strong> · {meCollector.email}
               </div>
             )}
-            <div className="form-group"><label className="form-label">Your Name *</label><input className="form-input" placeholder="Full name" value={localName} onChange={(e) => setLocalName(e.target.value)} /></div>
-            <div className="form-group"><label className="form-label">Email *</label><input className="form-input" type="email" placeholder="your@email.com" value={bidEmail} onChange={(e) => setBidEmail(e.target.value)} /><p className="form-hint">Only used to notify you if you win.</p></div>
+            <div className="form-group"><label className="form-label">Your Name *</label><input className="form-input" placeholder="Full name" value={localName} onChange={(e) => { if (!meCollector) setLocalName(e.target.value); }} readOnly={!!meCollector} style={meCollector ? { opacity: 0.7, cursor: "default" } : {}} /></div>
+            <div className="form-group"><label className="form-label">Email *</label><input className="form-input" type="email" placeholder="your@email.com" value={bidEmail} onChange={(e) => { if (!meCollector) setBidEmail(e.target.value); }} readOnly={!!meCollector} style={meCollector ? { opacity: 0.7, cursor: "default" } : {}} /><p className="form-hint">{meCollector ? "Bids are linked to your collector account." : "Only used to notify you if you win."}</p></div>
             {bidMsg && <div className={`alert alert-${bidMsg.type}`}>{bidMsg.text}</div>}
             <div className="alert alert-info" style={{ fontSize:"0.81rem" }}>By bidding, you agree to pay if you win. Payment required within 48 hours.</div>
             <div className="modal-actions"><button className="btn btn-ghost" style={{ flex:1 }} onClick={() => setShowModal(false)}>Cancel</button><button className="btn btn-primary" style={{ flex:2 }} onClick={placeBid}>✓ Confirm {fmt$(bidAmt)}</button></div>
@@ -2356,8 +2362,11 @@ export default function App() {
   const onCollectorLogout = async () => { await supabase.auth.signOut(); setCollector(null); setCollectorDropOpen(false); setView({ page: "home", id: null }); };
 
   // Use fresh profile data from store if available, fall back to session state
+  // Always merge session email in so bid matching works even if profiles.email was null
   const me = artist ? (store.artists[artist.id] || artist) : null;
-  const meCollector = collector ? (store.collectors?.[collector.id] || collector) : null;
+  const meCollector = collector
+    ? { ...(store.collectors?.[collector.id] || {}), ...collector }
+    : null;
   const isLoggedIn = !!(me || meCollector);
   const liveCount = store.auctions.filter((a) => !a.removed && !a.paused && a.published && new Date(a.endDate) > new Date()).length;
 
