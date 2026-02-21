@@ -4,7 +4,7 @@ const RESEND_API_KEY = Deno.env.get("RESEND_API_KEY")!;
 const APP_URL = Deno.env.get("APP_URL") ?? "https://artdrop.com";
 const CORS = {
   "Access-Control-Allow-Origin": "*",
-  "Access-Control-Allow-Headers": "authorization, content-type",
+  "Access-Control-Allow-Headers": "authorization, content-type, x-client-info, apikey",
 };
 
 serve(async (req) => {
