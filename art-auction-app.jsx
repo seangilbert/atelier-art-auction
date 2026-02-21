@@ -397,6 +397,13 @@ const STYLES = `
     80%  { transform:scale(1.15); }
     100% { transform:scale(1);    }
   }
+  .rolling-number { display:inline-flex; align-items:center; }
+  .rolling-digit-wrap { display:inline-block; overflow:hidden; height:1.15em; line-height:1.15; vertical-align:middle; }
+  .rolling-digit-char { display:inline-block; animation:digit-roll-up 0.4s cubic-bezier(0.34,1.56,0.64,1) both; }
+  @keyframes digit-roll-up {
+    from { transform:translateY(110%); opacity:0; }
+    to   { transform:translateY(0);    opacity:1; }
+  }
   .card-ooh-row { display:flex; align-items:center; justify-content:flex-end; margin-top:0.5rem; padding-top:0.5rem; border-top:1px solid var(--border); }
   .ooh-detail-wrap { display:flex; align-items:center; gap:0.75rem; margin-bottom:1.25rem; }
   .ooh-count-label { font-size:0.78rem; color:var(--mist); }
@@ -1096,6 +1103,21 @@ const AvatarUploadZone = ({ imageUrl, onImageUrl, userId }) => {
   );
 };
 
+// ── Rolling digit counter ─────────────────────────────────────────────────────
+const RollingDigit = ({ digit }) => (
+  <span className="rolling-digit-wrap">
+    <span key={digit} className="rolling-digit-char">{digit}</span>
+  </span>
+);
+const RollingNumber = ({ value }) => {
+  const digits = String(value).split("");
+  return (
+    <span className="rolling-number">
+      {digits.map((d, i) => <RollingDigit key={digits.length - 1 - i} digit={d} />)}
+    </span>
+  );
+};
+
 // ── OohButton ────────────────────────────────────────────────────────────────
 const OohButton = ({ auctionId, store, updateStore }) => {
   const [oohed, setOohed]         = useState(() => hasOohed(auctionId));
@@ -1125,7 +1147,7 @@ const OohButton = ({ auctionId, store, updateStore }) => {
       title={oohed ? "You oohed this" : "Ooh this artwork"}
     >
       <span className="ooh-icon">{oohed ? "✨" : "✦"}</span>
-      <span>{count > 0 ? `Ooh · ${count}` : "Ooh"}</span>
+      <span>Ooh{count > 0 && <> · <RollingNumber value={count} /></>}</span>
     </button>
   );
 };
