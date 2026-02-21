@@ -430,7 +430,7 @@ const STYLES = `
   /* ── Feed card ───────────────────────────────────────────────────────────── */
   .feed-card { background:white; border:1px solid var(--border); border-radius:var(--radius-xl); overflow:hidden; cursor:pointer; transition:all 0.3s; box-shadow:var(--shadow-card); }
   .feed-card:hover { transform:translateY(-4px); box-shadow:var(--shadow-lg); }
-  .feed-card-header { display:flex; align-items:center; gap:0.65rem; padding:0.85rem 1rem 0; }
+  .feed-card-header { display:flex; align-items:center; gap:0.65rem; padding:1rem 1.25rem 0; }
   .feed-avatar { width:34px; height:34px; border-radius:50%; background:var(--grad-accent); display:flex; align-items:center; justify-content:center; font-size:1rem; flex-shrink:0; overflow:hidden; }
   .feed-artist-name { font-size:0.82rem; font-weight:600; color:var(--ink); }
   .feed-time { font-size:0.7rem; color:var(--mist); }
