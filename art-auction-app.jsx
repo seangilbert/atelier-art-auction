@@ -2757,16 +2757,16 @@ function MobileBottomNav({ page, isArtist, isCollector, onNavigate }) {
   if (!isArtist && !isCollector) return null;
 
   const artistTabs = [
-    { id: "create",    icon: "✦", label: "New"       },
-    { id: "home",      icon: "◎", label: "Feed"      },
-    { id: "dashboard", icon: "⊞", label: "Dashboard" },
-    { id: "home",      icon: "⌕", label: "Search", searchFocus: true },
+    { id: "create",    icon: "➕", label: "New"       },
+    { id: "home",      icon: "🏠", label: "Feed"      },
+    { id: "dashboard", icon: "📊", label: "Dashboard" },
+    { id: "home",      icon: "🔍", label: "Search", searchFocus: true },
   ];
 
   const collectorTabs = [
-    { id: "home",                icon: "◎", label: "Feed" },
-    { id: "collector-dashboard", icon: "⊞", label: "Bids" },
-    { id: "home",                icon: "⌕", label: "Search", searchFocus: true },
+    { id: "home",                icon: "🏠", label: "Feed" },
+    { id: "collector-dashboard", icon: "🗂", label: "Bids" },
+    { id: "home",                icon: "🔍", label: "Search", searchFocus: true },
   ];
 
   const tabs = isArtist ? artistTabs : collectorTabs;
