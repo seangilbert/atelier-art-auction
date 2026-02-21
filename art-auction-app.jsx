@@ -579,7 +579,7 @@ const STYLES = `
   .mobile-nav-tab { display:flex; flex-direction:column; align-items:center; justify-content:center; flex:1; gap:2px; background:none; border:none; cursor:pointer; padding:0; color:var(--mist); font-size:0.65rem; font-weight:600; letter-spacing:0.03em; text-transform:uppercase; transition:color 0.15s; -webkit-tap-highlight-color:transparent; }
   .mobile-nav-tab:active { opacity:0.7; }
   .mobile-nav-tab.active { color:var(--accent); }
-  .mobile-nav-tab-icon { font-size:1.35rem; line-height:1; }
+  .mobile-nav-tab-icon { font-size:1.15rem; line-height:1; }
   @media (max-width:768px) {
     .mobile-bottom-nav { display:block; }
     .page-shell, .feed-shell, .dashboard-shell, .collector-dash-shell, .create-shell, .auth-shell { padding-bottom:calc(56px + env(safe-area-inset-bottom,0px) + 1rem); }
@@ -989,7 +989,7 @@ const CardTimer = ({ endDate }) => {
 };
 
 const StatusPill = ({ status }) => {
-  const cfg = { live: ["sp-live", "⬤ Live"], paused: ["sp-paused", "⏸ Paused"], ended: ["sp-ended", "Ended"], removed: ["sp-ended", "Removed"] };
+  const cfg = { live: ["sp-live", <><i className="fa-solid fa-circle" style={{fontSize:"0.55em",verticalAlign:"middle"}}></i> Live</>], paused: ["sp-paused", <><i className="fa-solid fa-pause"></i> Paused</>], ended: ["sp-ended", "Ended"], removed: ["sp-ended", "Removed"] };
   const [cls, label] = cfg[status] || cfg.ended;
   return <span className={`status-pill ${cls}`}>{label}</span>;
 };
@@ -997,7 +997,7 @@ const StatusPill = ({ status }) => {
 const ConfirmModal = ({ title, message, confirmLabel, confirmClass = "btn-danger", onConfirm, onCancel }) => (
   <div className="modal-overlay" onClick={onCancel}>
     <div className="modal" onClick={(e) => e.stopPropagation()}>
-      <button className="modal-close" onClick={onCancel}>✕</button>
+      <button className="modal-close" onClick={onCancel}><i className="fa-solid fa-xmark"></i></button>
       <div className="modal-title">{title}</div>
       <div className="modal-sub">{message}</div>
       <div className="modal-actions">
@@ -1116,8 +1116,8 @@ const AuthPage = ({ store, updateStore, onLogin, onCollectorLogin, initialMode, 
             <button className="btn btn-primary" style={{ width: "100%", justifyContent: "center" }} onClick={login} disabled={busy}>{busy ? "Signing in…" : "Sign In"}</button>
             <div className="auth-switch">
               {loginType === "artist"
-                ? <><span>No account? </span><button onClick={() => { setMode("signup"); setError(""); }}>Join as Artist →</button></>
-                : <><span>No account? </span><button onClick={() => { setMode("collector-signup"); setError(""); }}>Join as Collector →</button></>
+                ? <><span>No account? </span><button onClick={() => { setMode("signup"); setError(""); }}>Join as Artist <i className="fa-solid fa-arrow-right"></i></button></>
+                : <><span>No account? </span><button onClick={() => { setMode("collector-signup"); setError(""); }}>Join as Collector <i className="fa-solid fa-arrow-right"></i></button></>
               }
             </div>
           </>
@@ -1138,8 +1138,8 @@ const AuthPage = ({ store, updateStore, onLogin, onCollectorLogin, initialMode, 
             <div className="form-group"><label className="form-label">Short Bio (optional)</label><textarea className="form-textarea" rows={2} placeholder="Tell collectors about yourself and your art…" value={f.bio} onChange={(e) => set("bio", e.target.value)} /></div>
             <div className="form-group"><label className="form-label">Invite Code *</label><input className="form-input" type="text" placeholder="Enter invite code" value={f.inviteCode} onChange={(e) => set("inviteCode", e.target.value)} autoComplete="off" /></div>
             <button className="btn btn-primary" style={{ width: "100%", justifyContent: "center" }} onClick={signup} disabled={busy}>{busy ? "Creating account…" : "Create Artist Account"}</button>
-            <div className="auth-switch">Already have an account? <button onClick={() => { setMode("login"); setError(""); }}>Sign in →</button></div>
-            <div className="auth-switch" style={{ marginTop:"0.5rem" }}>Want to collect? <button onClick={() => { setMode("collector-signup"); setError(""); }}>Join as Collector →</button></div>
+            <div className="auth-switch">Already have an account? <button onClick={() => { setMode("login"); setError(""); }}>Sign in <i className="fa-solid fa-arrow-right"></i></button></div>
+            <div className="auth-switch" style={{ marginTop:"0.5rem" }}>Want to collect? <button onClick={() => { setMode("collector-signup"); setError(""); }}>Join as Collector <i className="fa-solid fa-arrow-right"></i></button></div>
           </>
         )}
 
@@ -1158,8 +1158,8 @@ const AuthPage = ({ store, updateStore, onLogin, onCollectorLogin, initialMode, 
             <div className="form-group"><label className="form-label">Short Bio (optional)</label><textarea className="form-textarea" rows={2} placeholder="Tell us what kind of art you love…" value={f.bio} onChange={(e) => set("bio", e.target.value)} /></div>
             <div className="form-group"><label className="form-label">Invite Code *</label><input className="form-input" type="text" placeholder="Enter invite code" value={f.inviteCode} onChange={(e) => set("inviteCode", e.target.value)} autoComplete="off" /></div>
             <button className="btn" style={{ width: "100%", justifyContent: "center", background:"var(--grad-cool)", color:"white", boxShadow:"0 4px 16px rgba(102,126,234,0.35)" }} onClick={signupCollector} disabled={busy}>{busy ? "Creating account…" : "Create Collector Account"}</button>
-            <div className="auth-switch">Already have an account? <button onClick={() => { setMode("login"); setLoginType("collector"); setError(""); }}>Sign in →</button></div>
-            <div className="auth-switch" style={{ marginTop:"0.5rem" }}>Are you an artist? <button onClick={() => { setMode("signup"); setError(""); }}>Join as Artist →</button></div>
+            <div className="auth-switch">Already have an account? <button onClick={() => { setMode("login"); setLoginType("collector"); setError(""); }}>Sign in <i className="fa-solid fa-arrow-right"></i></button></div>
+            <div className="auth-switch" style={{ marginTop:"0.5rem" }}>Are you an artist? <button onClick={() => { setMode("signup"); setError(""); }}>Join as Artist <i className="fa-solid fa-arrow-right"></i></button></div>
           </>
         )}
       </div>
@@ -1350,8 +1350,8 @@ const FeedPage = ({ onNavigate, store, updateStore, me, meCollector }) => {
                   <div className="card-title">{auction.title}</div>
                   {auction.description && <div className="feed-desc">{auction.description}</div>}
                   <div style={{ display:"flex", gap:"0.4rem", flexWrap:"wrap", marginBottom: (bidCount > 0 || commentCount > 0) ? "0.6rem" : 0 }}>
-                    {bidCount > 0 && <div className="feed-bid-count">🔥 {bidCount} bid{bidCount !== 1 ? "s" : ""}</div>}
-                    {commentCount > 0 && <div className="feed-comment-count">💬 {commentCount} comment{commentCount !== 1 ? "s" : ""}</div>}
+                    {bidCount > 0 && <div className="feed-bid-count"><i className="fa-solid fa-fire"></i> {bidCount} bid{bidCount !== 1 ? "s" : ""}</div>}
+                    {commentCount > 0 && <div className="feed-comment-count"><i className="fa-regular fa-comment"></i> {commentCount} comment{commentCount !== 1 ? "s" : ""}</div>}
                   </div>
                   <div className="card-meta">
                     <div><div className="card-price-label">{bidCount ? "Current Bid" : "Starting at"}</div><div className="card-price">{fmt$(topBidAmt)}</div></div>
@@ -1416,7 +1416,7 @@ const ArtistPage = ({ artistId, onNavigate, store, updateStore, me, meCollector 
 
   return (
     <div className="artist-page">
-      <button className="btn btn-ghost btn-sm" style={{ marginBottom:"1.5rem" }} onClick={() => onNavigate("home")}>← Back</button>
+      <button className="btn btn-ghost btn-sm" style={{ marginBottom:"1.5rem" }} onClick={() => onNavigate("home")}><i className="fa-solid fa-arrow-left"></i> Back</button>
       <div className="artist-profile-card">
         <div className="artist-profile-avatar">{artist.avatar}</div>
         <div className="artist-profile-info">
@@ -1432,7 +1432,7 @@ const ArtistPage = ({ artistId, onNavigate, store, updateStore, me, meCollector 
             <button className="btn btn-primary btn-sm" onClick={toggleFollow}>✦ Follow</button>
           )}
           {!isOwnProfile && meCollector && isFollowing && (
-            <button className="btn btn-outline btn-sm" onClick={toggleFollow}>✓ Following</button>
+            <button className="btn btn-outline btn-sm" onClick={toggleFollow}><i className="fa-solid fa-check"></i> Following</button>
           )}
         </div>
       </div>
@@ -1452,7 +1452,7 @@ const ArtistPage = ({ artistId, onNavigate, store, updateStore, me, meCollector 
                 <div className="card-image">
                   {auction.imageUrl ? <img src={auction.imageUrl} alt={auction.title} /> : <span>{auction.emoji || "🎨"}</span>}
                   {status === "live"   && <div className="badge badge-live"><div className="pulse" style={{ background:"white" }} /> Live</div>}
-                  {status === "paused" && <div className="badge badge-paused">⏸ Paused</div>}
+                  {status === "paused" && <div className="badge badge-paused"><i className="fa-solid fa-pause"></i> Paused</div>}
                   {status === "ended"  && <div className="badge badge-ended">Ended</div>}
                 </div>
                 <div className="card-body">
@@ -1540,7 +1540,7 @@ const CollectorDashboardPage = ({ meCollector, onNavigate, store, updateStore })
       <div className="cdash-section">
         <div className="cdash-section-title">🏷️ My Bids</div>
         {myBidAuctions.length === 0 ? (
-          <p style={{ color:"var(--mist)", fontSize:"0.88rem" }}>You haven't placed any bids yet. <button className="btn-follow-hint" onClick={() => onNavigate("home")}>Browse live auctions →</button></p>
+          <p style={{ color:"var(--mist)", fontSize:"0.88rem" }}>You haven't placed any bids yet. <button className="btn-follow-hint" onClick={() => onNavigate("home")}>Browse live auctions <i className="fa-solid fa-arrow-right"></i></button></p>
         ) : (
           <div className="cdash-bid-list">
             {myBidAuctions.map(({ auction, myTop, topBid, badgeLabel, badgeCls }) => {
@@ -1603,7 +1603,7 @@ const CollectorDashboardPage = ({ meCollector, onNavigate, store, updateStore })
                   <div className="cdash-artist-meta">{liveAuctions.length > 0 ? `${liveAuctions.length} live auction${liveAuctions.length !== 1 ? "s" : ""}` : "No live auctions right now"}</div>
                   {liveAuctions.length > 0 && <div className="cdash-artist-auctions">{liveAuctions.map((a) => a.title).join(" · ")}</div>}
                 </div>
-                <div style={{ fontSize:"0.8rem", color:"var(--mist)" }}>→</div>
+                <div style={{ fontSize:"0.8rem", color:"var(--mist)" }}><i className="fa-solid fa-arrow-right"></i></div>
               </div>
             ))}
           </div>
@@ -1653,8 +1653,8 @@ const InvitePage = ({ user, store, updateStore, onNavigate }) => {
 
   return (
     <div className="invite-page">
-      <button className="btn btn-ghost btn-sm" style={{ marginBottom:"1.5rem" }} onClick={() => onNavigate("home")}>← Back</button>
-      <div className="page-title">✉️ Your <em>Invites</em></div>
+      <button className="btn btn-ghost btn-sm" style={{ marginBottom:"1.5rem" }} onClick={() => onNavigate("home")}><i className="fa-solid fa-arrow-left"></i> Back</button>
+      <div className="page-title"><i className="fa-solid fa-envelope"></i> Your <em>Invites</em></div>
       <div className="page-subtitle">Share ArtDrop with people you trust. Each code allows up to 5 new members.</div>
 
       {!invite ? (
@@ -1675,7 +1675,7 @@ const InvitePage = ({ user, store, updateStore, onNavigate }) => {
                 : "All invites used"}
             </div>
             <button className="invite-copy-btn" onClick={copyLink}>
-              {copied ? "✓ Copied!" : "📋 Copy invite link"}
+              {copied ? <><i className="fa-solid fa-check"></i> Copied!</> : <><i className="fa-solid fa-copy"></i> Copy invite link</>}
             </button>
           </div>
 
@@ -1694,7 +1694,7 @@ const InvitePage = ({ user, store, updateStore, onNavigate }) => {
                   onKeyDown={(e) => e.key === "Enter" && sendInviteEmail()}
                 />
                 <button className="btn btn-primary" onClick={sendInviteEmail} disabled={sending}>
-                  {sending ? "Sending…" : "Send →"}
+                  {sending ? "Sending…" : <>Send <i className="fa-solid fa-paper-plane"></i></>}
                 </button>
               </div>
             </div>
@@ -1841,14 +1841,14 @@ const DashboardPage = ({ artist, onNavigate, store, updateStore }) => {
 
               <div className="pending-payment-actions">
                 {payment.paidAt ? (
-                  <span className="status-badge-paid">✓ Paid {new Date(payment.paidAt).toLocaleDateString("en-US", { month: "short", day: "numeric" })}</span>
+                  <span className="status-badge-paid"><i className="fa-solid fa-check"></i> Paid {new Date(payment.paidAt).toLocaleDateString("en-US", { month: "short", day: "numeric" })}</span>
                 ) : (
                   <button
                     className="btn btn-success btn-sm"
                     disabled={markingPaid === auction.id}
                     onClick={() => markPaid(auction.id)}
                   >
-                    {markingPaid === auction.id ? "Marking…" : "✓ Mark Paid"}
+                    {markingPaid === auction.id ? "Marking…" : <><i className="fa-solid fa-check"></i> Mark Paid</>}
                   </button>
                 )}
                 <input
@@ -1862,7 +1862,7 @@ const DashboardPage = ({ artist, onNavigate, store, updateStore }) => {
                   disabled={markingShipped === auction.id}
                   onClick={() => markShipped(auction.id)}
                 >
-                  {markingShipped === auction.id ? "Marking…" : "📦 Mark Shipped"}
+                  {markingShipped === auction.id ? "Marking…" : <><i className="fa-solid fa-box"></i> Mark Shipped</>}
                 </button>
               </div>
             </div>
@@ -1904,16 +1904,16 @@ const DashboardPage = ({ artist, onNavigate, store, updateStore }) => {
                   <button className="btn btn-ghost btn-sm" onClick={() => {
                     const url = `${window.location.origin}${window.location.pathname}#auction-${auction.id}`;
                     navigator.clipboard.writeText(url).then(() => { setCopiedId(auction.id); setTimeout(() => setCopiedId(null), 2500); });
-                  }}>{copiedId === auction.id ? "✓ Copied!" : "🔗 Copy Link"}</button>
+                  }}>{copiedId === auction.id ? <><i className="fa-solid fa-check"></i> Copied!</> : <><i className="fa-solid fa-link"></i> Copy Link</>}</button>
                   <button className="btn btn-ghost btn-sm" onClick={() => onNavigate("auction", auction.id)}>View</button>
                   {(status === "live" || status === "paused") && (
                     <button className="btn btn-ghost btn-sm" onClick={() => onNavigate("edit", auction.id)}>Edit</button>
                   )}
                   {status === "live" && (
-                    <><button className="btn btn-warning btn-sm" onClick={() => setConfirm({ type: "pause", id: auction.id })}>⏸ Pause</button><button className="btn btn-danger btn-sm" onClick={() => setConfirm({ type: "end", id: auction.id })}>End</button></>
+                    <><button className="btn btn-warning btn-sm" onClick={() => setConfirm({ type: "pause", id: auction.id })}><i className="fa-solid fa-pause"></i> Pause</button><button className="btn btn-danger btn-sm" onClick={() => setConfirm({ type: "end", id: auction.id })}>End</button></>
                   )}
                   {status === "paused" && (
-                    <><button className="btn btn-success btn-sm" onClick={() => setConfirm({ type: "resume", id: auction.id })}>▶ Resume</button><button className="btn btn-danger btn-sm" onClick={() => setConfirm({ type: "end", id: auction.id })}>End</button></>
+                    <><button className="btn btn-success btn-sm" onClick={() => setConfirm({ type: "resume", id: auction.id })}><i className="fa-solid fa-play"></i> Resume</button><button className="btn btn-danger btn-sm" onClick={() => setConfirm({ type: "end", id: auction.id })}>End</button></>
                   )}
                   <button className="btn btn-ghost btn-sm" style={{ color: "var(--rouge)", borderColor: "rgba(139,46,46,0.25)" }} onClick={() => setConfirm({ type: "remove", id: auction.id })}>Remove</button>
                 </div>
@@ -2029,7 +2029,7 @@ const CreatePage = ({ artist, onNavigate, store, updateStore }) => {
       <div className="step-indicator">
         {STEPS.map((s, i) => (
           <div key={s} style={{ display: "flex", alignItems: "center", flex: i < STEPS.length - 1 ? 1 : 0 }}>
-            <div className={`step-num ${i === step ? "active" : i < step ? "done" : ""}`}>{i < step ? "✓" : i + 1}</div>
+            <div className={`step-num ${i === step ? "active" : i < step ? "done" : ""}`}>{i < step ? <i className="fa-solid fa-check"></i> : i + 1}</div>
             <span className={`step-label ${i === step ? "active" : ""}`}>{s}</span>
             {i < STEPS.length - 1 && <div className="step-line" />}
           </div>
@@ -2048,7 +2048,7 @@ const CreatePage = ({ artist, onNavigate, store, updateStore }) => {
             />
           </div>
           <div className="form-group"><label className="form-label">Artwork Title *</label><input className="form-input" placeholder="e.g. Ocean at Dawn, Series III" value={f.title} onChange={(e) => set("title", e.target.value)} /></div>
-          <div className="form-actions"><button className="btn btn-ghost" onClick={() => onNavigate("dashboard")}>Cancel</button><button className="btn btn-primary" onClick={() => setStep(1)} disabled={!f.title.trim()}>Continue →</button></div>
+          <div className="form-actions"><button className="btn btn-ghost" onClick={() => onNavigate("dashboard")}>Cancel</button><button className="btn btn-primary" onClick={() => setStep(1)} disabled={!f.title.trim()}>Continue <i className="fa-solid fa-arrow-right"></i></button></div>
         </div>
       )}
 
@@ -2059,7 +2059,7 @@ const CreatePage = ({ artist, onNavigate, store, updateStore }) => {
             <div className="form-group"><label className="form-label">Medium</label><input className="form-input" placeholder="e.g. Oil on canvas" value={f.medium} onChange={(e) => set("medium", e.target.value)} /></div>
             <div className="form-group"><label className="form-label">Dimensions</label><input className="form-input" placeholder='e.g. 24" × 36"' value={f.dimensions} onChange={(e) => set("dimensions", e.target.value)} /></div>
           </div>
-          <div className="form-actions"><button className="btn btn-ghost" onClick={() => setStep(0)}>← Back</button><button className="btn btn-primary" onClick={() => setStep(2)}>Continue →</button></div>
+          <div className="form-actions"><button className="btn btn-ghost" onClick={() => setStep(0)}><i className="fa-solid fa-arrow-left"></i> Back</button><button className="btn btn-primary" onClick={() => setStep(2)}>Continue <i className="fa-solid fa-arrow-right"></i></button></div>
         </div>
       )}
 
@@ -2070,7 +2070,7 @@ const CreatePage = ({ artist, onNavigate, store, updateStore }) => {
             <div className="form-group"><label className="form-label">Minimum Increment</label><div className="input-prefix"><span className="input-prefix-sym">$</span><input className="form-input" type="number" min="1" placeholder="25" value={f.minIncrement} onChange={(e) => set("minIncrement", e.target.value)} /></div><p className="form-hint">Each new bid must raise by at least this amount</p></div>
           </div>
           <div className="form-group"><label className="form-label">Auction Duration</label><select className="form-select" value={f.durationDays} onChange={(e) => set("durationDays", e.target.value)}>{[["1","1 day"],["3","3 days"],["5","5 days"],["7","7 days (recommended)"],["14","14 days"],["30","30 days"]].map(([v,l]) => <option key={v} value={v}>{l}</option>)}</select></div>
-          <div className="form-actions"><button className="btn btn-ghost" onClick={() => setStep(1)}>← Back</button><button className="btn btn-primary" onClick={() => setStep(3)} disabled={!f.startingPrice}>Continue →</button></div>
+          <div className="form-actions"><button className="btn btn-ghost" onClick={() => setStep(1)}><i className="fa-solid fa-arrow-left"></i> Back</button><button className="btn btn-primary" onClick={() => setStep(3)} disabled={!f.startingPrice}>Continue <i className="fa-solid fa-arrow-right"></i></button></div>
         </div>
       )}
 
@@ -2089,12 +2089,12 @@ const CreatePage = ({ artist, onNavigate, store, updateStore }) => {
               <div style={{ display:"flex", alignItems:"center", gap:"0.75rem", padding:"0.85rem 1rem", border:`1px solid ${f.paymentMethods.includes(key)?"var(--gold)":"var(--border)"}`, borderRadius:"var(--radius)", background:f.paymentMethods.includes(key)?"rgba(201,168,76,0.05)":"white", cursor:"pointer", transition:"all 0.15s" }} onClick={() => togglePay(key)}>
                 <span style={{ fontSize:"1.15rem" }}>{icon}</span>
                 <span style={{ flex:1, fontWeight:500, fontSize:"0.92rem" }}>{label}</span>
-                <span style={{ color:f.paymentMethods.includes(key)?"var(--gold-dark)":"var(--border)" }}>{f.paymentMethods.includes(key)?"✓":"+"}</span>
+                <span style={{ color:f.paymentMethods.includes(key)?"var(--gold-dark)":"var(--border)" }}>{f.paymentMethods.includes(key) ? <i className="fa-solid fa-check"></i> : <i className="fa-solid fa-plus"></i>}</span>
               </div>
               {f.paymentMethods.includes(key) && field && <input className="form-input" style={{ marginTop:"0.4rem", borderRadius:`0 0 var(--radius) var(--radius)`, borderTop:"none" }} placeholder={ph} value={f[field]} onChange={(e) => set(field, e.target.value)} />}
             </div>
           ))}
-          <div className="form-actions"><button className="btn btn-ghost" onClick={() => setStep(2)}>← Back</button><button className="btn btn-primary" onClick={() => setStep(4)} disabled={f.paymentMethods.length === 0}>Continue →</button></div>
+          <div className="form-actions"><button className="btn btn-ghost" onClick={() => setStep(2)}><i className="fa-solid fa-arrow-left"></i> Back</button><button className="btn btn-primary" onClick={() => setStep(4)} disabled={f.paymentMethods.length === 0}>Continue <i className="fa-solid fa-arrow-right"></i></button></div>
         </div>
       )}
 
@@ -2118,8 +2118,8 @@ const CreatePage = ({ artist, onNavigate, store, updateStore }) => {
               ))}
             </div>
           </div>
-          <div className="alert alert-info">✦ Once published, your auction goes live immediately. You'll get a shareable link to send to collectors.</div>
-          <div className="form-actions"><button className="btn btn-ghost" onClick={() => setStep(3)}>← Back</button><button className="btn btn-primary btn-lg" onClick={publish} disabled={busy}>{busy ? "Publishing…" : "🚀 Publish Auction"}</button></div>
+          <div className="alert alert-info"><i className="fa-solid fa-circle-info"></i> Once published, your auction goes live immediately. You'll get a shareable link to send to collectors.</div>
+          <div className="form-actions"><button className="btn btn-ghost" onClick={() => setStep(3)}><i className="fa-solid fa-arrow-left"></i> Back</button><button className="btn btn-primary btn-lg" onClick={publish} disabled={busy}>{busy ? "Publishing…" : <><i className="fa-solid fa-rocket"></i> Publish Auction</>}</button></div>
         </div>
       )}
     </div>
@@ -2324,23 +2324,23 @@ const AuctionPage = ({ auctionId, onNavigate, store, updateStore, loadAuctionDet
 
   return (
     <div className="auction-detail">
-      <button className="btn btn-ghost btn-sm" style={{ marginBottom:"1.5rem" }} onClick={() => onNavigate("home")}>← Back</button>
+      <button className="btn btn-ghost btn-sm" style={{ marginBottom:"1.5rem" }} onClick={() => onNavigate("home")}><i className="fa-solid fa-arrow-left"></i> Back</button>
 
       {isOwner && (
         <div className="artist-mgmt-bar">
-          <div className="artist-mgmt-label">🎨 Your Listing &nbsp;·&nbsp; <StatusPill status={status} /></div>
+          <div className="artist-mgmt-label"><i className="fa-solid fa-palette"></i> Your Listing &nbsp;·&nbsp; <StatusPill status={status} /></div>
           <div className="artist-mgmt-actions">
             {(status === "live" || status === "paused") && <button className="btn btn-ghost btn-sm" onClick={() => onNavigate("edit", auctionId)}>Edit</button>}
-            {status === "live" && <><button className="btn btn-warning btn-sm" onClick={() => setConfirm("pause")}>⏸ Pause</button><button className="btn btn-danger btn-sm" onClick={() => setConfirm("end")}>End Early</button></>}
-            {status === "paused" && <><button className="btn btn-success btn-sm" onClick={() => setConfirm("resume")}>▶ Resume</button><button className="btn btn-danger btn-sm" onClick={() => setConfirm("end")}>End</button></>}
+            {status === "live" && <><button className="btn btn-warning btn-sm" onClick={() => setConfirm("pause")}><i className="fa-solid fa-pause"></i> Pause</button><button className="btn btn-danger btn-sm" onClick={() => setConfirm("end")}>End Early</button></>}
+            {status === "paused" && <><button className="btn btn-success btn-sm" onClick={() => setConfirm("resume")}><i className="fa-solid fa-play"></i> Resume</button><button className="btn btn-danger btn-sm" onClick={() => setConfirm("end")}>End</button></>}
             {(status === "live" || status === "paused" || status === "ended") && <button className="btn btn-ghost btn-sm" style={{ color:"var(--rouge)" }} onClick={() => setConfirm("remove")}>Remove</button>}
-            <button className="btn btn-ghost btn-sm" onClick={copyLink}>{copied ? "✓ Copied!" : "🔗 Copy Link"}</button>
+            <button className="btn btn-ghost btn-sm" onClick={copyLink}>{copied ? <><i className="fa-solid fa-check"></i> Copied!</> : <><i className="fa-solid fa-link"></i> Copy Link</>}</button>
             <button className="btn btn-dark btn-sm" onClick={() => onNavigate("dashboard")}>Dashboard</button>
           </div>
         </div>
       )}
 
-      {isWinner && <div className="alert alert-success" style={{ marginBottom:"1.5rem" }}>🏆 You won! <button className="btn btn-primary btn-sm" style={{ marginLeft:"1rem" }} onClick={() => onNavigate("payment", auctionId)}>Proceed to Payment →</button></div>}
+      {isWinner && <div className="alert alert-success" style={{ marginBottom:"1.5rem" }}><i className="fa-solid fa-trophy"></i> You won! <button className="btn btn-primary btn-sm" style={{ marginLeft:"1rem" }} onClick={() => onNavigate("payment", auctionId)}>Proceed to Payment <i className="fa-solid fa-arrow-right"></i></button></div>}
       {!isLive && topBid && !isWinner && <div className="alert" style={{ background:"var(--parchment)", border:"1px solid var(--border)", color:"var(--slate)", marginBottom:"1.5rem" }}>Auction ended. Winner: <strong>{shortName(topBid.bidder)}</strong> · {fmt$(topBid.amount)}</div>}
       {bidMsg && <div className={`alert alert-${bidMsg.type}`} style={{ marginBottom:"1rem" }}>{bidMsg.text}</div>}
 
@@ -2374,10 +2374,10 @@ const AuctionPage = ({ auctionId, onNavigate, store, updateStore, loadAuctionDet
             </span>
           </div>
 
-          {status === "paused" && <div className="paused-notice">⏸ This auction is currently paused. Bidding is suspended.</div>}
+          {status === "paused" && <div className="paused-notice"><i className="fa-solid fa-pause"></i> This auction is currently paused. Bidding is suspended.</div>}
 
           <div className="countdown-block">
-            <div className="countdown-label">⏱ Time Remaining</div>
+            <div className="countdown-label"><i className="fa-regular fa-clock"></i> Time Remaining</div>
             {status === "paused" ? <div className="countdown-ended" style={{ color:"var(--amber)" }}>Paused</div> : <Countdown endDate={auction.endDate} />}
             <div style={{ marginTop:"0.65rem", fontSize:"0.72rem", color:"var(--mist)" }}>{isLive ? `Ends ${fmtDate(auction.endDate)}` : `Ended ${fmtDate(auction.endDate)}`}</div>
           </div>
@@ -2397,7 +2397,7 @@ const AuctionPage = ({ auctionId, onNavigate, store, updateStore, loadAuctionDet
                 <ul className="bid-list">
                   {sortedBids.map((b, i) => (
                     <li key={b.id} className={`bid-item ${i===0?"top-bid":""}`}>
-                      <span className="bid-item-bidder">{shortName(b.bidder)}{i===0?" 🏆":""}</span>
+                      <span className="bid-item-bidder">{shortName(b.bidder)}{i===0 && <> <i className="fa-solid fa-trophy" style={{color:"var(--gold-dark)",fontSize:"0.8em"}}></i></>}</span>
                       <span className="bid-item-amount">{fmt$(b.amount)}</span>
                       <span className="bid-item-time">{new Date(b.placedAt).toLocaleTimeString([],{hour:"2-digit",minute:"2-digit"})}</span>
                     </li>
@@ -2410,7 +2410,7 @@ const AuctionPage = ({ auctionId, onNavigate, store, updateStore, loadAuctionDet
           {/* ── Comments ──────────────────────────────────────────────── */}
           <div className="comments-block">
             <div style={{ fontWeight:700, fontSize:"0.95rem", marginBottom:"1rem", letterSpacing:"-0.01em" }}>
-              💬 Comments {comments.length > 0 && <span style={{ color:"var(--mist)", fontWeight:400, fontSize:"0.82rem" }}>({comments.length})</span>}
+              <i className="fa-regular fa-comment"></i> Comments {comments.length > 0 && <span style={{ color:"var(--mist)", fontWeight:400, fontSize:"0.82rem" }}>({comments.length})</span>}
             </div>
             {currentUserId ? (
               <>
@@ -2449,7 +2449,7 @@ const AuctionPage = ({ auctionId, onNavigate, store, updateStore, loadAuctionDet
                         {isOwner && (
                           <button className="comment-delete-btn" onClick={() => deleteComment(c.id)}
                             disabled={deletingId === c.id} title="Delete comment">
-                            {deletingId === c.id ? "…" : "🗑"}
+                            {deletingId === c.id ? "…" : <i className="fa-solid fa-trash"></i>}
                           </button>
                         )}
                       </div>
@@ -2476,11 +2476,16 @@ const AuctionPage = ({ auctionId, onNavigate, store, updateStore, loadAuctionDet
           </div>
 
           <div className="share-block">
-            <div className="share-title">🔗 Share This Auction</div>
-            <div className="share-url"><div className="share-url-text">{shareUrl}</div><button className="btn btn-sm btn-dark" onClick={copyLink}>{copied?"✓ Copied!":"Copy"}</button></div>
-            {copied && <div className="copied-toast">✓ Link copied to clipboard</div>}
+            <div className="share-title"><i className="fa-solid fa-share-nodes"></i> Share This Auction</div>
+            <div className="share-url"><div className="share-url-text">{shareUrl}</div><button className="btn btn-sm btn-dark" onClick={copyLink}>{copied ? <><i className="fa-solid fa-check"></i> Copied!</> : "Copy"}</button></div>
+            {copied && <div className="copied-toast"><i className="fa-solid fa-check"></i> Link copied to clipboard</div>}
             <div className="share-buttons">
-              {[["📧","Email","email"],["💬","Text","sms"],["🐦","Twitter","twitter"],["📘","Facebook","facebook"]].map(([icon,label,method]) => (
+              {[
+                [<i className="fa-solid fa-envelope"></i>,"Email","email"],
+                [<i className="fa-solid fa-comment-sms"></i>,"Text","sms"],
+                [<i className="fa-brands fa-x-twitter"></i>,"Twitter","twitter"],
+                [<i className="fa-brands fa-facebook"></i>,"Facebook","facebook"],
+              ].map(([icon,label,method]) => (
                 <button key={method} className="share-btn" onClick={() => shareVia(method)}>{icon} {label}</button>
               ))}
             </div>
@@ -2491,7 +2496,7 @@ const AuctionPage = ({ auctionId, onNavigate, store, updateStore, loadAuctionDet
       {showModal && (
         <div className="modal-overlay" onClick={() => setShowModal(false)}>
           <div className="modal" onClick={(e) => e.stopPropagation()}>
-            <button className="modal-close" onClick={() => setShowModal(false)}>✕</button>
+            <button className="modal-close" onClick={() => setShowModal(false)}><i className="fa-solid fa-xmark"></i></button>
             <div className="modal-title">Confirm Your Bid</div>
             <div className="modal-sub">Bidding <strong style={{ color:"var(--gold-dark)", fontFamily:"var(--font-display)", fontSize:"1.1rem" }}>{fmt$(bidAmt)}</strong> on <em>{auction.title}</em></div>
             {meCollector && (
@@ -2503,7 +2508,7 @@ const AuctionPage = ({ auctionId, onNavigate, store, updateStore, loadAuctionDet
             <div className="form-group"><label className="form-label">Email *</label><input className="form-input" type="email" placeholder="your@email.com" value={bidEmail} onChange={(e) => { if (!meCollector) setBidEmail(e.target.value); }} readOnly={!!meCollector} style={meCollector ? { opacity: 0.7, cursor: "default" } : {}} /><p className="form-hint">{meCollector ? "Bids are linked to your collector account." : "Only used to notify you if you win."}</p></div>
             {bidMsg && <div className={`alert alert-${bidMsg.type}`}>{bidMsg.text}</div>}
             <div className="alert alert-info" style={{ fontSize:"0.81rem" }}>By bidding, you agree to pay if you win. Payment required within 48 hours.</div>
-            <div className="modal-actions"><button className="btn btn-ghost" style={{ flex:1 }} onClick={() => setShowModal(false)}>Cancel</button><button className="btn btn-primary" style={{ flex:2 }} onClick={placeBid}>✓ Confirm {fmt$(bidAmt)}</button></div>
+            <div className="modal-actions"><button className="btn btn-ghost" style={{ flex:1 }} onClick={() => setShowModal(false)}>Cancel</button><button className="btn btn-primary" style={{ flex:2 }} onClick={placeBid}><i className="fa-solid fa-check"></i> Confirm {fmt$(bidAmt)}</button></div>
           </div>
         </div>
       )}
@@ -2608,8 +2613,8 @@ const PaymentPage = ({ auctionId, onNavigate, store, updateStore, loadAuctionDet
 
   return (
     <div className="payment-page">
-      <button className="btn btn-ghost btn-sm" style={{ marginBottom:"2rem" }} onClick={() => onNavigate("auction", auctionId)}>← Back</button>
-      <div className="winner-banner"><div className="winner-crown">🏆</div><div className="winner-title">You won!</div><div className="winner-sub">"{auction.title}" by {auction.artistName}</div></div>
+      <button className="btn btn-ghost btn-sm" style={{ marginBottom:"2rem" }} onClick={() => onNavigate("auction", auctionId)}><i className="fa-solid fa-arrow-left"></i> Back</button>
+      <div className="winner-banner"><div className="winner-crown"><i className="fa-solid fa-trophy"></i></div><div className="winner-title">You won!</div><div className="winner-sub">"{auction.title}" by {auction.artistName}</div></div>
       <div style={{ background:"white", border:"1px solid var(--border)", borderRadius:"var(--radius-lg)", padding:"1.25rem 1.5rem", marginBottom:"1.75rem" }}>
         <div className="winner-summary-row">
           <div><div style={{ fontSize:"0.7rem", color:"var(--mist)", textTransform:"uppercase", letterSpacing:"0.06em" }}>Winning Bid</div><div style={{ fontFamily:"var(--font-display)", fontSize:"2rem", fontWeight:700, color:"var(--gold-dark)" }}>{fmt$(topBid?.amount)}</div></div>
@@ -2637,7 +2642,7 @@ const PaymentPage = ({ auctionId, onNavigate, store, updateStore, loadAuctionDet
         <div className="form-group"><label className="form-label">Country</label><select className="form-select" value={sh.country} onChange={(e) => set("country", e.target.value)}><option value="US">United States</option><option value="CA">Canada</option><option value="GB">United Kingdom</option><option value="AU">Australia</option><option value="other">Other</option></select></div>
       </div>
       <div className="form-group"><label className="form-label">Delivery Notes</label><textarea className="form-textarea" rows={2} value={sh.notes} onChange={(e) => set("notes", e.target.value)} placeholder="Any special instructions…" /></div>
-      <button className="btn btn-primary btn-lg" style={{ width:"100%", justifyContent:"center" }} disabled={!selPay||!sh.name||!sh.address||!sh.city||!sh.zip||busy} onClick={submit}>{busy?"Submitting…":"✓ Confirm Payment & Submit Shipping"}</button>
+      <button className="btn btn-primary btn-lg" style={{ width:"100%", justifyContent:"center" }} disabled={!selPay||!sh.name||!sh.address||!sh.city||!sh.zip||busy} onClick={submit}>{busy ? "Submitting…" : <><i className="fa-solid fa-check"></i> Confirm Payment &amp; Submit Shipping</>}</button>
       <p style={{ textAlign:"center", color:"var(--mist)", fontSize:"0.76rem", marginTop:"0.65rem" }}>Your shipping details will be sent to the artist securely.</p>
     </div>
   );
@@ -2690,7 +2695,7 @@ const EditPage = ({ auctionId, artist, onNavigate, store, updateStore }) => {
       <h1 className="page-title">Edit <em>Auction</em></h1>
       <p className="page-subtitle">Changes apply immediately. Bids and timer are unaffected.</p>
 
-      {saved && <div className="alert alert-success" style={{ marginBottom: "1.5rem" }}>✓ Saved! Redirecting…</div>}
+      {saved && <div className="alert alert-success" style={{ marginBottom: "1.5rem" }}><i className="fa-solid fa-check"></i> Saved! Redirecting…</div>}
 
       <div className="form-group">
         <label className="form-label">Artwork Photo</label>
@@ -2737,7 +2742,7 @@ const EditPage = ({ auctionId, artist, onNavigate, store, updateStore }) => {
             <div style={{ display:"flex", alignItems:"center", gap:"0.75rem", padding:"0.85rem 1rem", border:`1px solid ${f.paymentMethods.includes(key)?"var(--gold)":"var(--border)"}`, borderRadius:"var(--radius)", background:f.paymentMethods.includes(key)?"rgba(201,168,76,0.05)":"white", cursor:"pointer", transition:"all 0.15s" }} onClick={() => togglePay(key)}>
               <span style={{ fontSize:"1.15rem" }}>{icon}</span>
               <span style={{ flex:1, fontWeight:500, fontSize:"0.92rem" }}>{label}</span>
-              <span style={{ color:f.paymentMethods.includes(key)?"var(--gold-dark)":"var(--border)" }}>{f.paymentMethods.includes(key)?"✓":"+"}</span>
+              <span style={{ color:f.paymentMethods.includes(key)?"var(--gold-dark)":"var(--border)" }}>{f.paymentMethods.includes(key) ? <i className="fa-solid fa-check"></i> : <i className="fa-solid fa-plus"></i>}</span>
             </div>
             {f.paymentMethods.includes(key) && field && <input className="form-input" style={{ marginTop:"0.4rem", borderRadius:`0 0 var(--radius) var(--radius)`, borderTop:"none" }} placeholder={ph} value={f[field]} onChange={(e) => set(field, e.target.value)} />}
           </div>
@@ -2759,16 +2764,16 @@ function MobileBottomNav({ page, isArtist, isCollector, onNavigate }) {
   if (!isArtist && !isCollector) return null;
 
   const artistTabs = [
-    { id: "create",    icon: "➕", label: "New"       },
-    { id: "home",      icon: "🏠", label: "Feed"      },
-    { id: "dashboard", icon: "📊", label: "Dashboard" },
-    { id: "home",      icon: "🔍", label: "Search", searchFocus: true },
+    { id: "create",    icon: <i className="fa-solid fa-plus"></i>,             label: "New"       },
+    { id: "home",      icon: <i className="fa-solid fa-house"></i>,            label: "Feed"      },
+    { id: "dashboard", icon: <i className="fa-solid fa-chart-simple"></i>,     label: "Dashboard" },
+    { id: "home",      icon: <i className="fa-solid fa-magnifying-glass"></i>, label: "Search", searchFocus: true },
   ];
 
   const collectorTabs = [
-    { id: "home",                icon: "🏠", label: "Feed" },
-    { id: "collector-dashboard", icon: "🗂", label: "Bids" },
-    { id: "home",                icon: "🔍", label: "Search", searchFocus: true },
+    { id: "home",                icon: <i className="fa-solid fa-house"></i>,           label: "Feed" },
+    { id: "collector-dashboard", icon: <i className="fa-solid fa-folder-open"></i>,     label: "Bids" },
+    { id: "home",                icon: <i className="fa-solid fa-magnifying-glass"></i>, label: "Search", searchFocus: true },
   ];
 
   const tabs = isArtist ? artistTabs : collectorTabs;
@@ -2924,9 +2929,9 @@ export default function App() {
                 {dropOpen && (
                   <div className="artist-dropdown">
                     <div className="artist-dropdown-header"><div className="artist-dropdown-name">{me.name}</div><div className="artist-dropdown-email">{me.email}</div></div>
-                    <button className="dropdown-item" onClick={() => go("dashboard")}>📊 My Dashboard</button>
-                    <button className="dropdown-item" onClick={() => go("create")}>✦ New Auction</button>
-                    <button className="dropdown-item" onClick={() => go("invites")}>✉️ Invites</button>
+                    <button className="dropdown-item" onClick={() => go("dashboard")}><i className="fa-solid fa-chart-simple"></i> My Dashboard</button>
+                    <button className="dropdown-item" onClick={() => go("create")}><i className="fa-solid fa-plus"></i> New Auction</button>
+                    <button className="dropdown-item" onClick={() => go("invites")}><i className="fa-solid fa-envelope"></i> Invites</button>
                     <div className="dropdown-divider" />
                     <button className="dropdown-item danger" onClick={onLogout}>Sign Out</button>
                   </div>
@@ -2943,8 +2948,8 @@ export default function App() {
               {collectorDropOpen && (
                 <div className="artist-dropdown">
                   <div className="artist-dropdown-header"><div className="artist-dropdown-name">{meCollector.name}</div><div className="artist-dropdown-email">{meCollector.email} · Collector</div></div>
-                  <button className="dropdown-item" onClick={() => go("collector-dashboard")}>🗂 My Collection</button>
-                  <button className="dropdown-item" onClick={() => go("invites")}>✉️ Invites</button>
+                  <button className="dropdown-item" onClick={() => go("collector-dashboard")}><i className="fa-solid fa-folder-open"></i> My Collection</button>
+                  <button className="dropdown-item" onClick={() => go("invites")}><i className="fa-solid fa-envelope"></i> Invites</button>
                   <div className="dropdown-divider" />
                   <button className="dropdown-item danger" onClick={onCollectorLogout}>Sign Out</button>
                 </div>
@@ -2970,10 +2975,10 @@ export default function App() {
       />
       {meCollector && outbidCount > 0 && !bannerDismissed && (
         <div className="outbid-banner">
-          <span>⚠️</span>
+          <i className="fa-solid fa-triangle-exclamation"></i>
           <span>You've been outbid on <strong>{outbidCount} live auction{outbidCount !== 1 ? "s" : ""}</strong>.</span>
-          <button className="outbid-banner-link" onClick={() => go("collector-dashboard")}>View My Collection →</button>
-          <button className="outbid-banner-dismiss" onClick={() => setBannerDismissed(true)}>✕</button>
+          <button className="outbid-banner-link" onClick={() => go("collector-dashboard")}>View My Collection <i className="fa-solid fa-arrow-right"></i></button>
+          <button className="outbid-banner-dismiss" onClick={() => setBannerDismissed(true)}><i className="fa-solid fa-xmark"></i></button>
         </div>
       )}
 
