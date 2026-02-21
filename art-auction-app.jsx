@@ -580,10 +580,6 @@ const STYLES = `
   .mobile-nav-tab:active { opacity:0.7; }
   .mobile-nav-tab.active { color:var(--accent); }
   .mobile-nav-tab-icon { font-size:1.15rem; line-height:1; }
-  .mobile-nav-tab-new { position:relative; top:-12px; flex:1; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:4px; background:none; border:none; cursor:pointer; padding:0; -webkit-tap-highlight-color:transparent; }
-  .mobile-nav-tab-new-circle { width:48px; height:48px; border-radius:50%; background:var(--accent); display:flex; align-items:center; justify-content:center; color:white; font-size:1.25rem; box-shadow:0 4px 14px rgba(232,82,106,0.45); transition:transform 0.15s,box-shadow 0.15s; }
-  .mobile-nav-tab-new:active .mobile-nav-tab-new-circle { transform:scale(0.93); box-shadow:0 2px 8px rgba(232,82,106,0.35); }
-  .mobile-nav-tab-new-label { color:var(--accent); font-size:0.65rem; font-weight:700; letter-spacing:0.03em; text-transform:uppercase; margin-top:2px; }
   @media (max-width:768px) {
     .mobile-bottom-nav { display:block; }
     .nav-new-btn { display:none; }
@@ -2770,7 +2766,7 @@ function MobileBottomNav({ page, isArtist, isCollector, onNavigate }) {
 
   const artistTabs = [
     { id: "home",      icon: <i className="fa-solid fa-house"></i>,            label: "Feed"      },
-    { id: "create",    icon: null,                                              label: "New"       },
+    { id: "create",    icon: <i className="fa-solid fa-plus"></i>,             label: "New"       },
     { id: "dashboard", icon: <i className="fa-solid fa-chart-simple"></i>,     label: "Dashboard" },
     { id: "home",      icon: <i className="fa-solid fa-magnifying-glass"></i>, label: "Search", searchFocus: true },
   ];
@@ -2797,28 +2793,16 @@ function MobileBottomNav({ page, isArtist, isCollector, onNavigate }) {
   return (
     <div className="mobile-bottom-nav">
       <div className="mobile-bottom-nav-inner">
-        {tabs.map((tab, i) => {
-          if (isArtist && tab.id === "create") {
-            return (
-              <button key={i} className="mobile-nav-tab-new" onClick={() => handleTab(tab)}>
-                <div className="mobile-nav-tab-new-circle">
-                  <i className="fa-solid fa-plus"></i>
-                </div>
-                <span className="mobile-nav-tab-new-label">New</span>
-              </button>
-            );
-          }
-          return (
-            <button
-              key={i}
-              className={`mobile-nav-tab${!tab.searchFocus && tab.id === page ? " active" : ""}`}
-              onClick={() => handleTab(tab)}
-            >
-              <span className="mobile-nav-tab-icon">{tab.icon}</span>
-              <span>{tab.label}</span>
-            </button>
-          );
-        })}
+        {tabs.map((tab, i) => (
+          <button
+            key={i}
+            className={`mobile-nav-tab${!tab.searchFocus && tab.id === page ? " active" : ""}`}
+            onClick={() => handleTab(tab)}
+          >
+            <span className="mobile-nav-tab-icon">{tab.icon}</span>
+            <span>{tab.label}</span>
+          </button>
+        ))}
       </div>
     </div>
   );
