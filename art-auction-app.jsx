@@ -2057,6 +2057,10 @@ const DashboardPage = ({ artist, onNavigate, store, updateStore }) => {
     }, 0),
   };
 
+  const followerCount  = Object.values(store.collectors || {}).filter(c => (c.following || []).includes(artist.id)).length;
+  const followingCount = (artist.following || []).length;
+  const dropsCount     = my.filter(a => a.published).length;
+
   const act = async (type, id) => {
     const auction = store.auctions.find((a) => a.id === id);
     if (!auction) { setConfirm(null); return; }
@@ -2088,6 +2092,20 @@ const DashboardPage = ({ artist, onNavigate, store, updateStore }) => {
         <div>
           <div className="dash-greeting"><span className="dash-greeting-avatar"><AvatarImg avatar={artist.avatar} alt={artist.name} /></span> <em>{artist.name}</em>'s Studio</div>
           <div className="dash-subtitle">{artist.email} · Member since {new Date(artist.createdAt).toLocaleDateString("en-US", { month: "long", year: "numeric" })}</div>
+          <div className="artist-profile-stats" style={{ marginTop:"0.75rem" }}>
+            <div className="artist-profile-stat">
+              <span className="artist-profile-stat-num">{followerCount}</span>
+              <span className="artist-profile-stat-label">Followers</span>
+            </div>
+            <div className="artist-profile-stat">
+              <span className="artist-profile-stat-num">{followingCount}</span>
+              <span className="artist-profile-stat-label">Following</span>
+            </div>
+            <div className="artist-profile-stat">
+              <span className="artist-profile-stat-num">{dropsCount}</span>
+              <span className="artist-profile-stat-label">{dropsCount === 1 ? "Drop" : "Drops"}</span>
+            </div>
+          </div>
         </div>
         <button className="btn btn-primary" onClick={() => onNavigate("create")}>+ New Drop</button>
       </div>
