@@ -36,6 +36,8 @@ const AuctionPage = ({ auctionId, onNavigate, store, updateStore, loadAuctionDet
   const [commentText, setCommentText] = useState("");
   const [commentMsg, setCommentMsg]   = useState(null);
   const [deletingId, setDeletingId]   = useState(null);
+  const [reportingId, setReportingId] = useState(null);
+  const [reportedIds, setReportedIds] = useState(new Set());
   const [localMyReactions, setLocalMyReactions] = useState({});
   // currentUserId declared above (before mount effect)
   const currentUserName   = artist?.name || meCollector?.name || "";
@@ -160,6 +162,18 @@ const AuctionPage = ({ auctionId, onNavigate, store, updateStore, loadAuctionDet
     remove: { title:"Remove Drop",    message:"Listing will be hidden permanently.",                  confirmLabel:"Remove",   confirmClass:"btn-danger" },
   };
 
+  // Load which comments the current user has already reported
+  useEffect(() => {
+    if (!currentUserId || !auctionId) return;
+    supabase
+      .from("comment_reports")
+      .select("comment_id")
+      .eq("reporter_id", currentUserId)
+      .then(({ data }) => {
+        if (data) setReportedIds(new Set(data.map((r) => r.comment_id)));
+      });
+  }, [currentUserId, auctionId]);
+
   // ── Comment actions ───────────────────────────────────────────────────────
   const postComment = async () => {
     const body = commentText.trim();
@@ -180,6 +194,17 @@ const AuctionPage = ({ auctionId, onNavigate, store, updateStore, loadAuctionDet
     const { error } = await supabase.from("comments").delete().eq("id", commentId);
     if (!error) loadAuctionDetail(auctionId, currentUserId);
     setDeletingId(null);
+  };
+
+  const reportComment = async (commentId) => {
+    if (!currentUserId || reportedIds.has(commentId)) return;
+    setReportingId(commentId);
+    await supabase.from("comment_reports").insert({
+      comment_id: commentId,
+      reporter_id: currentUserId,
+    });
+    setReportedIds((prev) => new Set([...prev, commentId]));
+    setReportingId(null);
   };
 
   const toggleReaction = async (commentId, emoji) => {
@@ -324,10 +349,19 @@ const AuctionPage = ({ auctionId, onNavigate, store, updateStore, loadAuctionDet
                           <span style={{ fontWeight:600, fontSize:"0.85rem", color:"var(--ink)" }}>{c.authorName}</span>
                           <span style={{ fontSize:"0.72rem", color:"var(--mist)", marginLeft:"0.5rem" }}>{timeAgo(c.createdAt)}</span>
                         </div>
-                        {isOwner && (
+                        {(isOwner || c.authorId === currentUserId) && (
                           <button className="comment-delete-btn" onClick={() => deleteComment(c.id)}
                             disabled={deletingId === c.id} title="Delete comment">
                             {deletingId === c.id ? "…" : <i className="fa-solid fa-trash"></i>}
+                          </button>
+                        )}
+                        {currentUserId && c.authorId !== currentUserId && (
+                          <button
+                            onClick={() => reportComment(c.id)}
+                            disabled={reportedIds.has(c.id) || reportingId === c.id}
+                            title={reportedIds.has(c.id) ? "Reported" : "Report comment"}
+                            style={{ background:"none", border:"none", cursor: reportedIds.has(c.id) ? "default" : "pointer", opacity: reportedIds.has(c.id) ? 0.35 : 0.45, fontSize:"0.8rem", padding:"2px 4px", lineHeight:1 }}>
+                            {reportingId === c.id ? "…" : "🚩"}
                           </button>
                         )}
                       </div>
