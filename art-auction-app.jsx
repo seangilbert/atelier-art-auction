@@ -1452,7 +1452,7 @@ const ArtistPage = ({ artistId, onNavigate, store, updateStore, me, meCollector 
           {artist.bio && <div className="artist-profile-bio">{artist.bio}</div>}
         </div>
         <div className="artist-follow-wrap">
-          {!isOwnProfile && !meCollector && (
+          {!isOwnProfile && !meCollector && !me && (
             <button className="btn-follow-hint" onClick={toggleFollow}>Sign in to follow</button>
           )}
           {!isOwnProfile && meCollector && !isFollowing && (
