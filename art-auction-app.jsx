@@ -566,7 +566,7 @@ const STYLES = `
   .comment-list { list-style:none; margin-top:0.75rem; }
   .comment-item { padding:0.9rem 0; border-bottom:1px solid var(--border); }
   .comment-item:last-child { border-bottom:none; padding-bottom:0; }
-  .comment-avatar { width:30px; height:30px; border-radius:50%; background:var(--parchment); border:1px solid var(--border); display:inline-flex; align-items:center; justify-content:center; font-size:1rem; flex-shrink:0; }
+  .comment-avatar { width:30px; height:30px; border-radius:50%; overflow:hidden; background:var(--parchment); border:1px solid var(--border); display:inline-flex; align-items:center; justify-content:center; font-size:1rem; flex-shrink:0; }
   .comment-author-row { display:flex; align-items:center; gap:0.6rem; margin-bottom:0.35rem; }
   .comment-body { font-size:0.88rem; color:var(--ink); line-height:1.55; padding-left:calc(30px + 0.6rem); word-break:break-word; }
   .comment-reactions-row { display:flex; gap:0.35rem; margin-top:0.5rem; flex-wrap:wrap; padding-left:calc(30px + 0.6rem); }
@@ -3100,7 +3100,7 @@ const AuctionPage = ({ auctionId, onNavigate, store, updateStore, loadAuctionDet
               <>
                 {commentMsg && <div className={`alert alert-${commentMsg.type}`} style={{ marginBottom:"0.75rem" }}>{commentMsg.text}</div>}
                 <div className="comment-input-row">
-                  <span style={{ fontSize:"1.1rem", flexShrink:0 }}>{currentUserAvatar}</span>
+                  <span style={{ width:"1.8rem", height:"1.8rem", borderRadius:"50%", overflow:"hidden", background:"var(--grad-accent)", display:"inline-flex", alignItems:"center", justifyContent:"center", fontSize:"1rem", flexShrink:0 }}><AvatarImg avatar={currentUserAvatar} alt="" /></span>
                   <input className="comment-input" type="text" placeholder="Leave a comment…"
                     value={commentText} onChange={(e) => setCommentText(e.target.value)}
                     onKeyDown={(e) => { if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); postComment(); } }}
@@ -3125,7 +3125,7 @@ const AuctionPage = ({ auctionId, onNavigate, store, updateStore, loadAuctionDet
                   return (
                     <li key={c.id} className="comment-item">
                       <div className="comment-author-row">
-                        <span className="comment-avatar">{c.authorAvatar}</span>
+                        <span className="comment-avatar"><AvatarImg avatar={c.authorAvatar} alt={c.authorName} /></span>
                         <div style={{ flex:1, minWidth:0 }}>
                           <span style={{ fontWeight:600, fontSize:"0.85rem", color:"var(--ink)" }}>{c.authorName}</span>
                           <span style={{ fontSize:"0.72rem", color:"var(--mist)", marginLeft:"0.5rem" }}>{timeAgo(c.createdAt)}</span>
