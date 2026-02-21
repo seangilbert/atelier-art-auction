@@ -427,7 +427,8 @@ const STYLES = `
   .feed-time { font-size:0.7rem; color:var(--mist); }
   .feed-card .card-image { aspect-ratio:1/1; }
   .feed-desc { font-size:0.78rem; color:var(--slate); line-height:1.5; display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical; overflow:hidden; margin-bottom:0.5rem; }
-  .feed-bid-count { display:inline-flex; align-items:center; gap:0.3rem; font-size:0.72rem; font-weight:600; color:var(--accent2); background:var(--accent2-light); padding:0.2rem 0.55rem; border-radius:100px; margin-bottom:0.6rem; }
+  .feed-bid-count { display:inline-flex; align-items:center; gap:0.3rem; font-size:0.72rem; font-weight:600; color:var(--accent2); background:var(--accent2-light); padding:0.2rem 0.55rem; border-radius:100px; }
+  .feed-comment-count { display:inline-flex; align-items:center; gap:0.3rem; font-size:0.72rem; font-weight:600; color:var(--slate); background:var(--parchment); padding:0.2rem 0.55rem; border-radius:100px; }
   .card-ooh-row.feed-ooh { justify-content:flex-start; }
 
   /* ── Compact hero ────────────────────────────────────────────────────────── */
@@ -1278,7 +1279,10 @@ const FeedPage = ({ onNavigate, store, updateStore, me, meCollector }) => {
                 <div className="card-body">
                   <div className="card-title">{auction.title}</div>
                   {auction.description && <div className="feed-desc">{auction.description}</div>}
-                  {bids.length > 0 && <div className="feed-bid-count">🔥 {bids.length} bid{bids.length !== 1 ? "s" : ""}</div>}
+                  <div style={{ display:"flex", gap:"0.4rem", flexWrap:"wrap", marginBottom: (bids.length > 0 || (store.comments?.[auction.id]?.length || 0) > 0) ? "0.6rem" : 0 }}>
+                    {bids.length > 0 && <div className="feed-bid-count">🔥 {bids.length} bid{bids.length !== 1 ? "s" : ""}</div>}
+                    {(store.comments?.[auction.id]?.length || 0) > 0 && <div className="feed-comment-count">💬 {store.comments[auction.id].length} comment{store.comments[auction.id].length !== 1 ? "s" : ""}</div>}
+                  </div>
                   <div className="card-meta">
                     <div><div className="card-price-label">{bids.length ? "Current Bid" : "Starting at"}</div><div className="card-price">{fmt$(topBid)}</div></div>
                     <div><div className="card-timer-label">Closes</div><div className="card-timer-val"><CardTimer endDate={auction.endDate} /></div></div>
