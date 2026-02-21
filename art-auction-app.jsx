@@ -456,6 +456,10 @@ const STYLES = `
   .artist-profile-name { font-size:1.8rem; font-weight:700; color:var(--ink); letter-spacing:-0.03em; margin-bottom:0.15rem; }
   .artist-profile-since { font-size:0.78rem; color:var(--mist); margin-bottom:0.75rem; }
   .artist-profile-bio { font-size:0.9rem; color:var(--slate); line-height:1.7; }
+  .artist-profile-stats { display:flex; gap:1.75rem; margin-top:1rem; }
+  .artist-profile-stat { display:flex; flex-direction:column; align-items:flex-start; }
+  .artist-profile-stat-num { font-size:1.05rem; font-weight:700; color:var(--ink); line-height:1.2; }
+  .artist-profile-stat-label { font-size:0.7rem; color:var(--mist); text-transform:uppercase; letter-spacing:0.06em; margin-top:0.1rem; }
   .artist-follow-wrap { display:flex; align-items:flex-start; padding-top:0.25rem; }
   .btn-follow-hint { font-size:0.78rem; color:var(--mist); cursor:pointer; background:none; border:none; font-family:var(--font-body); text-decoration:underline; }
   .btn-follow-hint:hover { color:var(--gold-dark); }
@@ -1550,6 +1554,10 @@ const ArtistPage = ({ artistId, onNavigate, store, updateStore, me, meCollector 
   const ended = auctions.filter((a) => getStatus(a) === "ended");
   const sorted = [...live, ...ended];
 
+  const followerCount  = Object.values(store.collectors || {}).filter(c => (c.following || []).includes(artistId)).length;
+  const followingCount = (artist.following || []).length;
+  const dropsCount     = auctions.length;
+
   return (
     <div className="artist-page">
       <button className="btn btn-ghost btn-sm" style={{ marginBottom:"1.5rem" }} onClick={() => onNavigate("home")}><i className="fa-solid fa-arrow-left"></i> Back</button>
@@ -1559,6 +1567,20 @@ const ArtistPage = ({ artistId, onNavigate, store, updateStore, me, meCollector 
           <div className="artist-profile-name">{artist.name}</div>
           <div className="artist-profile-since">Member since {new Date(artist.createdAt).toLocaleDateString("en-US", { month:"long", year:"numeric" })}</div>
           {artist.bio && <div className="artist-profile-bio">{artist.bio}</div>}
+          <div className="artist-profile-stats">
+            <div className="artist-profile-stat">
+              <span className="artist-profile-stat-num">{followerCount}</span>
+              <span className="artist-profile-stat-label">Followers</span>
+            </div>
+            <div className="artist-profile-stat">
+              <span className="artist-profile-stat-num">{followingCount}</span>
+              <span className="artist-profile-stat-label">Following</span>
+            </div>
+            <div className="artist-profile-stat">
+              <span className="artist-profile-stat-num">{dropsCount}</span>
+              <span className="artist-profile-stat-label">{dropsCount === 1 ? "Drop" : "Drops"}</span>
+            </div>
+          </div>
         </div>
         <div className="artist-follow-wrap">
           {!isOwnProfile && !meCollector && !me && (
