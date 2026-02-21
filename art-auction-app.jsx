@@ -2919,7 +2919,7 @@ export default function App() {
         <div className="nav-logo" onClick={() => go("home")}>ArtDrop<span>Art Auction House</span></div>
         <div className="nav-actions">
           {liveCount > 0 && <span className="live-pip"><span className="pulse" style={{ background:"var(--rouge)" }} />{liveCount} live</span>}
-          <button className="nav-link" onClick={() => go("home")}>{isLoggedIn ? "Feed" : "Browse"}</button>
+          <button className="nav-link" onClick={() => go("home")}>{isLoggedIn ? "Drops" : "Browse"}</button>
 
           {/* Artist logged in */}
           {me && (
