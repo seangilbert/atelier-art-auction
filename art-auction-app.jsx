@@ -991,7 +991,7 @@ const OohButton = ({ auctionId, store, updateStore }) => {
 const Countdown = ({ endDate }) => {
   const [left, setLeft] = useState(() => timeLeft(endDate));
   useEffect(() => { const id = setInterval(() => setLeft(timeLeft(endDate)), 1000); return () => clearInterval(id); }, [endDate]);
-  if (!left) return <div className="countdown-ended">Auction has ended</div>;
+  if (!left) return <div className="countdown-ended">Drop has ended</div>;
   return (
     <div className="countdown-digits">
       {[["d","days"],["h","hrs"],["m","min"],["s","sec"]].map(([k, lbl], i) => (
@@ -1127,7 +1127,7 @@ const AuthPage = ({ store, updateStore, onLogin, onCollectorLogin, initialMode, 
       <div className="auth-bg" /><div className="auth-grid" />
       <div className="auth-card">
         <div className="auth-logo">ArtDrop</div>
-        <div className="auth-logo-sub">Art Auction House</div>
+        <div className="auth-logo-sub">Art Drop House</div>
 
         {mode === "login" && (
           <>
@@ -1136,7 +1136,7 @@ const AuthPage = ({ store, updateStore, onLogin, onCollectorLogin, initialMode, 
               <button className={`auth-type-tab ${loginType === "collector" ? "active" : ""}`} onClick={() => { setLoginType("collector"); setError(""); }}>Collector</button>
             </div>
             <div className="auth-title">Welcome back</div>
-            <div className="auth-sub">{loginType === "artist" ? "Sign in to manage your auctions." : "Sign in to follow artists and bid on art."}</div>
+            <div className="auth-sub">{loginType === "artist" ? "Sign in to manage your drops." : "Sign in to follow artists and bid on art."}</div>
             {error && <div className="alert alert-error">{error}</div>}
             <div className="form-group"><label className="form-label">Email</label><input className="form-input" type="email" placeholder="your@email.com" value={f.email} onChange={(e) => set("email", e.target.value)} onKeyDown={(e) => e.key === "Enter" && login()} /></div>
             <div className="form-group"><label className="form-label">Password</label><input className="form-input" type="password" placeholder="••••••••" value={f.password} onChange={(e) => set("password", e.target.value)} onKeyDown={(e) => e.key === "Enter" && login()} /></div>
@@ -1153,7 +1153,7 @@ const AuthPage = ({ store, updateStore, onLogin, onCollectorLogin, initialMode, 
         {mode === "signup" && (
           <>
             <div className="auth-title">Create your account</div>
-            <div className="auth-sub">Join ArtDrop to list and auction your original artwork.</div>
+            <div className="auth-sub">Join ArtDrop to list and drop your original artwork.</div>
             {error && <div className="alert alert-error">{error}</div>}
             <div className="form-group"><label className="form-label">Artist Name *</label><input className="form-input" placeholder="e.g. Maria Chen" value={f.name} onChange={(e) => set("name", e.target.value)} /></div>
             <div className="form-group">
@@ -1209,9 +1209,9 @@ const HomePage = ({ onNavigate, store, updateStore }) => {
         <div className="hero-bg" /><div className="hero-grid" />
         <div className="hero-inner">
           <div>
-            <div className="hero-eyebrow">The Art Auction House</div>
+            <div className="hero-eyebrow">The Art Drop House</div>
             <h1 className="hero-title">Where Unique Art<br />Finds <em>Its Voice</em></h1>
-            <p className="hero-subtitle">Run live auctions for your original artwork. Set your price, share your link, and watch collectors compete for your creations.</p>
+            <p className="hero-subtitle">Run live drops for your original artwork. Set your price, share your link, and watch collectors compete for your creations.</p>
             <div className="hero-actions">
               <button className="btn btn-primary btn-lg" onClick={() => onNavigate("signup")}>Start Selling Art</button>
               <button className="btn btn-outline btn-lg" onClick={() => onNavigate("collector-signup")}>Follow as Collector</button>
@@ -1222,7 +1222,7 @@ const HomePage = ({ onNavigate, store, updateStore }) => {
 
       <div className="features-strip">
         <div className="features-inner">
-          {[["🖼️","List Your Art","Upload photos, set your price, publish in minutes"],["⏱️","Live Countdown","Real-time auctions with transparent bidding"],["🔗","Share Anywhere","Links for email, social media, and text"],["💸","Flexible Payment","Venmo, PayPal, Cash App & more"]].map(([icon, label, desc]) => (
+          {[["🖼️","List Your Art","Upload photos, set your price, publish in minutes"],["⏱️","Live Countdown","Real-time drops with transparent bidding"],["🔗","Share Anywhere","Links for email, social media, and text"],["💸","Flexible Payment","Venmo, PayPal, Cash App & more"]].map(([icon, label, desc]) => (
             <div key={label} className="feature-item"><div className="feature-icon">{icon}</div><div className="feature-label">{label}</div><div className="feature-desc">{desc}</div></div>
           ))}
         </div>
@@ -1235,7 +1235,7 @@ const HomePage = ({ onNavigate, store, updateStore }) => {
           </div>
           {topOohs.length === 0 ? (
             <div className="empty-state">
-              <h3>No live auctions yet</h3>
+              <h3>No live drops yet</h3>
               <p style={{ marginBottom: "1.5rem" }}>Be the first to list your artwork.</p>
               <button className="btn btn-primary" onClick={() => onNavigate("signup")}>Become an Artist</button>
             </div>
@@ -1339,9 +1339,9 @@ const FeedPage = ({ onNavigate, store, updateStore, me, meCollector }) => {
 
       {filtered.length === 0 && live.length === 0 ? (
         <div className="empty-state">
-          <h3>No live auctions right now</h3>
+          <h3>No live drops right now</h3>
           <p style={{ marginBottom:"1.5rem" }}>Check back soon — new artworks are added regularly.</p>
-          {me && <button className="btn btn-primary" onClick={() => onNavigate("create")}>+ Create Auction</button>}
+          {me && <button className="btn btn-primary" onClick={() => onNavigate("create")}>+ Create Drop</button>}
         </div>
       ) : filtered.length === 0 ? (
         <div className="empty-state">
@@ -1464,10 +1464,10 @@ const ArtistPage = ({ artistId, onNavigate, store, updateStore, me, meCollector 
         </div>
       </div>
       <div className="dash-section-title" style={{ marginBottom:"1.25rem" }}>
-        {live.length > 0 ? `${live.length} Live Auction${live.length !== 1 ? "s" : ""}` : "Auctions"}
+        {live.length > 0 ? `${live.length} Live Drop${live.length !== 1 ? "s" : ""}` : "Drops"}
       </div>
       {sorted.length === 0 ? (
-        <div className="empty-state"><h3>No auctions yet</h3><p>This artist hasn't listed any artwork yet.</p></div>
+        <div className="empty-state"><h3>No drops yet</h3><p>This artist hasn't listed any artwork yet.</p></div>
       ) : (
         <div className="auction-grid">
           {sorted.map((auction) => {
@@ -1606,7 +1606,7 @@ const CollectorDashboardPage = ({ meCollector, onNavigate, store, updateStore })
       <div className="cdash-section">
         <div className="cdash-section-title">🏷️ My Bids</div>
         {myBidAuctions.length === 0 ? (
-          <p style={{ color:"var(--mist)", fontSize:"0.88rem" }}>You haven't placed any bids yet. <button className="btn-follow-hint" onClick={() => onNavigate("home")}>Browse live auctions <i className="fa-solid fa-arrow-right"></i></button></p>
+          <p style={{ color:"var(--mist)", fontSize:"0.88rem" }}>You haven't placed any bids yet. <button className="btn-follow-hint" onClick={() => onNavigate("home")}>Browse live drops <i className="fa-solid fa-arrow-right"></i></button></p>
         ) : (
           <div className="cdash-bid-list">
             {myBidAuctions.map(({ auction, myTop, topBid, badgeLabel, badgeCls }) => {
@@ -1666,7 +1666,7 @@ const CollectorDashboardPage = ({ meCollector, onNavigate, store, updateStore })
                 <div className="cdash-artist-avatar">{artist.avatar}</div>
                 <div className="cdash-artist-info">
                   <div className="cdash-artist-name">{artist.name}</div>
-                  <div className="cdash-artist-meta">{liveAuctions.length > 0 ? `${liveAuctions.length} live auction${liveAuctions.length !== 1 ? "s" : ""}` : "No live auctions right now"}</div>
+                  <div className="cdash-artist-meta">{liveAuctions.length > 0 ? `${liveAuctions.length} live drop${liveAuctions.length !== 1 ? "s" : ""}` : "No live drops right now"}</div>
                   {liveAuctions.length > 0 && <div className="cdash-artist-auctions">{liveAuctions.map((a) => a.title).join(" · ")}</div>}
                 </div>
                 <div style={{ fontSize:"0.8rem", color:"var(--mist)" }}><i className="fa-solid fa-arrow-right"></i></div>
@@ -1843,10 +1843,10 @@ const DashboardPage = ({ artist, onNavigate, store, updateStore }) => {
   };
 
   const confirmCfg = {
-    pause:  { title: "Pause Auction",     message: "Bidding is suspended until you resume.",                    confirmLabel: "Pause",      confirmClass: "btn-warning" },
-    resume: { title: "Resume Auction",    message: "The auction will go live again with the remaining time restored.", confirmLabel: "Resume",     confirmClass: "btn-success" },
-    end:    { title: "End Auction Early", message: "The highest bidder wins now. This cannot be undone.",       confirmLabel: "End Now",    confirmClass: "btn-danger" },
-    remove: { title: "Remove Listing",    message: "This hides the listing from the gallery permanently.",      confirmLabel: "Remove",     confirmClass: "btn-danger" },
+    pause:  { title: "Pause Drop",     message: "Bidding is suspended until you resume.",                    confirmLabel: "Pause",      confirmClass: "btn-warning" },
+    resume: { title: "Resume Drop",    message: "The drop will go live again with the remaining time restored.", confirmLabel: "Resume",     confirmClass: "btn-success" },
+    end:    { title: "End Drop Early", message: "The highest bidder wins now. This cannot be undone.",       confirmLabel: "End Now",    confirmClass: "btn-danger" },
+    remove: { title: "Remove Listing", message: "This hides the listing permanently.",                       confirmLabel: "Remove",     confirmClass: "btn-danger" },
   };
 
   return (
@@ -1856,12 +1856,12 @@ const DashboardPage = ({ artist, onNavigate, store, updateStore }) => {
           <div className="dash-greeting">{artist.avatar} <em>{artist.name}</em>'s Studio</div>
           <div className="dash-subtitle">{artist.email} · Member since {new Date(artist.createdAt).toLocaleDateString("en-US", { month: "long", year: "numeric" })}</div>
         </div>
-        <button className="btn btn-primary" onClick={() => onNavigate("create")}>+ New Auction</button>
+        <button className="btn btn-primary" onClick={() => onNavigate("create")}>+ New Drop</button>
       </div>
 
       <div className="dash-stats">
         {[
-          { v: stats.total,   label: "Total Auctions" },
+          { v: stats.total,   label: "Total Drops" },
           { v: stats.live,    label: "Live Now",       cls: "c-rouge" },
           { v: stats.ended,   label: "Completed" },
           { v: stats.revenue ? fmt$(stats.revenue) : "—", label: "Total Revenue", cls: "c-gold" },
@@ -2034,13 +2034,13 @@ const DashboardPage = ({ artist, onNavigate, store, updateStore }) => {
         );
       })()}
 
-      <div className="dash-section-title">My Auctions</div>
+      <div className="dash-section-title">My Drops</div>
 
       {my.length === 0 ? (
         <div className="empty-state">
-          <h3>No auctions yet</h3>
+          <h3>No drops yet</h3>
           <p style={{ marginBottom: "1.5rem" }}>Create your first listing to start selling your art.</p>
-          <button className="btn btn-primary" onClick={() => onNavigate("create")}>Create Auction</button>
+          <button className="btn btn-primary" onClick={() => onNavigate("create")}>Create Drop</button>
         </div>
       ) : (
         <div className="auction-mgmt-list">
@@ -2197,7 +2197,7 @@ const AddArtworkPage = ({ artist, store, updateStore, onNavigate, editItemId }) 
         <i className="fa-solid fa-arrow-left"></i> Back
       </button>
       <h1 className="page-title">{editItemId ? "Edit" : "Add"} <em>Artwork</em></h1>
-      <p className="page-subtitle">Add artwork to your gallery — set auction details later when you're ready to drop.</p>
+      <p className="page-subtitle">Add artwork to your gallery — set drop details later when you're ready to go live.</p>
       <div className="form-group">
         <label className="form-label">Artwork Photo</label>
         <ImagePicker imageUrl={f.imageUrl} emoji={f.emoji}
@@ -2271,7 +2271,7 @@ const CreatePage = ({ artist, onNavigate, store, updateStore, galleryItemId }) =
 
   return (
     <div className="page-container">
-      <h1 className="page-title">New <em>Auction</em></h1>
+      <h1 className="page-title">New <em>Drop</em></h1>
       <p className="page-subtitle">Listing as <strong>{artist.avatar} {artist.name}</strong></p>
 
       {galleryItem && (
@@ -2324,7 +2324,7 @@ const CreatePage = ({ artist, onNavigate, store, updateStore, galleryItemId }) =
             <div className="form-group"><label className="form-label">Starting Bid *</label><div className="input-prefix"><span className="input-prefix-sym">$</span><input className="form-input" type="number" min="1" placeholder="100" value={f.startingPrice} onChange={(e) => set("startingPrice", e.target.value)} /></div></div>
             <div className="form-group"><label className="form-label">Minimum Increment</label><div className="input-prefix"><span className="input-prefix-sym">$</span><input className="form-input" type="number" min="1" placeholder="25" value={f.minIncrement} onChange={(e) => set("minIncrement", e.target.value)} /></div><p className="form-hint">Each new bid must raise by at least this amount</p></div>
           </div>
-          <div className="form-group"><label className="form-label">Auction Duration</label><select className="form-select" value={f.durationDays} onChange={(e) => set("durationDays", e.target.value)}>{[["1","1 day"],["3","3 days"],["5","5 days"],["7","7 days (recommended)"],["14","14 days"],["30","30 days"]].map(([v,l]) => <option key={v} value={v}>{l}</option>)}</select></div>
+          <div className="form-group"><label className="form-label">Drop Duration</label><select className="form-select" value={f.durationDays} onChange={(e) => set("durationDays", e.target.value)}>{[["1","1 day"],["3","3 days"],["5","5 days"],["7","7 days (recommended)"],["14","14 days"],["30","30 days"]].map(([v,l]) => <option key={v} value={v}>{l}</option>)}</select></div>
           <div className="form-actions">
             <button className="btn btn-ghost" onClick={() => galleryItemId ? onNavigate("dashboard") : setStep(1)}><i className="fa-solid fa-arrow-left"></i> Back</button>
             <button className="btn btn-primary" onClick={() => setStep(3)} disabled={!f.startingPrice}>Continue <i className="fa-solid fa-arrow-right"></i></button>
@@ -2376,8 +2376,8 @@ const CreatePage = ({ artist, onNavigate, store, updateStore, galleryItemId }) =
               ))}
             </div>
           </div>
-          <div className="alert alert-info"><i className="fa-solid fa-circle-info"></i> Once published, your auction goes live immediately. You'll get a shareable link to send to collectors.</div>
-          <div className="form-actions"><button className="btn btn-ghost" onClick={() => setStep(3)}><i className="fa-solid fa-arrow-left"></i> Back</button><button className="btn btn-primary btn-lg" onClick={publish} disabled={busy}>{busy ? "Publishing…" : <><i className="fa-solid fa-rocket"></i> Publish Auction</>}</button></div>
+          <div className="alert alert-info"><i className="fa-solid fa-circle-info"></i> Once published, your drop goes live immediately. You'll get a shareable link to send to collectors.</div>
+          <div className="form-actions"><button className="btn btn-ghost" onClick={() => setStep(3)}><i className="fa-solid fa-arrow-left"></i> Back</button><button className="btn btn-primary btn-lg" onClick={publish} disabled={busy}>{busy ? "Publishing…" : <><i className="fa-solid fa-rocket"></i> Publish Drop</>}</button></div>
         </div>
       )}
     </div>
@@ -2465,7 +2465,7 @@ const AuctionPage = ({ auctionId, onNavigate, store, updateStore, loadAuctionDet
     }
   }, [status, topBid, isOwner]);
 
-  if (!auction) return <div className="page-container" style={{ textAlign:"center", paddingTop:"6rem" }}><div style={{ fontSize:"3rem", marginBottom:"1rem" }}>🔍</div><h2 style={{ fontFamily:"var(--font-display)", marginBottom:"0.75rem" }}>Auction Not Found</h2><button className="btn btn-primary" onClick={() => onNavigate("home")}>Back to Home</button></div>;
+  if (!auction) return <div className="page-container" style={{ textAlign:"center", paddingTop:"6rem" }}><div style={{ fontSize:"3rem", marginBottom:"1rem" }}>🔍</div><h2 style={{ fontFamily:"var(--font-display)", marginBottom:"0.75rem" }}>Drop Not Found</h2><button className="btn btn-primary" onClick={() => onNavigate("home")}>Back to Home</button></div>;
 
   const isLive = status === "live";
   const currentTop = topBid ? topBid.amount : auction.startingPrice;
@@ -2476,7 +2476,7 @@ const AuctionPage = ({ auctionId, onNavigate, store, updateStore, loadAuctionDet
   const copyLink = () => { navigator.clipboard.writeText(shareUrl).then(() => { setCopied(true); setTimeout(() => setCopied(false), 2500); }); };
   const shareVia = (m) => {
     const text = `🖼️ Bid on "${auction.title}" by ${auction.artistName} — ${shareUrl}`;
-    if (m === "email") window.open(`mailto:?subject=Art Auction: ${auction.title}&body=${encodeURIComponent(text)}`);
+    if (m === "email") window.open(`mailto:?subject=Art Drop: ${auction.title}&body=${encodeURIComponent(text)}`);
     if (m === "sms") window.open(`sms:?body=${encodeURIComponent(text)}`);
     if (m === "twitter") window.open(`https://twitter.com/intent/tweet?text=${encodeURIComponent(text)}`);
     if (m === "facebook") window.open(`https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(shareUrl)}`);
@@ -2534,10 +2534,10 @@ const AuctionPage = ({ auctionId, onNavigate, store, updateStore, loadAuctionDet
   };
 
   const mgmtCfg = {
-    pause:  { title:"Pause Auction",     message:"Bidding is suspended until you resume.",             confirmLabel:"Pause",    confirmClass:"btn-warning" },
-    resume: { title:"Resume Auction",    message:"Auction goes live again with the remaining time restored.",       confirmLabel:"Resume",   confirmClass:"btn-success" },
-    end:    { title:"End Auction Early", message:"Highest bidder wins now. Cannot be undone.",         confirmLabel:"End Now",  confirmClass:"btn-danger" },
-    remove: { title:"Remove Auction",    message:"Listing will be hidden from gallery permanently.",   confirmLabel:"Remove",   confirmClass:"btn-danger" },
+    pause:  { title:"Pause Drop",     message:"Bidding is suspended until you resume.",               confirmLabel:"Pause",    confirmClass:"btn-warning" },
+    resume: { title:"Resume Drop",    message:"Drop goes live again with the remaining time restored.", confirmLabel:"Resume",   confirmClass:"btn-success" },
+    end:    { title:"End Drop Early", message:"Highest bidder wins now. Cannot be undone.",           confirmLabel:"End Now",  confirmClass:"btn-danger" },
+    remove: { title:"Remove Drop",    message:"Listing will be hidden permanently.",                  confirmLabel:"Remove",   confirmClass:"btn-danger" },
   };
 
   // ── Comment actions ───────────────────────────────────────────────────────
@@ -2599,7 +2599,7 @@ const AuctionPage = ({ auctionId, onNavigate, store, updateStore, loadAuctionDet
       )}
 
       {isWinner && <div className="alert alert-success" style={{ marginBottom:"1.5rem" }}><i className="fa-solid fa-trophy"></i> You won! <button className="btn btn-primary btn-sm" style={{ marginLeft:"1rem" }} onClick={() => onNavigate("payment", auctionId)}>Proceed to Payment <i className="fa-solid fa-arrow-right"></i></button></div>}
-      {!isLive && topBid && !isWinner && <div className="alert" style={{ background:"var(--parchment)", border:"1px solid var(--border)", color:"var(--slate)", marginBottom:"1.5rem" }}>Auction ended. Winner: <strong>{shortName(topBid.bidder)}</strong> · {fmt$(topBid.amount)}</div>}
+      {!isLive && topBid && !isWinner && <div className="alert" style={{ background:"var(--parchment)", border:"1px solid var(--border)", color:"var(--slate)", marginBottom:"1.5rem" }}>Drop ended. Winner: <strong>{shortName(topBid.bidder)}</strong> · {fmt$(topBid.amount)}</div>}
       {bidMsg && <div className={`alert alert-${bidMsg.type}`} style={{ marginBottom:"1rem" }}>{bidMsg.text}</div>}
 
       <div className="auction-layout">
@@ -2632,7 +2632,7 @@ const AuctionPage = ({ auctionId, onNavigate, store, updateStore, loadAuctionDet
             </span>
           </div>
 
-          {status === "paused" && <div className="paused-notice"><i className="fa-solid fa-pause"></i> This auction is currently paused. Bidding is suspended.</div>}
+          {status === "paused" && <div className="paused-notice"><i className="fa-solid fa-pause"></i> This drop is currently paused. Bidding is suspended.</div>}
 
           <div className="countdown-block">
             <div className="countdown-label"><i className="fa-regular fa-clock"></i> Time Remaining</div>
@@ -2647,7 +2647,7 @@ const AuctionPage = ({ auctionId, onNavigate, store, updateStore, loadAuctionDet
             {isLive && !isOwner && (
               <><div className="bid-input-row"><div className="input-prefix" style={{ flex:1 }}><span className="input-prefix-sym">$</span><input className="form-input" style={{ borderRadius:"0 var(--radius) var(--radius) 0" }} type="number" placeholder={minBid} value={bidAmt} onChange={(e) => setBidAmt(e.target.value)} /></div><button className="btn btn-primary" onClick={() => setShowModal(true)} disabled={!bidAmt || parseFloat(bidAmt) < minBid}>Place Bid</button></div><div className="bid-min-hint">Minimum bid: {fmt$(minBid)}</div></>
             )}
-            {isOwner && isLive && <div className="alert alert-info" style={{ marginTop:"0.5rem", marginBottom:0 }}>You can't bid on your own auction.</div>}
+            {isOwner && isLive && <div className="alert alert-info" style={{ marginTop:"0.5rem", marginBottom:0 }}>You can't bid on your own drop.</div>}
             {!currentUserId && isLive && <div className="alert alert-info" style={{ marginTop:"0.5rem", marginBottom:0, fontSize:"0.84rem" }}><button className="btn-follow-hint" onClick={() => onNavigate("login")}>Sign in</button> to place a bid and track your collection.</div>}
             {sortedBids.length > 0 && (
               <div className="bid-history">
@@ -2734,7 +2734,7 @@ const AuctionPage = ({ auctionId, onNavigate, store, updateStore, loadAuctionDet
           </div>
 
           <div className="share-block">
-            <div className="share-title"><i className="fa-solid fa-share-nodes"></i> Share This Auction</div>
+            <div className="share-title"><i className="fa-solid fa-share-nodes"></i> Share This Drop</div>
             <div className="share-url"><div className="share-url-text">{shareUrl}</div><button className="btn btn-sm btn-dark" onClick={copyLink}>{copied ? <><i className="fa-solid fa-check"></i> Copied!</> : "Copy"}</button></div>
             {copied && <div className="copied-toast"><i className="fa-solid fa-check"></i> Link copied to clipboard</div>}
             <div className="share-buttons">
@@ -2912,7 +2912,7 @@ const PaymentPage = ({ auctionId, onNavigate, store, updateStore, loadAuctionDet
 const EditPage = ({ auctionId, artist, onNavigate, store, updateStore }) => {
   const auction = store.auctions.find((a) => a.id === auctionId);
   if (!auction || auction.artistId !== artist?.id) {
-    return <div className="page-container" style={{ textAlign: "center", paddingTop: "6rem" }}><h2>Auction not found.</h2><button className="btn btn-primary" style={{ marginTop: "1.5rem" }} onClick={() => onNavigate("dashboard")}>Back to Dashboard</button></div>;
+    return <div className="page-container" style={{ textAlign: "center", paddingTop: "6rem" }}><h2>Drop not found.</h2><button className="btn btn-primary" style={{ marginTop: "1.5rem" }} onClick={() => onNavigate("dashboard")}>Back to Dashboard</button></div>;
   }
 
   const [f, setF] = useState({
@@ -2950,7 +2950,7 @@ const EditPage = ({ auctionId, artist, onNavigate, store, updateStore }) => {
 
   return (
     <div className="page-container">
-      <h1 className="page-title">Edit <em>Auction</em></h1>
+      <h1 className="page-title">Edit <em>Drop</em></h1>
       <p className="page-subtitle">Changes apply immediately. Bids and timer are unaffected.</p>
 
       {saved && <div className="alert alert-success" style={{ marginBottom: "1.5rem" }}><i className="fa-solid fa-check"></i> Saved! Redirecting…</div>}
@@ -3173,7 +3173,7 @@ export default function App() {
       <style>{STYLES}</style>
 
       <nav className="nav">
-        <div className="nav-logo" onClick={() => go("home")}>ArtDrop<span>Art Auction House</span></div>
+        <div className="nav-logo" onClick={() => go("home")}>ArtDrop<span>Art Drop House</span></div>
         <div className="nav-actions">
           {liveCount > 0 && <span className="live-pip"><span className="pulse" style={{ background:"var(--rouge)" }} />{liveCount} live</span>}
           <button className="nav-link" onClick={() => go("home")}>{isLoggedIn ? "Drops" : "Browse"}</button>
@@ -3188,7 +3188,7 @@ export default function App() {
                   <div className="artist-dropdown">
                     <div className="artist-dropdown-header"><div className="artist-dropdown-name">{me.name}</div><div className="artist-dropdown-email">{me.email}</div></div>
                     <button className="dropdown-item" onClick={() => go("dashboard")}><i className="fa-solid fa-chart-simple"></i> My Dashboard</button>
-                    <button className="dropdown-item" onClick={() => go("create")}><i className="fa-solid fa-plus"></i> New Auction</button>
+                    <button className="dropdown-item" onClick={() => go("create")}><i className="fa-solid fa-plus"></i> New Drop</button>
                     <button className="dropdown-item" onClick={() => go("invites")}><i className="fa-solid fa-envelope"></i> Invites</button>
                     <div className="dropdown-divider" />
                     <button className="dropdown-item danger" onClick={onLogout}>Sign Out</button>
@@ -3234,7 +3234,7 @@ export default function App() {
       {meCollector && outbidCount > 0 && !bannerDismissed && (
         <div className="outbid-banner">
           <i className="fa-solid fa-triangle-exclamation"></i>
-          <span>You've been outbid on <strong>{outbidCount} live auction{outbidCount !== 1 ? "s" : ""}</strong>.</span>
+          <span>You've been outbid on <strong>{outbidCount} live drop{outbidCount !== 1 ? "s" : ""}</strong>.</span>
           <button className="outbid-banner-link" onClick={() => go("collector-dashboard")}>View My Collection <i className="fa-solid fa-arrow-right"></i></button>
           <button className="outbid-banner-dismiss" onClick={() => setBannerDismissed(true)}><i className="fa-solid fa-xmark"></i></button>
         </div>
