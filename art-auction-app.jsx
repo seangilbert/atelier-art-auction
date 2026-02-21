@@ -950,6 +950,7 @@ const AuthPage = ({ store, updateStore, onLogin, onCollectorLogin, initialMode, 
       options: { data: { name: f.name.trim(), avatar: f.avatar, bio: f.bio, type: "artist" } }
     });
     if (authErr) { setError(authErr.message); setBusy(false); return; }
+    if (!data.user) { setError("An account with this email already exists. Try signing in instead."); setBusy(false); return; }
     // Redeem the invite code (increment uses_count)
     await supabase.rpc("redeem_invite_code", { p_code: code });
     // Profile row is created automatically by the handle_new_user trigger
@@ -972,6 +973,7 @@ const AuthPage = ({ store, updateStore, onLogin, onCollectorLogin, initialMode, 
       options: { data: { name: f.name.trim(), avatar: f.avatar, bio: f.bio, type: "collector" } }
     });
     if (authErr) { setError(authErr.message); setBusy(false); return; }
+    if (!data.user) { setError("An account with this email already exists. Try signing in instead."); setBusy(false); return; }
     // Redeem the invite code (increment uses_count)
     await supabase.rpc("redeem_invite_code", { p_code: code });
     // Profile row is created automatically by the handle_new_user trigger
