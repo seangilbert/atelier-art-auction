@@ -536,6 +536,26 @@ const STYLES = `
   .outbid-banner-link { font-weight:700; color:var(--amber); cursor:pointer; text-decoration:underline; background:none; border:none; font-family:var(--font-body); font-size:inherit; padding:0; }
   .outbid-banner-dismiss { margin-left:auto; font-size:0.78rem; color:var(--mist); cursor:pointer; background:none; border:none; font-family:var(--font-body); padding:0.2rem 0.4rem; border-radius:6px; }
   .outbid-banner-dismiss:hover { color:var(--ink); background:rgba(237,137,54,0.08); }
+
+  /* ── Comments ─────────────────────────────────────────────────────────────── */
+  .comments-block { background:white; border:1.5px solid var(--border); border-radius:var(--radius-lg); padding:1.4rem 1.6rem; margin-bottom:1.25rem; box-shadow:var(--shadow-sm); }
+  .comment-input-row { display:flex; gap:0.6rem; align-items:center; margin-bottom:0.75rem; }
+  .comment-input { flex:1; padding:0.7rem 1rem; background:white; border:1.5px solid var(--border); border-radius:var(--radius); font-family:var(--font-body); font-size:0.88rem; color:var(--ink); transition:border-color 0.2s,box-shadow 0.2s; }
+  .comment-input:focus { outline:none; border-color:var(--gold); box-shadow:0 0 0 4px rgba(232,82,106,0.1); }
+  .comment-list { list-style:none; margin-top:0.75rem; }
+  .comment-item { padding:0.9rem 0; border-bottom:1px solid var(--border); }
+  .comment-item:last-child { border-bottom:none; padding-bottom:0; }
+  .comment-avatar { width:30px; height:30px; border-radius:50%; background:var(--parchment); border:1px solid var(--border); display:inline-flex; align-items:center; justify-content:center; font-size:1rem; flex-shrink:0; }
+  .comment-author-row { display:flex; align-items:center; gap:0.6rem; margin-bottom:0.35rem; }
+  .comment-body { font-size:0.88rem; color:var(--ink); line-height:1.55; padding-left:calc(30px + 0.6rem); word-break:break-word; }
+  .comment-reactions-row { display:flex; gap:0.35rem; margin-top:0.5rem; flex-wrap:wrap; padding-left:calc(30px + 0.6rem); }
+  .reaction-btn { display:inline-flex; align-items:center; font-size:0.82rem; font-family:var(--font-body); padding:0.22rem 0.6rem; border-radius:100px; border:1.5px solid var(--border); background:white; color:var(--slate); cursor:pointer; transition:all 0.15s; line-height:1.4; font-weight:500; }
+  .reaction-btn:hover { border-color:var(--gold); background:var(--gold-light); }
+  .reaction-btn-active { border-color:var(--gold); background:var(--gold-light); color:var(--gold-dark); font-weight:600; }
+  .comment-delete-btn { background:none; border:none; cursor:pointer; font-size:0.85rem; color:var(--mist); padding:0.25rem 0.4rem; border-radius:6px; transition:color 0.15s,background 0.15s; flex-shrink:0; min-width:30px; min-height:30px; display:flex; align-items:center; justify-content:center; }
+  .comment-delete-btn:hover { color:var(--rouge); background:var(--gold-light); }
+  .comment-delete-btn:disabled { opacity:0.5; cursor:not-allowed; }
+  @media (max-width:768px) { .comments-block { padding:1rem 1.1rem; } .comment-body,.comment-reactions-row { padding-left:0; margin-top:0.35rem; } }
 `;
 
 
@@ -609,7 +629,8 @@ const getOohCount = (store, id) => (store.oohs?.[id]) || 0;
 // all components (AuctionPage, DashboardPage, etc.) need minimal changes.
 const useSupabaseStore = () => {
   const [store, setStoreState] = useState({
-    artists: {}, collectors: {}, auctions: [], bids: {}, payments: {}, oohs: {}, myInvite: null
+    artists: {}, collectors: {}, auctions: [], bids: {}, payments: {}, oohs: {}, myInvite: null,
+    comments: {}, commentReactions: {}, myReactions: {}
   });
 
   const loadAll = useCallback(async (userId = null) => {
@@ -620,6 +641,8 @@ const useSupabaseStore = () => {
         supabase.from("oohs").select("*"),
         supabase.from("payments").select("*"),
         supabase.from("profiles").select("*"),
+        supabase.from("comments").select("*").order("created_at", { ascending: true }),
+        supabase.from("comment_reactions").select("*"),
       ];
       const [
         { data: auctions },
@@ -627,6 +650,8 @@ const useSupabaseStore = () => {
         { data: oohs },
         { data: payments },
         { data: profiles },
+        { data: commentsRaw },
+        { data: reactionsRaw },
       ] = await Promise.all(queries);
 
       // Build bids map { auctionId: [bid, ...] }
@@ -660,6 +685,33 @@ const useSupabaseStore = () => {
         else collectorsMap[p.id] = user;
       });
 
+      // Build comments map { auctionId: Comment[] }
+      const commentsMap = {};
+      (commentsRaw || []).forEach(c => {
+        if (!commentsMap[c.auction_id]) commentsMap[c.auction_id] = [];
+        commentsMap[c.auction_id].push({
+          id: c.id, auctionId: c.auction_id, authorId: c.author_id,
+          authorName: c.author_name, authorAvatar: c.author_avatar,
+          body: c.body, createdAt: c.created_at,
+        });
+      });
+
+      // Build reaction counts { commentId: { emoji: count } }
+      const commentReactionsMap = {};
+      (reactionsRaw || []).forEach(r => {
+        if (!commentReactionsMap[r.comment_id]) commentReactionsMap[r.comment_id] = {};
+        commentReactionsMap[r.comment_id][r.emoji] = (commentReactionsMap[r.comment_id][r.emoji] || 0) + 1;
+      });
+
+      // Build myReactions { commentId: Set<emoji> } — only for logged-in user
+      const myReactionsMap = {};
+      if (userId) {
+        (reactionsRaw || []).filter(r => r.user_id === userId).forEach(r => {
+          if (!myReactionsMap[r.comment_id]) myReactionsMap[r.comment_id] = new Set();
+          myReactionsMap[r.comment_id].add(r.emoji);
+        });
+      }
+
       // Normalize auction rows to legacy camelCase shape
       const auctionList = (auctions || []).filter(a => !a.removed).map(a => ({
         id: a.id, published: true, paused: a.paused, removed: a.removed,
@@ -692,7 +744,7 @@ const useSupabaseStore = () => {
         }
       }
 
-      setStoreState({ artists: artistsMap, collectors: collectorsMap, auctions: auctionList, bids: bidsMap, oohs: oohsMap, payments: paymentsMap, myInvite });
+      setStoreState({ artists: artistsMap, collectors: collectorsMap, auctions: auctionList, bids: bidsMap, oohs: oohsMap, payments: paymentsMap, myInvite, comments: commentsMap, commentReactions: commentReactionsMap, myReactions: myReactionsMap });
     } catch (err) {
       console.error("loadAll error:", err);
     }
@@ -1918,12 +1970,30 @@ const AuctionPage = ({ auctionId, onNavigate, store, updateStore, artist, meColl
   const [confirm, setConfirm] = useState(null);
   const endedEmailSent = useRef(false);
 
+  // ── Comments state ────────────────────────────────────────────────────────
+  const [commentText, setCommentText] = useState("");
+  const [commentMsg, setCommentMsg]   = useState(null);
+  const [deletingId, setDeletingId]   = useState(null);
+  const [localMyReactions, setLocalMyReactions] = useState({});
+  const REACTION_EMOJIS = ["❤️", "👏", "🔥"];
+  const currentUserId     = artist?.id || meCollector?.id || null;
+  const currentUserName   = artist?.name || meCollector?.name || "";
+  const currentUserAvatar = artist?.avatar || meCollector?.avatar || "";
+  const comments = store.comments?.[auctionId] || [];
+  const getMyReactionsForComment = (commentId) => {
+    const serverSet = store.myReactions?.[commentId] || new Set();
+    const localSet  = localMyReactions[commentId]    || new Set();
+    return new Set([...serverSet, ...localSet]);
+  };
+
   // Realtime: refresh store when bids or oohs change on this auction
   useEffect(() => {
     const channel = supabase
       .channel(`auction-${auctionId}`)
-      .on("postgres_changes", { event: "INSERT", schema: "public", table: "bids", filter: `auction_id=eq.${auctionId}` }, () => updateStore())
-      .on("postgres_changes", { event: "*", schema: "public", table: "oohs", filter: `auction_id=eq.${auctionId}` }, () => updateStore())
+      .on("postgres_changes", { event: "INSERT", schema: "public", table: "bids",     filter: `auction_id=eq.${auctionId}` }, () => updateStore())
+      .on("postgres_changes", { event: "*",      schema: "public", table: "oohs",     filter: `auction_id=eq.${auctionId}` }, () => updateStore())
+      .on("postgres_changes", { event: "INSERT", schema: "public", table: "comments", filter: `auction_id=eq.${auctionId}` }, () => updateStore())
+      .on("postgres_changes", { event: "DELETE", schema: "public", table: "comments", filter: `auction_id=eq.${auctionId}` }, () => updateStore())
       .subscribe();
     return () => { supabase.removeChannel(channel); };
   }, [auctionId, updateStore]);
@@ -2029,6 +2099,46 @@ const AuctionPage = ({ auctionId, onNavigate, store, updateStore, artist, meColl
     remove: { title:"Remove Auction",    message:"Listing will be hidden from gallery permanently.",   confirmLabel:"Remove",   confirmClass:"btn-danger" },
   };
 
+  // ── Comment actions ───────────────────────────────────────────────────────
+  const postComment = async () => {
+    const body = commentText.trim();
+    if (!body || !currentUserId) return;
+    const { error } = await supabase.from("comments").insert({
+      auction_id: auctionId, author_id: currentUserId,
+      author_name: currentUserName, author_avatar: currentUserAvatar, body,
+    });
+    if (error) { setCommentMsg({ type:"error", text:"Failed to post. Try again." }); return; }
+    setCommentText("");
+    setCommentMsg({ type:"success", text:"Comment posted!" });
+    setTimeout(() => setCommentMsg(null), 3000);
+    updateStore();
+  };
+
+  const deleteComment = async (commentId) => {
+    setDeletingId(commentId);
+    const { error } = await supabase.from("comments").delete().eq("id", commentId);
+    if (!error) updateStore();
+    setDeletingId(null);
+  };
+
+  const toggleReaction = async (commentId, emoji) => {
+    if (!currentUserId) return;
+    const already = getMyReactionsForComment(commentId).has(emoji);
+    setLocalMyReactions(prev => {
+      const s = new Set(prev[commentId] || []);
+      if (already) s.delete(emoji); else s.add(emoji);
+      return { ...prev, [commentId]: s };
+    });
+    if (already) {
+      await supabase.from("comment_reactions").delete()
+        .eq("comment_id", commentId).eq("user_id", currentUserId).eq("emoji", emoji);
+    } else {
+      await supabase.from("comment_reactions")
+        .upsert({ comment_id: commentId, user_id: currentUserId, emoji }, { onConflict: "comment_id,user_id,emoji" });
+    }
+    updateStore();
+  };
+
   return (
     <div className="auction-detail">
       <button className="btn btn-ghost btn-sm" style={{ marginBottom:"1.5rem" }} onClick={() => onNavigate("home")}>← Back</button>
@@ -2110,6 +2220,74 @@ const AuctionPage = ({ auctionId, onNavigate, store, updateStore, artist, meColl
                   ))}
                 </ul>
               </div>
+            )}
+          </div>
+
+          {/* ── Comments ──────────────────────────────────────────────── */}
+          <div className="comments-block">
+            <div style={{ fontWeight:700, fontSize:"0.95rem", marginBottom:"1rem", letterSpacing:"-0.01em" }}>
+              💬 Comments {comments.length > 0 && <span style={{ color:"var(--mist)", fontWeight:400, fontSize:"0.82rem" }}>({comments.length})</span>}
+            </div>
+            {currentUserId ? (
+              <>
+                {commentMsg && <div className={`alert alert-${commentMsg.type}`} style={{ marginBottom:"0.75rem" }}>{commentMsg.text}</div>}
+                <div className="comment-input-row">
+                  <span style={{ fontSize:"1.1rem", flexShrink:0 }}>{currentUserAvatar}</span>
+                  <input className="comment-input" type="text" placeholder="Leave a comment…"
+                    value={commentText} onChange={(e) => setCommentText(e.target.value)}
+                    onKeyDown={(e) => { if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); postComment(); } }}
+                    maxLength={1000} />
+                  <button className="btn btn-primary btn-sm" onClick={postComment}
+                    disabled={!commentText.trim()} style={{ flexShrink:0 }}>Post</button>
+                </div>
+              </>
+            ) : (
+              <div className="alert alert-info" style={{ fontSize:"0.84rem" }}>
+                <button className="btn-follow-hint" onClick={() => onNavigate("login")}>Sign in</button> to leave a comment.
+              </div>
+            )}
+            {comments.length === 0 && (
+              <p style={{ fontSize:"0.84rem", color:"var(--mist)", marginTop:"0.5rem" }}>No comments yet. Be the first!</p>
+            )}
+            {comments.length > 0 && (
+              <ul className="comment-list">
+                {comments.map((c) => {
+                  const mySet = getMyReactionsForComment(c.id);
+                  const reactions = store.commentReactions?.[c.id] || {};
+                  return (
+                    <li key={c.id} className="comment-item">
+                      <div className="comment-author-row">
+                        <span className="comment-avatar">{c.authorAvatar}</span>
+                        <div style={{ flex:1, minWidth:0 }}>
+                          <span style={{ fontWeight:600, fontSize:"0.85rem", color:"var(--ink)" }}>{c.authorName}</span>
+                          <span style={{ fontSize:"0.72rem", color:"var(--mist)", marginLeft:"0.5rem" }}>{timeAgo(c.createdAt)}</span>
+                        </div>
+                        {isOwner && (
+                          <button className="comment-delete-btn" onClick={() => deleteComment(c.id)}
+                            disabled={deletingId === c.id} title="Delete comment">
+                            {deletingId === c.id ? "…" : "🗑"}
+                          </button>
+                        )}
+                      </div>
+                      <div className="comment-body">{c.body}</div>
+                      <div className="comment-reactions-row">
+                        {REACTION_EMOJIS.map((emoji) => {
+                          const count = reactions[emoji] || 0;
+                          const active = mySet.has(emoji);
+                          return (
+                            <button key={emoji}
+                              className={`reaction-btn${active ? " reaction-btn-active" : ""}`}
+                              onClick={() => currentUserId ? toggleReaction(c.id, emoji) : onNavigate("login")}
+                              title={active ? `Remove ${emoji}` : `React with ${emoji}`}>
+                              {emoji}{count > 0 && <span style={{ marginLeft:"0.25rem" }}>{count}</span>}
+                            </button>
+                          );
+                        })}
+                      </div>
+                    </li>
+                  );
+                })}
+              </ul>
             )}
           </div>
 
