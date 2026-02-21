@@ -39,8 +39,10 @@ const STYLES = `
     --grad-cool: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
   }
 
-  html { scroll-behavior: smooth; }
-  body { font-family: var(--font-body); background: var(--cream); color: var(--ink); font-size: 16px; line-height: 1.6; min-height: 100vh; }
+  html { scroll-behavior: auto; overflow-x: hidden; }
+  body { font-family: var(--font-body); background: var(--cream); color: var(--ink); font-size: 16px; line-height: 1.6; min-height: 100vh; overflow-x: hidden; }
+  #root { min-height: 100vh; }
+  .app-loading-screen { min-height: 100vh; background: var(--cream); }
 
   /* Nav */
   .nav { position: sticky; top: 0; z-index: 200; background: rgba(247,249,252,0.85); backdrop-filter: blur(16px); -webkit-backdrop-filter: blur(16px); border-bottom: 1px solid var(--border); padding: 0 2rem; display: flex; align-items: center; justify-content: space-between; height: 68px; }
@@ -3441,7 +3443,7 @@ function MobileBottomNav({ page, isArtist, isCollector, onNavigate }) {
   const handleTab = (tab) => {
     onNavigate(tab.id);
     if (tab.searchFocus) {
-      window.scrollTo({ top: 0, behavior: "smooth" });
+      window.scrollTo({ top: 0, behavior: "instant" });
       setTimeout(() => {
         const el = document.querySelector(".feed-search-input");
         if (el) el.focus();
@@ -3472,6 +3474,7 @@ function MobileBottomNav({ page, isArtist, isCollector, onNavigate }) {
 // ─────────────────────────────────────────────────────────────────────────────
 export default function App() {
   const [store, updateStore, loadAuctionDetail] = useSupabaseStore();
+  const [authReady, setAuthReady] = useState(false);
   const [artist, setArtist] = useState(null);
   const [collector, setCollector] = useState(null);
   const [view, setView] = useState({ page: "home", id: null });
@@ -3485,13 +3488,16 @@ export default function App() {
   // Restore session from Supabase auth on mount
   useEffect(() => {
     supabase.auth.getSession().then(async ({ data: { session } }) => {
-      if (!session) return;
-      const { data: profile } = await supabase.from("profiles").select("*").eq("id", session.user.id).single();
-      if (!profile) return;
-      const user = { id: session.user.id, name: profile.name, email: session.user.email, avatar: profile.avatar, bio: profile.bio, createdAt: profile.created_at };
-      if (profile.type === "artist") setArtist(user);
-      else setCollector(user);
-      updateStore(session.user.id);
+      if (session) {
+        const { data: profile } = await supabase.from("profiles").select("*").eq("id", session.user.id).single();
+        if (profile) {
+          const user = { id: session.user.id, name: profile.name, email: session.user.email, avatar: profile.avatar, bio: profile.bio, createdAt: profile.created_at };
+          if (profile.type === "artist") setArtist(user);
+          else setCollector(user);
+          updateStore(session.user.id);
+        }
+      }
+      setAuthReady(true); // always unblock render, logged-in or not
     });
   }, []);
 
@@ -3525,7 +3531,7 @@ export default function App() {
     setView({ page, id });
     setDropOpen(false);
     setCollectorDropOpen(false);
-    window.scrollTo({ top: 0, behavior: "smooth" });
+    window.scrollTo({ top: 0, behavior: "instant" });
     if (page === "auction" && id) window.history.pushState(null, "", `${window.location.pathname}#auction-${id}`);
     else window.history.pushState(null, "", window.location.pathname);
   };
@@ -3571,6 +3577,13 @@ export default function App() {
     return topBid && topBid.email !== meCollector.email;
   }) : [];
   const outbidCount = outbidAuctions.length;
+
+  if (!authReady) return (
+    <>
+      <style>{STYLES}</style>
+      <div className="app-loading-screen" />
+    </>
+  );
 
   return (
     <>
