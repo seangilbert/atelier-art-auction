@@ -2211,6 +2211,7 @@ const AuctionPage = ({ auctionId, onNavigate, store, updateStore, artist, meColl
               <><div className="bid-input-row"><div className="input-prefix" style={{ flex:1 }}><span className="input-prefix-sym">$</span><input className="form-input" style={{ borderRadius:"0 var(--radius) var(--radius) 0" }} type="number" placeholder={minBid} value={bidAmt} onChange={(e) => setBidAmt(e.target.value)} /></div><button className="btn btn-primary" onClick={() => setShowModal(true)} disabled={!bidAmt || parseFloat(bidAmt) < minBid}>Place Bid</button></div><div className="bid-min-hint">Minimum bid: {fmt$(minBid)}</div></>
             )}
             {isOwner && isLive && <div className="alert alert-info" style={{ marginTop:"0.5rem", marginBottom:0 }}>You can't bid on your own auction.</div>}
+            {!currentUserId && isLive && <div className="alert alert-info" style={{ marginTop:"0.5rem", marginBottom:0, fontSize:"0.84rem" }}><button className="btn-follow-hint" onClick={() => onNavigate("login")}>Sign in</button> to place a bid and track your collection.</div>}
             {sortedBids.length > 0 && (
               <div className="bid-history">
                 <div className="bid-history-title">Bid History</div>
@@ -2718,7 +2719,7 @@ export default function App() {
       )}
       {view.page === "dashboard"           && me          && <DashboardPage artist={me} onNavigate={go} store={store} updateStore={updateStore} />}
       {view.page === "create"              && me          && <CreatePage    artist={me} onNavigate={go} store={store} updateStore={updateStore} />}
-      {view.page === "auction"             && (isLoggedIn ? <AuctionPage auctionId={view.id} onNavigate={go} store={store} updateStore={updateStore} artist={me} meCollector={meCollector} bidderName={bidderName} setBidderName={setBidderName} bidderEmail={bidderEmail} setBidderEmail={setBidderEmail} /> : <AuthPage store={store} updateStore={updateStore} onLogin={onLogin} onCollectorLogin={onCollectorLogin} initialMode="login" initialInviteCode={pendingInviteCode} />)}
+      {view.page === "auction"             && <AuctionPage auctionId={view.id} onNavigate={go} store={store} updateStore={updateStore} artist={me} meCollector={meCollector} bidderName={bidderName} setBidderName={setBidderName} bidderEmail={bidderEmail} setBidderEmail={setBidderEmail} />}
       {view.page === "payment"             && (isLoggedIn ? <PaymentPage auctionId={view.id} onNavigate={go} store={store} updateStore={updateStore} bidderName={bidderName} bidderEmail={bidderEmail} /> : <AuthPage store={store} updateStore={updateStore} onLogin={onLogin} onCollectorLogin={onCollectorLogin} initialMode="login" initialInviteCode={pendingInviteCode} />)}
       {view.page === "edit"                && me          && <EditPage auctionId={view.id} artist={me} onNavigate={go} store={store} updateStore={updateStore} />}
       {view.page === "artist"              && (isLoggedIn ? <ArtistPage artistId={view.id} onNavigate={go} store={store} updateStore={updateStore} me={me} meCollector={meCollector} /> : <AuthPage store={store} updateStore={updateStore} onLogin={onLogin} onCollectorLogin={onCollectorLogin} initialMode="login" initialInviteCode={pendingInviteCode} />)}
