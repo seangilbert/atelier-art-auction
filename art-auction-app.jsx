@@ -2765,14 +2765,14 @@ function MobileBottomNav({ page, isArtist, isCollector, onNavigate }) {
   if (!isArtist && !isCollector) return null;
 
   const artistTabs = [
-    { id: "home",      icon: <i className="fa-solid fa-house"></i>,            label: "Drops"     },
+    { id: "home",      icon: <i className="fa-solid fa-paintbrush"></i>,       label: "Drops"     },
     { id: "create",    icon: <i className="fa-solid fa-plus"></i>,             label: "New"       },
     { id: "dashboard", icon: <i className="fa-solid fa-chart-simple"></i>,     label: "Dashboard" },
     { id: "home",      icon: <i className="fa-solid fa-magnifying-glass"></i>, label: "Search", searchFocus: true },
   ];
 
   const collectorTabs = [
-    { id: "home",                icon: <i className="fa-solid fa-house"></i>,           label: "Drops" },
+    { id: "home",                icon: <i className="fa-solid fa-paintbrush"></i>,      label: "Drops" },
     { id: "collector-dashboard", icon: <i className="fa-solid fa-folder-open"></i>,     label: "Bids" },
     { id: "home",                icon: <i className="fa-solid fa-magnifying-glass"></i>, label: "Search", searchFocus: true },
   ];
