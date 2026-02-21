@@ -1695,6 +1695,66 @@ const DashboardPage = ({ artist, onNavigate, store, updateStore }) => {
       )}
 
       {confirm && <ConfirmModal {...confirmCfg[confirm.type]} onConfirm={() => act(confirm.type, confirm.id)} onCancel={() => setConfirm(null)} />}
+
+      {/* My Bids — auctions the artist has bid on as a bidder */}
+      {(() => {
+        const myBidAuctions = store.auctions
+          .filter((a) => {
+            if (a.removed) return false;
+            const bids = store.bids[a.id] || [];
+            return bids.some((b) => b.email === artist.email);
+          })
+          .map((a) => {
+            const bids = store.bids[a.id] || [];
+            const myBids = bids.filter((b) => b.email === artist.email);
+            const myTop = Math.max(...myBids.map((b) => b.amount));
+            const allSorted = [...bids].sort((x, y) => y.amount - x.amount);
+            const topBid = allSorted[0] || null;
+            const status = getStatus(a);
+            let badgeLabel = "", badgeCls = "";
+            if (status === "live" || status === "paused") {
+              if (topBid && topBid.email === artist.email) { badgeLabel = "Winning"; badgeCls = "bid-badge-winning"; }
+              else { badgeLabel = "Outbid"; badgeCls = "bid-badge-outbid"; }
+            } else if (status === "ended") {
+              if (topBid && topBid.email === artist.email) { badgeLabel = "Won"; badgeCls = "bid-badge-won"; }
+              else { badgeLabel = "Lost"; badgeCls = "bid-badge-lost"; }
+            }
+            return { auction: a, myTop, topBid, status, badgeLabel, badgeCls };
+          })
+          .sort((a, b) => {
+            const order = { live:0, paused:1, ended:2, removed:3 };
+            return (order[a.status] ?? 3) - (order[b.status] ?? 3);
+          });
+
+        if (myBidAuctions.length === 0) return null;
+
+        return (
+          <div style={{ marginTop: "3rem" }}>
+            <div className="dash-section-title">🏷️ My Bids</div>
+            <div className="cdash-bid-list">
+              {myBidAuctions.map(({ auction, myTop, topBid, badgeLabel, badgeCls }) => {
+                const bids = store.bids[auction.id] || [];
+                const currentTop = topBid ? topBid.amount : auction.startingPrice;
+                return (
+                  <div key={auction.id} className="cdash-bid-card" onClick={() => onNavigate("auction", auction.id)}>
+                    <div className="cdash-bid-thumb">
+                      {auction.imageUrl ? <img src={auction.imageUrl} alt="" /> : (auction.emoji || "🎨")}
+                    </div>
+                    <div className="cdash-bid-info">
+                      <div className="cdash-bid-title">{auction.title}</div>
+                      <div className="cdash-bid-meta">by {auction.artistName} · {bids.length} bid{bids.length !== 1 ? "s" : ""} · Top: {fmt$(currentTop)}</div>
+                    </div>
+                    <div className="cdash-bid-status">
+                      {badgeLabel && <span className={`bid-badge ${badgeCls}`}>{badgeLabel}</span>}
+                      <span style={{ fontSize:"0.75rem", color:"var(--mist)" }}>Your bid: {fmt$(myTop)}</span>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+        );
+      })()}
     </div>
   );
 };
