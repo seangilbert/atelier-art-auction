@@ -299,6 +299,24 @@ const STYLES = `
   .alert-error { background: var(--gold-light); border: 1.5px solid rgba(232,82,106,0.25); color: var(--gold-dark); }
   .alert-info { background: var(--accent2-light); border: 1.5px solid rgba(102,126,234,0.25); color: var(--accent2); }
 
+  /* Invite Page */
+  .invite-page { max-width: 560px; margin: 0 auto; padding: 3rem 2rem 5rem; }
+  .invite-code-box { background: var(--ink); border-radius: var(--radius-lg); padding: 1.75rem 2rem; margin-bottom: 1.5rem; text-align: center; }
+  .invite-code-label { font-size: 0.68rem; font-weight: 600; color: rgba(255,255,255,0.4); letter-spacing: 0.1em; text-transform: uppercase; margin-bottom: 0.65rem; }
+  .invite-code-value { font-size: 2.4rem; font-weight: 700; color: white; letter-spacing: 0.12em; font-family: var(--font-mono); margin-bottom: 0.85rem; }
+  .invite-slots { display: flex; gap: 0.5rem; justify-content: center; margin-bottom: 0.75rem; }
+  .invite-slot { width: 36px; height: 10px; border-radius: 100px; }
+  .invite-slot.available { background: #38a169; }
+  .invite-slot.used { background: rgba(255,255,255,0.15); }
+  .invite-slots-label { font-size: 0.8rem; color: rgba(255,255,255,0.55); }
+  .invite-copy-btn { background: rgba(255,255,255,0.1); border: 1.5px solid rgba(255,255,255,0.18); color: white; border-radius: 100px; padding: 0.55rem 1.25rem; font-size: 0.82rem; font-weight: 600; cursor: pointer; transition: all 0.18s; margin-top: 0.75rem; font-family: var(--font-body); }
+  .invite-copy-btn:hover { background: rgba(255,255,255,0.18); }
+  .invite-send-section { background: white; border: 1.5px solid var(--border); border-radius: var(--radius-lg); padding: 1.5rem; box-shadow: var(--shadow-sm); }
+  .invite-send-title { font-size: 1rem; font-weight: 700; margin-bottom: 0.35rem; color: var(--ink); }
+  .invite-send-sub { font-size: 0.82rem; color: var(--mist); margin-bottom: 1.25rem; }
+  .invite-send-row { display: flex; gap: 0.65rem; }
+  .invite-exhausted { background: var(--parchment); border: 1.5px dashed var(--border); border-radius: var(--radius-lg); padding: 1.5rem; text-align: center; color: var(--mist); font-size: 0.88rem; }
+
   /* Misc */
   .divider { height: 1px; background: var(--border); margin: 1.75rem 0; }
   .tag { display: inline-block; background: var(--parchment); border: 1.5px solid var(--border); border-radius: 100px; font-size: 0.72rem; font-weight: 500; padding: 0.22rem 0.7rem; color: var(--slate); }
@@ -585,32 +603,31 @@ const hasOohed    = (id) => getOohedSet().has(id);
 const saveOoh     = (id) => { const s = getOohedSet(); s.add(id); try { localStorage.setItem(OOHS_KEY, JSON.stringify([...s])); } catch {} };
 const getOohCount = (store, id) => (store.oohs?.[id]) || 0;
 
-const INVITE_CODE = "ARTDROP2026"; // change this to update the invite code
-
 // ── Supabase data hook ────────────────────────────────────────────────────────
 // Returns [store, loadAll] where loadAll() re-fetches all data from Supabase.
 // The store shape is kept compatible with the old localStorage shape so that
 // all components (AuctionPage, DashboardPage, etc.) need minimal changes.
 const useSupabaseStore = () => {
   const [store, setStoreState] = useState({
-    artists: {}, collectors: {}, auctions: [], bids: {}, payments: {}, oohs: {}
+    artists: {}, collectors: {}, auctions: [], bids: {}, payments: {}, oohs: {}, myInvite: null
   });
 
-  const loadAll = useCallback(async () => {
+  const loadAll = useCallback(async (userId = null) => {
     try {
+      const queries = [
+        supabase.from("auctions").select("*").order("created_at", { ascending: false }),
+        supabase.from("bids").select("*").order("placed_at", { ascending: true }),
+        supabase.from("oohs").select("*"),
+        supabase.from("payments").select("*"),
+        supabase.from("profiles").select("*"),
+      ];
       const [
         { data: auctions },
         { data: bids },
         { data: oohs },
         { data: payments },
         { data: profiles },
-      ] = await Promise.all([
-        supabase.from("auctions").select("*").order("created_at", { ascending: false }),
-        supabase.from("bids").select("*").order("placed_at", { ascending: true }),
-        supabase.from("oohs").select("*"),
-        supabase.from("payments").select("*"),
-        supabase.from("profiles").select("*"),
-      ]);
+      ] = await Promise.all(queries);
 
       // Build bids map { auctionId: [bid, ...] }
       const bidsMap = {};
@@ -634,11 +651,11 @@ const useSupabaseStore = () => {
         };
       });
 
-      // Build artists + collectors maps from profiles
+      // Build artists + collectors maps from profiles (with email)
       const artistsMap = {};
       const collectorsMap = {};
       (profiles || []).forEach(p => {
-        const user = { id: p.id, name: p.name, avatar: p.avatar, bio: p.bio, createdAt: p.created_at, following: p.following || [] };
+        const user = { id: p.id, name: p.name, avatar: p.avatar, bio: p.bio, email: p.email, createdAt: p.created_at, following: p.following || [] };
         if (p.type === "artist") artistsMap[p.id] = user;
         else collectorsMap[p.id] = user;
       });
@@ -656,7 +673,26 @@ const useSupabaseStore = () => {
         remainingMs: a.remaining_ms ? Number(a.remaining_ms) : undefined,
       }));
 
-      setStoreState({ artists: artistsMap, collectors: collectorsMap, auctions: auctionList, bids: bidsMap, oohs: oohsMap, payments: paymentsMap });
+      // Fetch this user's personal invite row (if logged in)
+      let myInvite = null;
+      if (userId) {
+        const { data: inviteRow } = await supabase
+          .from("invites")
+          .select("code, uses_count, max_uses")
+          .eq("owner_id", userId)
+          .neq("code", "ARTDROP2026")
+          .maybeSingle();
+        if (inviteRow) {
+          myInvite = {
+            code: inviteRow.code,
+            usesCount: inviteRow.uses_count,
+            maxUses: inviteRow.max_uses,
+            remaining: inviteRow.max_uses - inviteRow.uses_count,
+          };
+        }
+      }
+
+      setStoreState({ artists: artistsMap, collectors: collectorsMap, auctions: auctionList, bids: bidsMap, oohs: oohsMap, payments: paymentsMap, myInvite });
     } catch (err) {
       console.error("loadAll error:", err);
     }
@@ -863,10 +899,10 @@ const ConfirmModal = ({ title, message, confirmLabel, confirmClass = "btn-danger
 // ─────────────────────────────────────────────────────────────────────────────
 // AUTH PAGE
 // ─────────────────────────────────────────────────────────────────────────────
-const AuthPage = ({ store, updateStore, onLogin, onCollectorLogin, initialMode }) => {
+const AuthPage = ({ store, updateStore, onLogin, onCollectorLogin, initialMode, initialInviteCode = "" }) => {
   const [mode, setMode] = useState(initialMode || "login");
   const [loginType, setLoginType] = useState("artist"); // "artist" | "collector"
-  const [f, setF] = useState({ name: "", email: "", password: "", avatar: "🎨", bio: "", inviteCode: "" });
+  const [f, setF] = useState({ name: "", email: "", password: "", avatar: "🎨", bio: "", inviteCode: initialInviteCode });
   const [error, setError] = useState("");
   const [busy, setBusy] = useState(false);
   const set = (k, v) => setF((p) => ({ ...p, [k]: v }));
@@ -887,21 +923,38 @@ const AuthPage = ({ store, updateStore, onLogin, onCollectorLogin, initialMode }
     setBusy(false);
   };
 
+  const validateInviteCode = async () => {
+    const code = f.inviteCode.trim().toUpperCase();
+    if (!code) { setError("Enter an invite code to sign up."); return null; }
+    const { data: inviteRow } = await supabase
+      .from("invites")
+      .select("id, uses_count, max_uses")
+      .eq("code", code)
+      .maybeSingle();
+    if (!inviteRow || inviteRow.uses_count >= inviteRow.max_uses) {
+      setError("Invalid or expired invite code."); return null;
+    }
+    return code;
+  };
+
   const signup = async () => {
     setError("");
     if (!f.name.trim()) { setError("Enter your artist name."); return; }
     if (!f.email.includes("@")) { setError("Enter a valid email address."); return; }
     if (f.password.length < 6) { setError("Password must be at least 6 characters."); return; }
-    if (f.inviteCode.trim().toUpperCase() !== INVITE_CODE) { setError("Invalid invite code. Ask your host for access."); return; }
     setBusy(true);
+    const code = await validateInviteCode();
+    if (!code) { setBusy(false); return; }
     const { data, error: authErr } = await supabase.auth.signUp({
       email: f.email.toLowerCase(), password: f.password,
       options: { data: { name: f.name.trim(), avatar: f.avatar, bio: f.bio, type: "artist" } }
     });
     if (authErr) { setError(authErr.message); setBusy(false); return; }
+    // Redeem the invite code (increment uses_count)
+    await supabase.rpc("redeem_invite_code", { p_code: code });
     // Profile row is created automatically by the handle_new_user trigger
     const artist = { id: data.user.id, name: f.name.trim(), email: f.email.toLowerCase(), avatar: f.avatar, bio: f.bio, createdAt: new Date().toISOString() };
-    updateStore(); // refresh global store
+    updateStore(data.user.id);
     onLogin(artist);
     setBusy(false);
   };
@@ -911,16 +964,19 @@ const AuthPage = ({ store, updateStore, onLogin, onCollectorLogin, initialMode }
     if (!f.name.trim()) { setError("Enter your display name."); return; }
     if (!f.email.includes("@")) { setError("Enter a valid email address."); return; }
     if (f.password.length < 6) { setError("Password must be at least 6 characters."); return; }
-    if (f.inviteCode.trim().toUpperCase() !== INVITE_CODE) { setError("Invalid invite code. Ask your host for access."); return; }
     setBusy(true);
+    const code = await validateInviteCode();
+    if (!code) { setBusy(false); return; }
     const { data, error: authErr } = await supabase.auth.signUp({
       email: f.email.toLowerCase(), password: f.password,
       options: { data: { name: f.name.trim(), avatar: f.avatar, bio: f.bio, type: "collector" } }
     });
     if (authErr) { setError(authErr.message); setBusy(false); return; }
+    // Redeem the invite code (increment uses_count)
+    await supabase.rpc("redeem_invite_code", { p_code: code });
     // Profile row is created automatically by the handle_new_user trigger
     const collector = { id: data.user.id, name: f.name.trim(), email: f.email.toLowerCase(), avatar: f.avatar, bio: f.bio, createdAt: new Date().toISOString(), type: "collector" };
-    updateStore(); // refresh global store
+    updateStore(data.user.id);
     onCollectorLogin(collector);
     setBusy(false);
   };
@@ -1421,6 +1477,102 @@ const CollectorDashboardPage = ({ meCollector, onNavigate, store, updateStore })
 };
 
 // ─────────────────────────────────────────────────────────────────────────────
+// INVITE PAGE
+// ─────────────────────────────────────────────────────────────────────────────
+const InvitePage = ({ user, store, updateStore, onNavigate }) => {
+  const invite = store.myInvite;
+  const [recipientEmail, setRecipientEmail] = useState("");
+  const [sending, setSending] = useState(false);
+  const [sendMsg, setSendMsg] = useState(null);
+  const [copied, setCopied] = useState(false);
+
+  const appUrl = window.location.origin + window.location.pathname;
+  const inviteLink = invite ? `${appUrl}?invite=${invite.code}` : "";
+
+  const copyLink = () => {
+    navigator.clipboard.writeText(inviteLink).then(() => {
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
+    });
+  };
+
+  const sendInviteEmail = async () => {
+    if (!recipientEmail.includes("@")) { setSendMsg({ type:"error", text:"Enter a valid email address." }); return; }
+    setSending(true);
+    setSendMsg(null);
+    try {
+      const { error } = await supabase.functions.invoke("send-invite-email", {
+        body: { recipientEmail: recipientEmail.trim(), senderName: user.name, inviteCode: invite.code }
+      });
+      if (error) throw error;
+      setSendMsg({ type:"success", text:`Invite sent to ${recipientEmail.trim()}!` });
+      setRecipientEmail("");
+      updateStore(user.id);
+    } catch (e) {
+      setSendMsg({ type:"error", text:"Failed to send invite. Try again." });
+    }
+    setSending(false);
+  };
+
+  return (
+    <div className="invite-page">
+      <button className="btn btn-ghost btn-sm" style={{ marginBottom:"1.5rem" }} onClick={() => onNavigate("home")}>← Back</button>
+      <div className="page-title">✉️ Your <em>Invites</em></div>
+      <div className="page-subtitle">Share ArtDrop with people you trust. Each code allows up to 5 new members.</div>
+
+      {!invite ? (
+        <div className="alert alert-info">Your personal invite code is being generated. Try refreshing in a moment.</div>
+      ) : (
+        <>
+          <div className="invite-code-box">
+            <div className="invite-code-label">Your Invite Code</div>
+            <div className="invite-code-value">{invite.code}</div>
+            <div className="invite-slots">
+              {Array.from({ length: invite.maxUses }).map((_, i) => (
+                <div key={i} className={`invite-slot ${i < invite.remaining ? "available" : "used"}`} />
+              ))}
+            </div>
+            <div className="invite-slots-label">
+              {invite.remaining > 0
+                ? `${invite.remaining} of ${invite.maxUses} invites remaining`
+                : "All invites used"}
+            </div>
+            <button className="invite-copy-btn" onClick={copyLink}>
+              {copied ? "✓ Copied!" : "📋 Copy invite link"}
+            </button>
+          </div>
+
+          {invite.remaining > 0 ? (
+            <div className="invite-send-section">
+              <div className="invite-send-title">Send an email invite</div>
+              <div className="invite-send-sub">Enter a friend's email and we'll send them a personalised invite from you.</div>
+              {sendMsg && <div className={`alert alert-${sendMsg.type}`}>{sendMsg.text}</div>}
+              <div className="invite-send-row">
+                <input
+                  className="form-input"
+                  type="email"
+                  placeholder="friend@example.com"
+                  value={recipientEmail}
+                  onChange={(e) => setRecipientEmail(e.target.value)}
+                  onKeyDown={(e) => e.key === "Enter" && sendInviteEmail()}
+                />
+                <button className="btn btn-primary" onClick={sendInviteEmail} disabled={sending}>
+                  {sending ? "Sending…" : "Send →"}
+                </button>
+              </div>
+            </div>
+          ) : (
+            <div className="invite-exhausted">
+              🎉 All 5 invites have been used. Your friends are on ArtDrop!
+            </div>
+          )}
+        </>
+      )}
+    </div>
+  );
+};
+
+// ─────────────────────────────────────────────────────────────────────────────
 // DASHBOARD
 // ─────────────────────────────────────────────────────────────────────────────
 const DashboardPage = ({ artist, onNavigate, store, updateStore }) => {
@@ -1696,14 +1848,47 @@ const AuctionPage = ({ auctionId, onNavigate, store, updateStore, artist, meColl
   const [copied, setCopied] = useState(false);
   const [showModal, setShowModal] = useState(false);
   const [confirm, setConfirm] = useState(null);
+  const endedEmailSent = useRef(false);
+
+  // Realtime: refresh store when bids or oohs change on this auction
+  useEffect(() => {
+    const channel = supabase
+      .channel(`auction-${auctionId}`)
+      .on("postgres_changes", { event: "INSERT", schema: "public", table: "bids", filter: `auction_id=eq.${auctionId}` }, () => updateStore())
+      .on("postgres_changes", { event: "*", schema: "public", table: "oohs", filter: `auction_id=eq.${auctionId}` }, () => updateStore())
+      .subscribe();
+    return () => { supabase.removeChannel(channel); };
+  }, [auctionId, updateStore]);
+
+  // Auction-ended email: fire once when the owner is watching and the auction ends
+  const status = getStatus(auction || { endDate: new Date(0).toISOString(), paused: false });
+  const sortedBids = [...bids].sort((a, b) => b.amount - a.amount);
+  const topBid = sortedBids[0] || null;
+  const isOwner = artist?.id === auction?.artistId;
+  useEffect(() => {
+    if (!auction) return;
+    if (status === "ended" && !endedEmailSent.current && topBid && isOwner) {
+      endedEmailSent.current = true;
+      const artistProfile = store.artists[auction.artistId];
+      if (artistProfile?.email) {
+        supabase.functions.invoke("send-auction-ended", {
+          body: {
+            auctionId: auction.id,
+            auctionTitle: auction.title,
+            winnerName: topBid.bidder,
+            winnerEmail: topBid.email,
+            winningAmount: topBid.amount,
+            artistEmail: artistProfile.email,
+            artistName: auction.artistName,
+          }
+        }).catch(() => {});
+      }
+    }
+  }, [status, topBid, isOwner]);
 
   if (!auction) return <div className="page-container" style={{ textAlign:"center", paddingTop:"6rem" }}><div style={{ fontSize:"3rem", marginBottom:"1rem" }}>🔍</div><h2 style={{ fontFamily:"var(--font-display)", marginBottom:"0.75rem" }}>Auction Not Found</h2><button className="btn btn-primary" onClick={() => onNavigate("home")}>Back to Home</button></div>;
 
-  const status = getStatus(auction);
   const isLive = status === "live";
-  const isOwner = artist?.id === auction.artistId;
-  const sortedBids = [...bids].sort((a, b) => b.amount - a.amount);
-  const topBid = sortedBids[0] || null;
   const currentTop = topBid ? topBid.amount : auction.startingPrice;
   const minBid = topBid ? currentTop + (auction.minIncrement || 25) : currentTop;
   const shareUrl = `${window.location.origin}${window.location.pathname}#auction-${auctionId}`;
@@ -1717,16 +1902,6 @@ const AuctionPage = ({ auctionId, onNavigate, store, updateStore, artist, meColl
     if (m === "twitter") window.open(`https://twitter.com/intent/tweet?text=${encodeURIComponent(text)}`);
     if (m === "facebook") window.open(`https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(shareUrl)}`);
   };
-
-  // Realtime: refresh store when bids or oohs change on this auction
-  useEffect(() => {
-    const channel = supabase
-      .channel(`auction-${auctionId}`)
-      .on("postgres_changes", { event: "INSERT", schema: "public", table: "bids", filter: `auction_id=eq.${auctionId}` }, () => updateStore())
-      .on("postgres_changes", { event: "*", schema: "public", table: "oohs", filter: `auction_id=eq.${auctionId}` }, () => updateStore())
-      .subscribe();
-    return () => { supabase.removeChannel(channel); };
-  }, [auctionId, updateStore]);
 
   const placeBid = async () => {
     if (!localName.trim() || !bidEmail.trim()) { setBidMsg({ type:"error", text:"Enter your name and email." }); return; }
@@ -1746,6 +1921,20 @@ const AuctionPage = ({ auctionId, onNavigate, store, updateStore, artist, meColl
     setShowModal(false);
     updateStore(); // also refresh immediately
     setTimeout(() => setBidMsg(null), 4000);
+    // Fire-and-forget bid notification email to the artist
+    const artistProfile = store.artists[auction.artistId];
+    if (artistProfile?.email) {
+      supabase.functions.invoke("send-bid-notification", {
+        body: {
+          auctionId,
+          auctionTitle: auction.title,
+          bidderName: trimmedName,
+          bidAmount: amt,
+          artistEmail: artistProfile.email,
+          artistName: auction.artistName,
+        }
+      }).catch(() => {});
+    }
   };
 
   const doManage = async (type) => {
@@ -2128,6 +2317,7 @@ export default function App() {
       const user = { id: session.user.id, name: profile.name, email: session.user.email, avatar: profile.avatar, bio: profile.bio, createdAt: profile.created_at };
       if (profile.type === "artist") setArtist(user);
       else setCollector(user);
+      updateStore(session.user.id);
     });
   }, []);
 
@@ -2158,9 +2348,9 @@ export default function App() {
     else window.history.pushState(null, "", window.location.pathname);
   };
 
-  const onLogin = (a) => { setArtist(a); setView({ page: "dashboard", id: null }); };
+  const onLogin = (a) => { setArtist(a); updateStore(a.id); setView({ page: "dashboard", id: null }); };
   const onLogout = async () => { await supabase.auth.signOut(); setArtist(null); setDropOpen(false); setView({ page: "home", id: null }); };
-  const onCollectorLogin = (c) => { setCollector(c); setView({ page: "home", id: null }); };
+  const onCollectorLogin = (c) => { setCollector(c); updateStore(c.id); setView({ page: "home", id: null }); };
   const onCollectorLogout = async () => { await supabase.auth.signOut(); setCollector(null); setCollectorDropOpen(false); setView({ page: "home", id: null }); };
 
   // Use fresh profile data from store if available, fall back to session state
@@ -2168,6 +2358,18 @@ export default function App() {
   const meCollector = collector ? (store.collectors?.[collector.id] || collector) : null;
   const isLoggedIn = !!(me || meCollector);
   const liveCount = store.auctions.filter((a) => !a.removed && !a.paused && a.published && new Date(a.endDate) > new Date()).length;
+
+  // Pre-fill invite code from ?invite= URL param
+  const [pendingInviteCode, setPendingInviteCode] = useState("");
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const code = params.get("invite");
+    if (code) {
+      setPendingInviteCode(code.trim().toUpperCase());
+      if (!artist && !collector) setView({ page: "signup", id: null });
+      window.history.replaceState(null, "", window.location.pathname + window.location.hash);
+    }
+  }, []);
 
   const [bannerDismissed, setBannerDismissed] = useState(false);
   useEffect(() => { setBannerDismissed(false); }, [collector]);
@@ -2204,6 +2406,7 @@ export default function App() {
                     <div className="artist-dropdown-header"><div className="artist-dropdown-name">{me.name}</div><div className="artist-dropdown-email">{me.email}</div></div>
                     <button className="dropdown-item" onClick={() => go("dashboard")}>📊 My Dashboard</button>
                     <button className="dropdown-item" onClick={() => go("create")}>✦ New Auction</button>
+                    <button className="dropdown-item" onClick={() => go("invites")}>✉️ Invites</button>
                     <div className="dropdown-divider" />
                     <button className="dropdown-item danger" onClick={onLogout}>Sign Out</button>
                   </div>
@@ -2221,6 +2424,7 @@ export default function App() {
                 <div className="artist-dropdown">
                   <div className="artist-dropdown-header"><div className="artist-dropdown-name">{meCollector.name}</div><div className="artist-dropdown-email">{meCollector.email} · Collector</div></div>
                   <button className="dropdown-item" onClick={() => go("collector-dashboard")}>🗂 My Collection</button>
+                  <button className="dropdown-item" onClick={() => go("invites")}>✉️ Invites</button>
                   <div className="dropdown-divider" />
                   <button className="dropdown-item danger" onClick={onCollectorLogout}>Sign Out</button>
                 </div>
@@ -2250,21 +2454,23 @@ export default function App() {
       {view.page === "home" && (
         isLoggedIn
           ? <FeedPage onNavigate={go} store={store} updateStore={updateStore} me={me} meCollector={meCollector} />
-          : <AuthPage store={store} updateStore={updateStore} onLogin={onLogin} onCollectorLogin={onCollectorLogin} initialMode="login" />
+          : <AuthPage store={store} updateStore={updateStore} onLogin={onLogin} onCollectorLogin={onCollectorLogin} initialMode="login" initialInviteCode={pendingInviteCode} />
       )}
       {(view.page === "login" || view.page === "signup" || view.page === "collector-signup") && (
         isLoggedIn
           ? <FeedPage onNavigate={go} store={store} updateStore={updateStore} me={me} meCollector={meCollector} />
           : <AuthPage store={store} updateStore={updateStore} onLogin={onLogin} onCollectorLogin={onCollectorLogin}
-              initialMode={view.page === "signup" ? "signup" : view.page === "collector-signup" ? "collector-signup" : "login"} />
+              initialMode={view.page === "signup" ? "signup" : view.page === "collector-signup" ? "collector-signup" : "login"}
+              initialInviteCode={pendingInviteCode} />
       )}
       {view.page === "dashboard"           && me          && <DashboardPage artist={me} onNavigate={go} store={store} updateStore={updateStore} />}
       {view.page === "create"              && me          && <CreatePage    artist={me} onNavigate={go} store={store} updateStore={updateStore} />}
-      {view.page === "auction"             && (isLoggedIn ? <AuctionPage auctionId={view.id} onNavigate={go} store={store} updateStore={updateStore} artist={me} meCollector={meCollector} bidderName={bidderName} setBidderName={setBidderName} bidderEmail={bidderEmail} setBidderEmail={setBidderEmail} /> : <AuthPage store={store} updateStore={updateStore} onLogin={onLogin} onCollectorLogin={onCollectorLogin} initialMode="login" />)}
-      {view.page === "payment"             && (isLoggedIn ? <PaymentPage auctionId={view.id} onNavigate={go} store={store} updateStore={updateStore} bidderName={bidderName} bidderEmail={bidderEmail} /> : <AuthPage store={store} updateStore={updateStore} onLogin={onLogin} onCollectorLogin={onCollectorLogin} initialMode="login" />)}
+      {view.page === "auction"             && (isLoggedIn ? <AuctionPage auctionId={view.id} onNavigate={go} store={store} updateStore={updateStore} artist={me} meCollector={meCollector} bidderName={bidderName} setBidderName={setBidderName} bidderEmail={bidderEmail} setBidderEmail={setBidderEmail} /> : <AuthPage store={store} updateStore={updateStore} onLogin={onLogin} onCollectorLogin={onCollectorLogin} initialMode="login" initialInviteCode={pendingInviteCode} />)}
+      {view.page === "payment"             && (isLoggedIn ? <PaymentPage auctionId={view.id} onNavigate={go} store={store} updateStore={updateStore} bidderName={bidderName} bidderEmail={bidderEmail} /> : <AuthPage store={store} updateStore={updateStore} onLogin={onLogin} onCollectorLogin={onCollectorLogin} initialMode="login" initialInviteCode={pendingInviteCode} />)}
       {view.page === "edit"                && me          && <EditPage auctionId={view.id} artist={me} onNavigate={go} store={store} updateStore={updateStore} />}
-      {view.page === "artist"              && (isLoggedIn ? <ArtistPage artistId={view.id} onNavigate={go} store={store} updateStore={updateStore} me={me} meCollector={meCollector} /> : <AuthPage store={store} updateStore={updateStore} onLogin={onLogin} onCollectorLogin={onCollectorLogin} initialMode="login" />)}
+      {view.page === "artist"              && (isLoggedIn ? <ArtistPage artistId={view.id} onNavigate={go} store={store} updateStore={updateStore} me={me} meCollector={meCollector} /> : <AuthPage store={store} updateStore={updateStore} onLogin={onLogin} onCollectorLogin={onCollectorLogin} initialMode="login" initialInviteCode={pendingInviteCode} />)}
       {view.page === "collector-dashboard" && meCollector && <CollectorDashboardPage meCollector={meCollector} onNavigate={go} store={store} updateStore={updateStore} />}
+      {view.page === "invites"             && isLoggedIn  && <InvitePage user={me || meCollector} store={store} updateStore={updateStore} onNavigate={go} />}
     </>
   );
 }
