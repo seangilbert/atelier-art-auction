@@ -2181,7 +2181,7 @@ const AddArtworkPage = ({ artist, store, updateStore, onNavigate, editItemId }) 
       }).eq("id", editItemId);
     } else {
       await supabase.from("gallery").insert({
-        id: generateId(), artist_id: artist.id,
+        artist_id: artist.id,
         title: f.title.trim(), description: f.description, medium: f.medium,
         dimensions: f.dimensions, image_url: f.imageUrl, emoji: f.emoji,
       });
