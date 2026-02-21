@@ -431,7 +431,7 @@ const STYLES = `
   .feed-card { background:white; border:1px solid var(--border); border-radius:var(--radius-xl); overflow:hidden; cursor:pointer; transition:all 0.3s; box-shadow:var(--shadow-card); }
   .feed-card:hover { transform:translateY(-4px); box-shadow:var(--shadow-lg); }
   .feed-card-header { display:flex; align-items:center; gap:0.65rem; padding:0.85rem 1rem 0; }
-  .feed-avatar { width:34px; height:34px; border-radius:50%; background:var(--grad-accent); display:flex; align-items:center; justify-content:center; font-size:1rem; flex-shrink:0; }
+  .feed-avatar { width:34px; height:34px; border-radius:50%; background:var(--grad-accent); display:flex; align-items:center; justify-content:center; font-size:1rem; flex-shrink:0; overflow:hidden; }
   .feed-artist-name { font-size:0.82rem; font-weight:600; color:var(--ink); }
   .feed-time { font-size:0.7rem; color:var(--mist); }
   .feed-card .card-image { aspect-ratio:1/1; }
@@ -460,7 +460,7 @@ const STYLES = `
   /* ── Artist page ─────────────────────────────────────────────────────────── */
   .artist-page { max-width:900px; margin:0 auto; padding:3rem 2rem 5rem; }
   .artist-profile-card { background:white; border:1px solid var(--border); border-radius:var(--radius-xl); padding:2rem; margin-bottom:2rem; display:flex; align-items:flex-start; gap:1.5rem; box-shadow:var(--shadow-sm); flex-wrap:wrap; }
-  .artist-profile-avatar { width:80px; height:80px; border-radius:50%; background:var(--grad-accent); display:flex; align-items:center; justify-content:center; font-size:2.2rem; flex-shrink:0; }
+  .artist-profile-avatar { width:80px; height:80px; border-radius:50%; background:var(--grad-accent); display:flex; align-items:center; justify-content:center; font-size:2.2rem; flex-shrink:0; overflow:hidden; }
   .artist-profile-info { flex:1; min-width:200px; }
   .artist-profile-name { font-size:1.8rem; font-weight:700; color:var(--ink); letter-spacing:-0.03em; margin-bottom:0.15rem; }
   .artist-profile-since { font-size:0.78rem; color:var(--mist); margin-bottom:0.75rem; }
@@ -509,7 +509,7 @@ const STYLES = `
   .cdash-following-list { display:flex; flex-direction:column; gap:0.75rem; }
   .cdash-artist-row { background:white; border:1px solid var(--border); border-radius:var(--radius-lg); padding:1rem 1.25rem; display:flex; align-items:center; gap:1rem; box-shadow:var(--shadow-sm); cursor:pointer; transition:all 0.2s; }
   .cdash-artist-row:hover { box-shadow:var(--shadow-md); transform:translateY(-1px); }
-  .cdash-artist-avatar { width:44px; height:44px; border-radius:50%; background:var(--grad-accent); display:flex; align-items:center; justify-content:center; font-size:1.2rem; flex-shrink:0; }
+  .cdash-artist-avatar { width:44px; height:44px; border-radius:50%; background:var(--grad-accent); display:flex; align-items:center; justify-content:center; font-size:1.2rem; flex-shrink:0; overflow:hidden; }
   .cdash-artist-info { flex:1; min-width:0; }
   .cdash-artist-name { font-weight:600; font-size:0.95rem; color:var(--ink); }
   .cdash-artist-meta { font-size:0.75rem; color:var(--mist); margin-top:0.15rem; }
@@ -669,7 +669,7 @@ const AVATARS = ["🎨", "🖌️", "🌊", "🌿", "🦋", "🌙", "🏔️", "
 // The parent container provides size and shape via its own CSS class.
 const AvatarImg = ({ avatar, alt = "" }) => {
   const isUrl = avatar && (avatar.startsWith("http") || avatar.startsWith("data:"));
-  if (isUrl) return <img src={avatar} alt={alt} style={{ width:"100%", height:"100%", objectFit:"cover", borderRadius:"50%" }} />;
+  if (isUrl) return <img src={avatar} alt={alt} style={{ width:"100%", height:"100%", objectFit:"cover", display:"block" }} />;
   return <span>{avatar || "🎨"}</span>;
 };
 
