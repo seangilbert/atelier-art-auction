@@ -55,7 +55,7 @@ const STYLES = `
 
   /* Artist avatar dropdown */
   .artist-menu { position: relative; }
-  .artist-avatar-btn { width: 44px; height: 44px; border-radius: 50%; background: var(--grad-primary); border: none; cursor: pointer; font-size: 1.1rem; display: flex; align-items: center; justify-content: center; color: white; transition: transform 0.15s; box-shadow: 0 2px 10px rgba(232,82,106,0.35); }
+  .artist-avatar-btn { width: 44px; height: 44px; border-radius: 50%; background: var(--grad-primary); border: none; cursor: pointer; font-size: 1.1rem; display: flex; align-items: center; justify-content: center; color: white; transition: transform 0.15s; box-shadow: 0 2px 10px rgba(232,82,106,0.35); overflow: hidden; }
   .artist-avatar-btn:hover { transform: scale(1.08); }
   .artist-dropdown { position: absolute; top: calc(100% + 10px); right: 0; min-width: 220px; background: white; border: 1px solid var(--border); border-radius: var(--radius-lg); box-shadow: var(--shadow-lg); overflow: hidden; animation: dropIn 0.18s ease; z-index: 300; }
   @keyframes dropIn { from{opacity:0;transform:translateY(-6px)} to{opacity:1;transform:translateY(0)} }
@@ -599,6 +599,26 @@ const STYLES = `
   .gallery-drop-history { margin:0.4rem 0 0.5rem; display:flex; flex-direction:column; gap:0.25rem; }
   .gallery-drop-row { display:flex; align-items:center; gap:0.5rem; font-size:0.78rem; cursor:pointer; padding:0.2rem 0; }
   .gallery-drop-row:hover { opacity:0.75; }
+
+  /* ── Dashboard greeting inline avatar ──────────────────────────────────────── */
+  .dash-greeting-avatar { display:inline-flex; width:1.8rem; height:1.8rem; border-radius:50%; overflow:hidden; vertical-align:middle; margin-right:0.35rem; flex-shrink:0; background:var(--grad-accent); }
+
+  /* ── Avatar upload zone (Edit Profile) ─────────────────────────────────────── */
+  .avatar-upload-zone { border:2px dashed var(--border); border-radius:var(--radius-lg); padding:1.5rem 1.25rem; text-align:center; cursor:pointer; transition:all 0.2s; background:white; }
+  .avatar-upload-zone:hover, .avatar-upload-zone.drag-over { border-color:var(--gold); background:var(--gold-light); }
+  .avatar-upload-label { font-size:0.9rem; font-weight:600; color:var(--ink); margin-bottom:0.25rem; }
+  .avatar-upload-sub { font-size:0.76rem; color:var(--mist); }
+  .avatar-upload-preview-wrap { display:flex; flex-direction:column; align-items:center; gap:0.4rem; }
+  .avatar-upload-preview { width:80px; height:80px; border-radius:50%; object-fit:cover; border:3px solid var(--gold); box-shadow:var(--shadow-sm); }
+  .avatar-upload-empty { display:flex; flex-direction:column; align-items:center; }
+
+  /* ── Edit profile layout ────────────────────────────────────────────────────── */
+  .edit-profile-avatar-row { display:flex; gap:1.5rem; align-items:flex-start; }
+  .edit-profile-avatar-preview { width:80px; height:80px; border-radius:50%; background:var(--grad-accent); display:flex; align-items:center; justify-content:center; font-size:2.2rem; flex-shrink:0; overflow:hidden; box-shadow:var(--shadow-sm); border:3px solid var(--border); }
+  @media (max-width:550px) {
+    .edit-profile-avatar-row { flex-direction:column; align-items:stretch; }
+    .edit-profile-avatar-preview { align-self:center; }
+  }
 `;
 
 
@@ -624,6 +644,14 @@ const timeAgo = (iso) => {
   return `${Math.floor(h / 24)}d ago`;
 };
 const AVATARS = ["🎨", "🖌️", "🌊", "🌿", "🦋", "🌙", "🏔️", "🌺", "🦚", "✨"];
+
+// Renders an emoji string as text, or an http/data URL as a circular <img>.
+// The parent container provides size and shape via its own CSS class.
+const AvatarImg = ({ avatar, alt = "" }) => {
+  const isUrl = avatar && (avatar.startsWith("http") || avatar.startsWith("data:"));
+  if (isUrl) return <img src={avatar} alt={alt} style={{ width:"100%", height:"100%", objectFit:"cover", borderRadius:"50%" }} />;
+  return <span>{avatar || "🎨"}</span>;
+};
 
 const MAX_IMG_DIM = 1200;
 const compressImage = (file) =>
@@ -948,6 +976,87 @@ const ImagePicker = ({ imageUrl, emoji, onImageUrl, onEmoji }) => {
       {preview && (
         <button className="btn btn-ghost btn-sm" style={{ marginTop:"0.5rem" }} onClick={() => { onImageUrl(""); setUrlInput(""); }}>
           Remove Image
+        </button>
+      )}
+    </div>
+  );
+};
+
+// ── AvatarUploadZone ──────────────────────────────────────────────────────────
+// Slimmed-down upload zone for profile photos — reuses compressImage and the
+// same "artworks" bucket as ImagePicker, under an "avatars/" path prefix.
+const AvatarUploadZone = ({ imageUrl, onImageUrl, userId }) => {
+  const [dragOver, setDragOver] = useState(false);
+  const [uploading, setUploading] = useState(false);
+  const fileRef = useRef();
+
+  const handleFile = async (file) => {
+    if (!file?.type.startsWith("image/")) return;
+    setUploading(true);
+    try {
+      const compressed = await compressImage(file);
+      try {
+        const res = await fetch(compressed);
+        const blob = await res.blob();
+        const path = `avatars/${userId}-${Date.now()}.jpg`;
+        const { error: uploadErr } = await supabase.storage
+          .from("artworks")
+          .upload(path, blob, { contentType: "image/jpeg", upsert: true });
+        if (!uploadErr) {
+          const { data: { publicUrl } } = supabase.storage.from("artworks").getPublicUrl(path);
+          onImageUrl(publicUrl);
+          setUploading(false);
+          return;
+        }
+      } catch {}
+      // Fallback: store as base64 data URI
+      onImageUrl(compressed);
+    } catch {
+      const r = new FileReader();
+      r.onload = (e) => onImageUrl(e.target.result);
+      r.readAsDataURL(file);
+    }
+    setUploading(false);
+  };
+
+  const hasPhoto = imageUrl && (imageUrl.startsWith("http") || imageUrl.startsWith("data:"));
+
+  return (
+    <div>
+      <div
+        className={`avatar-upload-zone ${dragOver ? "drag-over" : ""}`}
+        onDragOver={(e) => { e.preventDefault(); setDragOver(true); }}
+        onDragLeave={() => setDragOver(false)}
+        onDrop={(e) => { e.preventDefault(); setDragOver(false); handleFile(e.dataTransfer.files[0]); }}
+        onClick={() => !uploading && fileRef.current?.click()}
+      >
+        <input
+          ref={fileRef}
+          type="file"
+          accept="image/*"
+          style={{ display: "none" }}
+          onChange={(e) => handleFile(e.target.files[0])}
+        />
+        {hasPhoto ? (
+          <div className="avatar-upload-preview-wrap">
+            <img src={imageUrl} alt="Avatar preview" className="avatar-upload-preview" />
+            <div className="avatar-upload-sub">Click or drag to replace</div>
+          </div>
+        ) : (
+          <div className="avatar-upload-empty">
+            <i className="fa-regular fa-image" style={{ fontSize:"1.8rem", color:"var(--mist)", marginBottom:"0.5rem" }}></i>
+            <div className="avatar-upload-label">{uploading ? "Uploading…" : "Upload a profile photo"}</div>
+            <div className="avatar-upload-sub">JPG, PNG, WEBP · Click or drag to browse</div>
+          </div>
+        )}
+      </div>
+      {hasPhoto && (
+        <button
+          className="btn btn-ghost btn-sm"
+          style={{ marginTop: "0.5rem" }}
+          onClick={(e) => { e.stopPropagation(); onImageUrl(""); }}
+        >
+          <i className="fa-solid fa-xmark"></i> Remove photo
         </button>
       )}
     </div>
@@ -1363,7 +1472,7 @@ const FeedPage = ({ onNavigate, store, updateStore, me, meCollector }) => {
                   className="feed-card-header feed-card-header-link"
                   onClick={(e) => { e.stopPropagation(); onNavigate("artist", auction.artistId); }}
                 >
-                  <div className="feed-avatar">{auction.artistAvatar || "🎨"}</div>
+                  <div className="feed-avatar"><AvatarImg avatar={auction.artistAvatar || "🎨"} alt={auction.artistName} /></div>
                   <div>
                     <div className="feed-artist-name">{auction.artistName}</div>
                     <div className="feed-time">{timeAgo(auction.createdAt)}</div>
@@ -1445,7 +1554,7 @@ const ArtistPage = ({ artistId, onNavigate, store, updateStore, me, meCollector 
     <div className="artist-page">
       <button className="btn btn-ghost btn-sm" style={{ marginBottom:"1.5rem" }} onClick={() => onNavigate("home")}><i className="fa-solid fa-arrow-left"></i> Back</button>
       <div className="artist-profile-card">
-        <div className="artist-profile-avatar">{artist.avatar}</div>
+        <div className="artist-profile-avatar"><AvatarImg avatar={artist.avatar} alt={artist.name} /></div>
         <div className="artist-profile-info">
           <div className="artist-profile-name">{artist.name}</div>
           <div className="artist-profile-since">Member since {new Date(artist.createdAt).toLocaleDateString("en-US", { month:"long", year:"numeric" })}</div>
@@ -1598,7 +1707,7 @@ const CollectorDashboardPage = ({ meCollector, onNavigate, store, updateStore })
   return (
     <div className="collector-dashboard">
       <div style={{ marginBottom:"2.5rem" }}>
-        <div className="dash-greeting">{meCollector.avatar} <em style={{ fontStyle:"normal", background:"var(--grad-cool)", WebkitBackgroundClip:"text", WebkitTextFillColor:"transparent", backgroundClip:"text" }}>{meCollector.name}</em>'s Collection</div>
+        <div className="dash-greeting"><span className="dash-greeting-avatar"><AvatarImg avatar={meCollector.avatar} alt={meCollector.name} /></span> <em style={{ fontStyle:"normal", background:"var(--grad-cool)", WebkitBackgroundClip:"text", WebkitTextFillColor:"transparent", backgroundClip:"text" }}>{meCollector.name}</em>'s Collection</div>
         <div className="dash-subtitle">{meCollector.email} · Collector</div>
       </div>
 
@@ -1663,7 +1772,7 @@ const CollectorDashboardPage = ({ meCollector, onNavigate, store, updateStore })
           <div className="cdash-following-list">
             {followedArtists.map(({ artist, liveAuctions }) => (
               <div key={artist.id} className="cdash-artist-row" onClick={() => onNavigate("artist", artist.id)}>
-                <div className="cdash-artist-avatar">{artist.avatar}</div>
+                <div className="cdash-artist-avatar"><AvatarImg avatar={artist.avatar} alt={artist.name} /></div>
                 <div className="cdash-artist-info">
                   <div className="cdash-artist-name">{artist.name}</div>
                   <div className="cdash-artist-meta">{liveAuctions.length > 0 ? `${liveAuctions.length} live drop${liveAuctions.length !== 1 ? "s" : ""}` : "No live drops right now"}</div>
@@ -1776,6 +1885,108 @@ const InvitePage = ({ user, store, updateStore, onNavigate }) => {
 };
 
 // ─────────────────────────────────────────────────────────────────────────────
+// EDIT PROFILE
+// ─────────────────────────────────────────────────────────────────────────────
+const EditProfilePage = ({ user, userType, onNavigate, updateStore, onProfileSaved }) => {
+  const isUrl = (s) => s && (s.startsWith("http") || s.startsWith("data:"));
+  const [f, setF] = useState({
+    name: user.name || "",
+    bio: user.bio || "",
+    photoUrl: isUrl(user.avatar) ? user.avatar : "",
+    emojiAvatar: !isUrl(user.avatar) ? (user.avatar || "🎨") : "🎨",
+  });
+  const [busy, setBusy] = useState(false);
+  const [saved, setSaved] = useState(false);
+  const [error, setError] = useState("");
+  const set = (k, v) => setF((p) => ({ ...p, [k]: v }));
+
+  const effectiveAvatar = f.photoUrl || f.emojiAvatar;
+
+  const save = async () => {
+    if (!f.name.trim()) { setError("Display name is required."); return; }
+    setError("");
+    setBusy(true);
+    try {
+      await supabase.from("profiles").update({
+        name: f.name.trim(), bio: f.bio.trim(), avatar: effectiveAvatar,
+      }).eq("id", user.id);
+
+      if (userType === "artist") {
+        await supabase.from("auctions")
+          .update({ artist_avatar: effectiveAvatar, artist_name: f.name.trim() })
+          .eq("artist_id", user.id)
+          .neq("removed", true);
+      }
+
+      await updateStore(user.id);
+      onProfileSaved({ ...user, name: f.name.trim(), bio: f.bio.trim(), avatar: effectiveAvatar });
+      setSaved(true);
+      setTimeout(() => setSaved(false), 2500);
+    } catch (err) {
+      setError("Failed to save. Please try again.");
+      console.error("EditProfilePage save error:", err);
+    }
+    setBusy(false);
+  };
+
+  const backPage = userType === "artist" ? "dashboard" : "collector-dashboard";
+
+  return (
+    <div className="page-container">
+      <button className="btn btn-ghost btn-sm" style={{ marginBottom:"1.5rem" }} onClick={() => onNavigate(backPage)}>
+        <i className="fa-solid fa-arrow-left"></i> Back
+      </button>
+      <h1 className="page-title">Edit <em>Profile</em></h1>
+      <p className="page-subtitle">Update your display name, bio, and profile photo.</p>
+
+      {error && <div className="alert alert-error" style={{ marginBottom:"1rem" }}>{error}</div>}
+      {saved && <div className="alert alert-success" style={{ marginBottom:"1rem" }}><i className="fa-solid fa-check"></i> Profile saved!</div>}
+
+      <div className="form-group">
+        <label className="form-label">Profile Photo</label>
+        <div className="edit-profile-avatar-row">
+          <div className="edit-profile-avatar-preview">
+            <AvatarImg avatar={effectiveAvatar} alt={f.name} />
+          </div>
+          <div style={{ flex:1 }}>
+            <AvatarUploadZone imageUrl={f.photoUrl} onImageUrl={(url) => set("photoUrl", url || "")} userId={user.id} />
+          </div>
+        </div>
+      </div>
+
+      {!f.photoUrl && (
+        <div className="form-group">
+          <label className="form-label">Emoji Avatar</label>
+          <div className="avatar-picker">
+            {AVATARS.map((av) => (
+              <div key={av} className={`avatar-opt ${f.emojiAvatar === av ? "selected" : ""}`} onClick={() => set("emojiAvatar", av)}>{av}</div>
+            ))}
+          </div>
+        </div>
+      )}
+
+      <div className="form-group">
+        <label className="form-label">Display Name *</label>
+        <input className="form-input" value={f.name} onChange={(e) => set("name", e.target.value)} placeholder="Your public name" />
+      </div>
+
+      <div className="form-group">
+        <label className="form-label">Bio</label>
+        <textarea className="form-textarea" rows={3} value={f.bio} onChange={(e) => set("bio", e.target.value)}
+          placeholder={userType === "artist" ? "Tell collectors about yourself and your art…" : "Tell us what kind of art you love…"} />
+      </div>
+
+      <div className="form-actions">
+        <button className="btn btn-ghost" onClick={() => onNavigate(backPage)}>Cancel</button>
+        <button className="btn btn-primary" onClick={save} disabled={busy}>
+          {busy ? "Saving…" : "Save Profile"}
+        </button>
+      </div>
+    </div>
+  );
+};
+
+// ─────────────────────────────────────────────────────────────────────────────
 // DASHBOARD
 // ─────────────────────────────────────────────────────────────────────────────
 const DashboardPage = ({ artist, onNavigate, store, updateStore }) => {
@@ -1853,7 +2064,7 @@ const DashboardPage = ({ artist, onNavigate, store, updateStore }) => {
     <div className="dashboard">
       <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", marginBottom: "2.5rem", flexWrap: "wrap", gap: "1rem" }}>
         <div>
-          <div className="dash-greeting">{artist.avatar} <em>{artist.name}</em>'s Studio</div>
+          <div className="dash-greeting"><span className="dash-greeting-avatar"><AvatarImg avatar={artist.avatar} alt={artist.name} /></span> <em>{artist.name}</em>'s Studio</div>
           <div className="dash-subtitle">{artist.email} · Member since {new Date(artist.createdAt).toLocaleDateString("en-US", { month: "long", year: "numeric" })}</div>
         </div>
         <button className="btn btn-primary" onClick={() => onNavigate("create")}>+ New Drop</button>
@@ -3132,6 +3343,8 @@ export default function App() {
   const onLogout = async () => { await supabase.auth.signOut(); setArtist(null); setDropOpen(false); setView({ page: "home", id: null }); };
   const onCollectorLogin = (c) => { setCollector(c); updateStore(c.id); setView(returnToAuction ? { page: "auction", id: returnToAuction } : { page: "home", id: null }); setReturnToAuction(null); };
   const onCollectorLogout = async () => { await supabase.auth.signOut(); setCollector(null); setCollectorDropOpen(false); setView({ page: "home", id: null }); };
+  const onArtistProfileSaved = (updated) => setArtist(updated);
+  const onCollectorProfileSaved = (updated) => setCollector(updated);
 
   // Use fresh profile data from store if available, fall back to session state
   // Always merge session email in so bid matching works even if profiles.email was null
@@ -3183,13 +3396,14 @@ export default function App() {
             <>
               <button className="nav-link nav-new-btn" onClick={() => go("create")}>+ New</button>
               <div className="artist-menu" ref={dropRef}>
-                <button className="artist-avatar-btn" onClick={() => setDropOpen((o) => !o)} title={me.name}>{me.avatar}</button>
+                <button className="artist-avatar-btn" onClick={() => setDropOpen((o) => !o)} title={me.name}><AvatarImg avatar={me.avatar} alt={me.name} /></button>
                 {dropOpen && (
                   <div className="artist-dropdown">
                     <div className="artist-dropdown-header"><div className="artist-dropdown-name">{me.name}</div><div className="artist-dropdown-email">{me.email}</div></div>
                     <button className="dropdown-item" onClick={() => go("dashboard")}><i className="fa-solid fa-chart-simple"></i> My Dashboard</button>
                     <button className="dropdown-item" onClick={() => go("create")}><i className="fa-solid fa-plus"></i> New Drop</button>
                     <button className="dropdown-item" onClick={() => go("invites")}><i className="fa-solid fa-envelope"></i> Invites</button>
+                    <button className="dropdown-item" onClick={() => go("edit-profile")}><i className="fa-solid fa-user-pen"></i> Edit Profile</button>
                     <div className="dropdown-divider" />
                     <button className="dropdown-item danger" onClick={onLogout}>Sign Out</button>
                   </div>
@@ -3201,13 +3415,14 @@ export default function App() {
           {/* Collector logged in (not artist) */}
           {meCollector && !me && (
             <div className="artist-menu" ref={collectorDropRef}>
-              <button className="artist-avatar-btn collector-avatar-btn" onClick={() => setCollectorDropOpen((o) => !o)} title={meCollector.name}>{meCollector.avatar}</button>
+              <button className="artist-avatar-btn collector-avatar-btn" onClick={() => setCollectorDropOpen((o) => !o)} title={meCollector.name}><AvatarImg avatar={meCollector.avatar} alt={meCollector.name} /></button>
               {outbidCount > 0 && <span className="notif-badge">{outbidCount}</span>}
               {collectorDropOpen && (
                 <div className="artist-dropdown">
                   <div className="artist-dropdown-header"><div className="artist-dropdown-name">{meCollector.name}</div><div className="artist-dropdown-email">{meCollector.email} · Collector</div></div>
                   <button className="dropdown-item" onClick={() => go("collector-dashboard")}><i className="fa-solid fa-folder-open"></i> My Collection</button>
                   <button className="dropdown-item" onClick={() => go("invites")}><i className="fa-solid fa-envelope"></i> Invites</button>
+                  <button className="dropdown-item" onClick={() => go("edit-profile")}><i className="fa-solid fa-user-pen"></i> Edit Profile</button>
                   <div className="dropdown-divider" />
                   <button className="dropdown-item danger" onClick={onCollectorLogout}>Sign Out</button>
                 </div>
@@ -3256,6 +3471,8 @@ export default function App() {
       {view.page === "create"              && me          && <CreatePage    artist={me} onNavigate={go} store={store} updateStore={updateStore} galleryItemId={view.id || null} />}
       {view.page === "add-artwork"         && me          && <AddArtworkPage artist={me} store={store} updateStore={updateStore} onNavigate={go} />}
       {view.page === "edit-artwork"        && me          && <AddArtworkPage artist={me} store={store} updateStore={updateStore} onNavigate={go} editItemId={view.id} />}
+      {view.page === "edit-profile"        && me          && <EditProfilePage user={me} userType="artist" onNavigate={go} updateStore={updateStore} onProfileSaved={onArtistProfileSaved} />}
+      {view.page === "edit-profile"        && meCollector && !me && <EditProfilePage user={meCollector} userType="collector" onNavigate={go} updateStore={updateStore} onProfileSaved={onCollectorProfileSaved} />}
       {view.page === "auction"             && <AuctionPage auctionId={view.id} onNavigate={go} store={store} updateStore={updateStore} loadAuctionDetail={loadAuctionDetail} artist={me} meCollector={meCollector} bidderName={bidderName} setBidderName={setBidderName} bidderEmail={bidderEmail} setBidderEmail={setBidderEmail} />}
       {view.page === "payment"             && (isLoggedIn ? <PaymentPage auctionId={view.id} onNavigate={go} store={store} updateStore={updateStore} loadAuctionDetail={loadAuctionDetail} bidderName={bidderName} bidderEmail={bidderEmail} meCollector={meCollector} /> : <AuthPage store={store} updateStore={updateStore} onLogin={onLogin} onCollectorLogin={onCollectorLogin} initialMode="login" initialInviteCode={pendingInviteCode} />)}
       {view.page === "edit"                && me          && <EditPage auctionId={view.id} artist={me} onNavigate={go} store={store} updateStore={updateStore} />}
