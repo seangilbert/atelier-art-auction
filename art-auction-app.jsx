@@ -2589,8 +2589,16 @@ export default function App() {
     return () => document.removeEventListener("mousedown", fn);
   }, []);
 
+  const [returnToAuction, setReturnToAuction] = useState(null);
+
   const go = (page, id = null) => {
     if ((page === "create" || page === "dashboard") && !artist) { setView({ page: "login", id: null }); return; }
+    // When navigating to auth from an auction page, remember which auction to return to after login
+    if ((page === "login" || page === "signup" || page === "collector-signup") && view.page === "auction" && view.id) {
+      setReturnToAuction(view.id);
+    } else if (page !== "login" && page !== "signup" && page !== "collector-signup") {
+      setReturnToAuction(null);
+    }
     setView({ page, id });
     setDropOpen(false);
     setCollectorDropOpen(false);
@@ -2599,9 +2607,9 @@ export default function App() {
     else window.history.pushState(null, "", window.location.pathname);
   };
 
-  const onLogin = (a) => { setArtist(a); updateStore(a.id); setView({ page: "dashboard", id: null }); };
+  const onLogin = (a) => { setArtist(a); updateStore(a.id); setView(returnToAuction ? { page: "auction", id: returnToAuction } : { page: "dashboard", id: null }); setReturnToAuction(null); };
   const onLogout = async () => { await supabase.auth.signOut(); setArtist(null); setDropOpen(false); setView({ page: "home", id: null }); };
-  const onCollectorLogin = (c) => { setCollector(c); updateStore(c.id); setView({ page: "home", id: null }); };
+  const onCollectorLogin = (c) => { setCollector(c); updateStore(c.id); setView(returnToAuction ? { page: "auction", id: returnToAuction } : { page: "home", id: null }); setReturnToAuction(null); };
   const onCollectorLogout = async () => { await supabase.auth.signOut(); setCollector(null); setCollectorDropOpen(false); setView({ page: "home", id: null }); };
 
   // Use fresh profile data from store if available, fall back to session state
