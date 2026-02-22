@@ -87,6 +87,18 @@ const AuctionPage = ({ auctionId, onNavigate, store, updateStore, loadAuctionDet
     }
   }, [status, topBid, isOwner]);
 
+  // Load which comments the current user has already reported (must be before early return)
+  useEffect(() => {
+    if (!currentUserId || !auctionId) return;
+    supabase
+      .from("comment_reports")
+      .select("comment_id")
+      .eq("reporter_id", currentUserId)
+      .then(({ data }) => {
+        if (data) setReportedIds(new Set(data.map((r) => r.comment_id)));
+      });
+  }, [currentUserId, auctionId]);
+
   if (!auction) return <div className="page-container" style={{ textAlign:"center", paddingTop:"6rem" }}><div style={{ fontSize:"3rem", marginBottom:"1rem" }}>🔍</div><h2 style={{ fontFamily:"var(--font-display)", marginBottom:"0.75rem" }}>Drop Not Found</h2><button className="btn btn-primary" onClick={() => onNavigate("home")}>Back to Home</button></div>;
 
   const isLive = status === "live";
@@ -161,18 +173,6 @@ const AuctionPage = ({ auctionId, onNavigate, store, updateStore, loadAuctionDet
     end:    { title:"End Drop Early", message:"Highest bidder wins now. Cannot be undone.",           confirmLabel:"End Now",  confirmClass:"btn-danger" },
     remove: { title:"Remove Drop",    message:"Listing will be hidden permanently.",                  confirmLabel:"Remove",   confirmClass:"btn-danger" },
   };
-
-  // Load which comments the current user has already reported
-  useEffect(() => {
-    if (!currentUserId || !auctionId) return;
-    supabase
-      .from("comment_reports")
-      .select("comment_id")
-      .eq("reporter_id", currentUserId)
-      .then(({ data }) => {
-        if (data) setReportedIds(new Set(data.map((r) => r.comment_id)));
-      });
-  }, [currentUserId, auctionId]);
 
   // ── Comment actions ───────────────────────────────────────────────────────
   const postComment = async () => {
