@@ -361,7 +361,7 @@ const AuctionPage = ({ auctionId, onNavigate, store, updateStore, loadAuctionDet
                             disabled={reportedIds.has(c.id) || reportingId === c.id}
                             title={reportedIds.has(c.id) ? "Reported" : "Report comment"}
                             style={{ background:"none", border:"none", cursor: reportedIds.has(c.id) ? "default" : "pointer", opacity: reportedIds.has(c.id) ? 0.35 : 0.45, fontSize:"0.8rem", padding:"2px 4px", lineHeight:1 }}>
-                            {reportingId === c.id ? "…" : "🚩"}
+                            {reportingId === c.id ? "…" : <i className="fa-solid fa-flag" />}
                           </button>
                         )}
                       </div>
