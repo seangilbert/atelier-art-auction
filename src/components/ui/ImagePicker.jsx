@@ -7,6 +7,7 @@ const ImagePicker = ({ imageUrl, emoji, onImageUrl, onEmoji }) => {
   const [urlInput, setUrlInput] = useState(imageUrl && !imageUrl.startsWith("data:") ? imageUrl : "");
   const [urlErr, setUrlErr]   = useState("");
   const [dragOver, setDragOver] = useState(false);
+  const [uploading, setUploading] = useState(false);
   const fileRef = useRef();
 
   // Local preview: if imageUrl is already set (e.g. edit mode), show it immediately
@@ -14,6 +15,7 @@ const ImagePicker = ({ imageUrl, emoji, onImageUrl, onEmoji }) => {
 
   const handleFile = async (file) => {
     if (!file?.type.startsWith("image/")) return;
+    setUploading(true);
     try {
       const compressed = await compressImage(file);
       // Try to upload to Supabase Storage; fall back to base64 data URI if unavailable
@@ -25,6 +27,7 @@ const ImagePicker = ({ imageUrl, emoji, onImageUrl, onEmoji }) => {
         if (!uploadErr) {
           const { data: { publicUrl } } = supabase.storage.from("artworks").getPublicUrl(path);
           onImageUrl(publicUrl);
+          setUploading(false);
           return;
         }
       } catch {}
@@ -35,6 +38,7 @@ const ImagePicker = ({ imageUrl, emoji, onImageUrl, onEmoji }) => {
       r.onload = (e) => onImageUrl(e.target.result);
       r.readAsDataURL(file);
     }
+    setUploading(false);
   };
 
   const handleUseUrl = () => {
@@ -57,12 +61,12 @@ const ImagePicker = ({ imageUrl, emoji, onImageUrl, onEmoji }) => {
           onDragOver={(e) => { e.preventDefault(); setDragOver(true); }}
           onDragLeave={() => setDragOver(false)}
           onDrop={(e) => { e.preventDefault(); setDragOver(false); handleFile(e.dataTransfer.files[0]); }}
-          onClick={() => fileRef.current?.click()}
+          onClick={() => !uploading && fileRef.current?.click()}
         >
           <input ref={fileRef} type="file" accept="image/*" style={{ display:"none" }} onChange={(e) => handleFile(e.target.files[0])} />
           {preview
-            ? <><img src={preview} alt="preview" className="upload-preview" /><p className="upload-sub">Click or drag to replace</p></>
-            : <><div className="upload-icon">🖼️</div><div className="upload-label">Drag & drop your artwork photo</div><div className="upload-sub">JPG, PNG, WEBP · Compressed automatically · or click to browse</div></>
+            ? <><img src={preview} alt="preview" className="upload-preview" /><p className="upload-sub">{uploading ? "Uploading…" : "Click or drag to replace"}</p></>
+            : <><div className="upload-icon">🖼️</div><div className="upload-label">{uploading ? "Uploading…" : "Drag & drop your artwork photo"}</div><div className="upload-sub">JPG, PNG, WEBP · Compressed automatically · or click to browse</div></>
           }
         </div>
       )}
