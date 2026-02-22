@@ -19,6 +19,20 @@ const DashboardPage = ({ artist, onNavigate, store, updateStore }) => {
   const markPaid = async (auctionId) => {
     setMarkingPaid(auctionId);
     await supabase.from("payments").update({ paid_at: new Date().toISOString() }).eq("auction_id", auctionId);
+    const auction = store.auctions.find((a) => a.id === auctionId);
+    const payment = store.payments?.[auctionId];
+    if (auction && payment) {
+      supabase.functions.invoke("send-payment-received", {
+        body: {
+          auctionId,
+          auctionTitle:  auction.title,
+          artistName:    artist.name,
+          winnerName:    payment.sh.name,
+          winnerEmail:   payment.sh.email,
+          winningAmount: store.bidSummaries[auctionId]?.topAmount || 0,
+        },
+      }).catch(() => {});
+    }
     updateStore();
     setMarkingPaid(null);
   };
@@ -28,6 +42,21 @@ const DashboardPage = ({ artist, onNavigate, store, updateStore }) => {
     await supabase.from("payments")
       .update({ shipped_at: new Date().toISOString(), tracking: trackingInput[auctionId] || "" })
       .eq("auction_id", auctionId);
+    const auction = store.auctions.find((a) => a.id === auctionId);
+    const payment = store.payments?.[auctionId];
+    if (auction && payment) {
+      supabase.functions.invoke("send-order-shipped", {
+        body: {
+          auctionId,
+          auctionTitle:  auction.title,
+          artistName:    artist.name,
+          winnerName:    payment.sh.name,
+          winnerEmail:   payment.sh.email,
+          winningAmount: store.bidSummaries[auctionId]?.topAmount || 0,
+          tracking:      trackingInput[auctionId] || "",
+        },
+      }).catch(() => {});
+    }
     updateStore();
     setMarkingShipped(null);
   };
