@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
 import { supabase } from "../supabase.js";
 
 // ── Supabase data hook ────────────────────────────────────────────────────────
@@ -13,7 +13,10 @@ const useSupabaseStore = () => {
     ratings: { byRatee: {}, byAuction: {} },
   });
 
-  const loadAll = useCallback(async (userId = null) => {
+  const lastUserIdRef = useRef(null);
+
+  const loadAll = useCallback(async (userId = lastUserIdRef.current) => {
+    if (userId !== null) lastUserIdRef.current = userId;
     try {
       // Tier-1 fetch: lightweight queries only — full bids/comments/reactions loaded per-auction
       const [
