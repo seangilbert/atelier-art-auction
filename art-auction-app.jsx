@@ -273,6 +273,7 @@ export default function App() {
       )}
       {view.page === "dashboard"           && me          && <DashboardPage artist={me} onNavigate={go} store={store} updateStore={updateStore} />}
       {view.page === "create"              && me          && <CreatePage    artist={me} onNavigate={go} store={store} updateStore={updateStore} galleryItemId={view.id || null} />}
+      {view.page === "edit-draft"          && me          && <CreatePage    artist={me} onNavigate={go} store={store} updateStore={updateStore} editDraftId={view.id} />}
       {view.page === "add-artwork"         && me          && <AddArtworkPage artist={me} store={store} updateStore={updateStore} onNavigate={go} />}
       {view.page === "edit-artwork"        && me          && <AddArtworkPage artist={me} store={store} updateStore={updateStore} onNavigate={go} editItemId={view.id} />}
       {view.page === "edit-profile"        && me          && <EditProfilePage user={me} userType="artist" onNavigate={go} updateStore={updateStore} onProfileSaved={onArtistProfileSaved} />}

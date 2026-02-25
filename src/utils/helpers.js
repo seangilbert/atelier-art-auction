@@ -43,8 +43,10 @@ export const compressImage = (file) =>
 
 export const getStatus = (a) => {
   if (a.removed) return "removed";
+  if (!a.startDate) return "draft";
+  if (new Date(a.startDate) > new Date()) return "scheduled";
   if (a.paused) return "paused";
-  if (new Date(a.endDate) <= new Date()) return "ended";
+  if (a.endDate && new Date(a.endDate) <= new Date()) return "ended";
   return "live";
 };
 

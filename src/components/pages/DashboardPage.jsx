@@ -7,7 +7,10 @@ import ConfirmModal from "../ui/ConfirmModal.jsx";
 import { RatingModal } from "../ui/StarPicker.jsx";
 
 const DashboardPage = ({ artist, onNavigate, store, updateStore }) => {
-  const my = store.auctions.filter((a) => a.artistId === artist.id && !a.removed);
+  const my            = store.auctions.filter((a) => a.artistId === artist.id && !a.removed);
+  const drafts        = my.filter((a) => getStatus(a) === "draft");
+  const scheduled     = my.filter((a) => getStatus(a) === "scheduled").sort((a, b) => new Date(a.startDate) - new Date(b.startDate));
+  const publishedDrops = my.filter((a) => !["draft", "scheduled"].includes(getStatus(a)));
   const [confirm, setConfirm] = useState(null);
   const [copiedId, setCopiedId] = useState(null);
   const [markingPaid, setMarkingPaid] = useState(null);
@@ -90,11 +93,24 @@ const DashboardPage = ({ artist, onNavigate, store, updateStore }) => {
       return { auction: a, topBid, payment };
     });
 
+  const publishDraft = async (auction) => {
+    const startDate = new Date().toISOString();
+    const endDate   = new Date(Date.now() + auction.durationDays * 86400000).toISOString();
+    await supabase.from("auctions").update({ start_date: startDate, end_date: endDate }).eq("id", auction.id);
+    updateStore(artist.id);
+  };
+
+  const unscheduleDrop = async (id) => {
+    await supabase.from("auctions").update({ start_date: null, end_date: null }).eq("id", id);
+    updateStore(artist.id);
+  };
+
   const stats = {
-    total: my.length,
-    live: my.filter((a) => getStatus(a) === "live").length,
-    ended: my.filter((a) => getStatus(a) === "ended").length,
-    revenue: my.filter((a) => getStatus(a) === "ended").reduce((sum, a) => {
+    total:   publishedDrops.length,
+    drafts:  drafts.length + scheduled.length,
+    live:    publishedDrops.filter((a) => getStatus(a) === "live").length,
+    ended:   publishedDrops.filter((a) => getStatus(a) === "ended").length,
+    revenue: publishedDrops.filter((a) => getStatus(a) === "ended").reduce((sum, a) => {
       return sum + (store.bidSummaries[a.id]?.topAmount || 0);
     }, 0),
   };
@@ -160,10 +176,11 @@ const DashboardPage = ({ artist, onNavigate, store, updateStore }) => {
 
       <div className="dash-stats">
         {[
-          { v: stats.total,   label: "Total Drops" },
-          { v: stats.live,    label: "Live Now",       cls: "c-rouge" },
-          { v: stats.ended,   label: "Completed" },
+          { v: stats.total,                               label: "Published" },
+          { v: stats.live,                                label: "Live Now",      cls: "c-rouge" },
+          { v: stats.ended,                               label: "Completed" },
           { v: stats.revenue ? fmt$(stats.revenue) : "—", label: "Total Revenue", cls: "c-gold" },
+          ...(stats.drafts > 0 ? [{ v: stats.drafts, label: "Drafts/Sched", cls: "c-slate" }] : []),
         ].map((s) => (
           <div key={s.label} className="stat-card">
             <div className={`stat-value ${s.cls || ""}`}>{s.v}</div>
@@ -171,6 +188,64 @@ const DashboardPage = ({ artist, onNavigate, store, updateStore }) => {
           </div>
         ))}
       </div>
+
+      {/* ── Scheduled Queue ────────────────────────────────── */}
+      {scheduled.length > 0 && (
+        <div style={{ marginBottom:"2.5rem" }}>
+          <div className="dash-section-title">📅 Scheduled Queue</div>
+          <div className="auction-mgmt-list">
+            {scheduled.map((auction) => (
+              <div key={auction.id} className="mgmt-card st-scheduled">
+                <div className="mgmt-thumb">{auction.imageUrl ? <img src={auction.imageUrl} alt="" /> : (auction.emoji || "🎨")}</div>
+                <div className="mgmt-info">
+                  <div style={{ display:"flex", alignItems:"center", gap:"0.6rem", flexWrap:"wrap", marginBottom:"0.2rem" }}>
+                    <div className="mgmt-title">{auction.title}</div>
+                    <StatusPill status="scheduled" />
+                  </div>
+                  <div className="mgmt-meta">
+                    <i className="fa-solid fa-clock"></i> Goes live {fmtDate(auction.startDate)}
+                    {" · "}{auction.durationDays}-day drop · Starting {fmt$(auction.startingPrice)}
+                  </div>
+                </div>
+                <div className="mgmt-actions">
+                  <button className="btn btn-ghost btn-sm" onClick={() => onNavigate("edit-draft", auction.id)}>Edit</button>
+                  <button className="btn btn-ghost btn-sm" onClick={() => unscheduleDrop(auction.id)}>Unschedule</button>
+                  <button className="btn btn-ghost btn-sm" style={{ color:"var(--rouge)", borderColor:"rgba(139,46,46,0.25)" }} onClick={() => setConfirm({ type:"remove", id:auction.id })}>Delete</button>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {/* ── Drafts ─────────────────────────────────────────── */}
+      {drafts.length > 0 && (
+        <div style={{ marginBottom:"2.5rem" }}>
+          <div className="dash-section-title">✏️ Drafts</div>
+          <div className="auction-mgmt-list">
+            {drafts.map((auction) => (
+              <div key={auction.id} className="mgmt-card st-draft">
+                <div className="mgmt-thumb">{auction.imageUrl ? <img src={auction.imageUrl} alt="" /> : (auction.emoji || "🎨")}</div>
+                <div className="mgmt-info">
+                  <div style={{ display:"flex", alignItems:"center", gap:"0.6rem", flexWrap:"wrap", marginBottom:"0.2rem" }}>
+                    <div className="mgmt-title">{auction.title || <em style={{ color:"var(--mist)" }}>Untitled draft</em>}</div>
+                    <StatusPill status="draft" />
+                  </div>
+                  <div className="mgmt-meta">
+                    {auction.startingPrice ? `Starting ${fmt$(auction.startingPrice)}` : "No price set"}
+                    {" · "}{auction.durationDays}-day drop
+                  </div>
+                </div>
+                <div className="mgmt-actions">
+                  <button className="btn btn-ghost btn-sm" onClick={() => onNavigate("edit-draft", auction.id)}>Edit</button>
+                  <button className="btn btn-outline btn-sm" onClick={() => publishDraft(auction)}>Publish Now</button>
+                  <button className="btn btn-ghost btn-sm" style={{ color:"var(--rouge)", borderColor:"rgba(139,46,46,0.25)" }} onClick={() => setConfirm({ type:"remove", id:auction.id })}>Delete</button>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
 
       {pendingPayments.length > 0 && (
         <div style={{ marginBottom: "2.5rem" }}>
@@ -335,7 +410,7 @@ const DashboardPage = ({ artist, onNavigate, store, updateStore }) => {
 
       <div className="dash-section-title">My Drops</div>
 
-      {my.length === 0 ? (
+      {publishedDrops.length === 0 ? (
         <div className="empty-state">
           <h3>No drops yet</h3>
           <p style={{ marginBottom: "1.5rem" }}>Create your first listing to start selling your art.</p>
@@ -343,7 +418,7 @@ const DashboardPage = ({ artist, onNavigate, store, updateStore }) => {
         </div>
       ) : (
         <div className="auction-mgmt-list">
-          {my.map((auction) => {
+          {publishedDrops.map((auction) => {
             const status = getStatus(auction);
             const summary = store.bidSummaries[auction.id] || { count: 0, topAmount: 0 };
             const topBid = summary.topAmount || null;

@@ -4,50 +4,80 @@ import { generateId, fmt$ } from "../../utils/helpers.js";
 import ImagePicker from "../ui/ImagePicker.jsx";
 import AvatarImg from "../ui/AvatarImg.jsx";
 
-const CreatePage = ({ artist, onNavigate, store, updateStore, galleryItemId }) => {
-  const galleryItem = galleryItemId ? store.gallery[galleryItemId] : null;
-  const [step, setStep] = useState(galleryItemId ? 2 : 0);
+const CreatePage = ({ artist, onNavigate, store, updateStore, galleryItemId, editDraftId }) => {
+  const galleryItem   = galleryItemId ? store.gallery[galleryItemId] : null;
+  const draftAuction  = editDraftId   ? store.auctions.find(a => a.id === editDraftId) : null;
+
+  const [step, setStep] = useState(draftAuction ? 0 : galleryItemId ? 2 : 0);
   const [f, setF] = useState({
-    title: galleryItem?.title || "", description: galleryItem?.description || "",
-    medium: galleryItem?.medium || "", dimensions: galleryItem?.dimensions || "",
-    imageUrl: galleryItem?.imageUrl || "", emoji: galleryItem?.emoji || "🎨",
-    startingPrice: "", minIncrement: "25", durationDays: "7",
-    paymentMethods: ["venmo","paypal"], venmoHandle: "", paypalEmail: "", cashappHandle: "",
+    title:          draftAuction?.title          || galleryItem?.title       || "",
+    description:    draftAuction?.description    || galleryItem?.description || "",
+    medium:         draftAuction?.medium         || galleryItem?.medium      || "",
+    dimensions:     draftAuction?.dimensions     || galleryItem?.dimensions  || "",
+    imageUrl:       draftAuction?.imageUrl       || galleryItem?.imageUrl    || "",
+    emoji:          draftAuction?.emoji          || galleryItem?.emoji       || "🎨",
+    startingPrice:  draftAuction?.startingPrice?.toString() || "",
+    minIncrement:   draftAuction?.minIncrement?.toString()  || "25",
+    durationDays:   draftAuction?.durationDays?.toString()  || "7",
+    paymentMethods: draftAuction?.paymentMethods || ["venmo","paypal"],
+    venmoHandle:    draftAuction?.venmoHandle    || "",
+    paypalEmail:    draftAuction?.paypalEmail    || "",
+    cashappHandle:  draftAuction?.cashappHandle  || "",
   });
   const [busy, setBusy] = useState(false);
-  const set = (k, v) => setF((p) => ({ ...p, [k]: v }));
+  const [showSchedulePicker, setShowSchedulePicker] = useState(false);
+  const [scheduleInput, setScheduleInput] = useState("");
 
+  const set = (k, v) => setF((p) => ({ ...p, [k]: v }));
   const togglePay = (m) => set("paymentMethods", f.paymentMethods.includes(m) ? f.paymentMethods.filter((x) => x !== m) : [...f.paymentMethods, m]);
 
-  const publish = async () => {
+  // Save with one of three modes: "draft" | "schedule" | "now"
+  const save = async (mode, scheduledAt = null) => {
     setBusy(true);
-    const id = generateId();
-    const endDate = new Date(Date.now() + parseInt(f.durationDays) * 86400000).toISOString();
-    const auctionRow = {
-      id, artist_id: artist.id, artist_name: artist.name, artist_avatar: artist.avatar,
+    const id = editDraftId || generateId();
+    const startDate = mode === "draft"    ? null
+                    : mode === "schedule" ? new Date(scheduledAt).toISOString()
+                    : new Date().toISOString();
+    const endDate = startDate
+      ? new Date(new Date(startDate).getTime() + parseInt(f.durationDays) * 86400000).toISOString()
+      : null;
+    const row = {
+      id,
+      artist_id: artist.id, artist_name: artist.name, artist_avatar: artist.avatar,
       title: f.title, description: f.description, medium: f.medium, dimensions: f.dimensions,
-      starting_price: parseFloat(f.startingPrice) || 50, min_increment: parseFloat(f.minIncrement) || 25,
-      end_date: endDate, duration_days: parseInt(f.durationDays),
-      payment_methods: f.paymentMethods, venmo_handle: f.venmoHandle,
-      paypal_email: f.paypalEmail, cashapp_handle: f.cashappHandle,
-      image_url: f.imageUrl, emoji: f.emoji, paused: false, removed: false,
-      gallery_item_id: galleryItemId || null,
+      starting_price: parseFloat(f.startingPrice) || 50,
+      min_increment:  parseFloat(f.minIncrement)  || 25,
+      start_date: startDate, end_date: endDate, duration_days: parseInt(f.durationDays),
+      payment_methods: f.paymentMethods,
+      venmo_handle: f.venmoHandle, paypal_email: f.paypalEmail, cashapp_handle: f.cashappHandle,
+      image_url: f.imageUrl, emoji: f.emoji,
+      paused: false, removed: false,
+      gallery_item_id: galleryItemId || draftAuction?.galleryItemId || null,
     };
-    const { error: insertErr } = await supabase.from("auctions").insert(auctionRow);
-    if (insertErr) { console.error("publish error:", insertErr); setBusy(false); return; }
-    await updateStore(); // refresh store so new auction is visible
+    let saveErr;
+    if (editDraftId) {
+      ({ error: saveErr } = await supabase.from("auctions").update(row).eq("id", editDraftId));
+    } else {
+      ({ error: saveErr } = await supabase.from("auctions").insert(row));
+    }
+    if (saveErr) { console.error("save error:", saveErr); setBusy(false); return; }
+    await updateStore();
     setBusy(false);
-    onNavigate("auction", id);
+    if (mode === "now") onNavigate("auction", id);
+    else onNavigate("dashboard");
   };
 
   const STEPS = ["Artwork", "Details", "Pricing", "Payment", "Publish"];
 
+  // Min datetime for schedule picker: 1 minute from now
+  const minDatetime = new Date(Date.now() + 60000).toISOString().slice(0, 16);
+
   return (
     <div className="page-container">
-      <h1 className="page-title">New <em>Drop</em></h1>
+      <h1 className="page-title">{editDraftId ? "Edit Draft" : <>New <em>Drop</em></>}</h1>
       <p className="page-subtitle">Listing as <strong><span style={{ display:"inline-flex", width:"1.2rem", height:"1.2rem", borderRadius:"50%", overflow:"hidden", verticalAlign:"middle", marginRight:"0.25rem", background:"var(--grad-accent)", fontSize:"0.85rem" }}><AvatarImg avatar={artist.avatar} alt={artist.name} /></span>{artist.name}</strong></p>
 
-      {galleryItem && (
+      {galleryItem && !editDraftId && (
         <div className="alert alert-info" style={{ marginBottom:"1.5rem" }}>
           <i className="fa-solid fa-images"></i>
           Artwork details pre-filled from your gallery: <strong>{galleryItem.title}</strong>
@@ -57,7 +87,7 @@ const CreatePage = ({ artist, onNavigate, store, updateStore, galleryItemId }) =
       <div className="step-indicator">
         {STEPS.map((s, i) => (
           <div key={s} style={{ display: "flex", alignItems: "center", flex: i < STEPS.length - 1 ? 1 : 0 }}>
-            <div className={`step-num ${i === step ? "active" : (i < step || (galleryItemId && i < 2)) ? "done" : ""}`}>{(i < step || (galleryItemId && i < 2)) ? <i className="fa-solid fa-check"></i> : i + 1}</div>
+            <div className={`step-num ${i === step ? "active" : (i < step || (galleryItemId && !editDraftId && i < 2)) ? "done" : ""}`}>{(i < step || (galleryItemId && !editDraftId && i < 2)) ? <i className="fa-solid fa-check"></i> : i + 1}</div>
             <span className={`step-label ${i === step ? "active" : ""}`}>{s}</span>
             {i < STEPS.length - 1 && <div className="step-line" />}
           </div>
@@ -99,7 +129,7 @@ const CreatePage = ({ artist, onNavigate, store, updateStore, galleryItemId }) =
           </div>
           <div className="form-group"><label className="form-label">Drop Duration</label><select className="form-select" value={f.durationDays} onChange={(e) => set("durationDays", e.target.value)}>{[["1","1 day"],["3","3 days"],["5","5 days"],["7","7 days (recommended)"],["14","14 days"],["30","30 days"]].map(([v,l]) => <option key={v} value={v}>{l}</option>)}</select></div>
           <div className="form-actions">
-            <button className="btn btn-ghost" onClick={() => galleryItemId ? onNavigate("dashboard") : setStep(1)}><i className="fa-solid fa-arrow-left"></i> Back</button>
+            <button className="btn btn-ghost" onClick={() => galleryItemId && !editDraftId ? onNavigate("dashboard") : setStep(1)}><i className="fa-solid fa-arrow-left"></i> Back</button>
             <button className="btn btn-primary" onClick={() => setStep(3)} disabled={!f.startingPrice}>Continue <i className="fa-solid fa-arrow-right"></i></button>
           </div>
         </div>
@@ -131,6 +161,7 @@ const CreatePage = ({ artist, onNavigate, store, updateStore, galleryItemId }) =
 
       {step === 4 && (
         <div>
+          {/* Summary card */}
           <div style={{ background:"white", border:"1px solid var(--border)", borderRadius:"var(--radius-lg)", padding:"1.5rem", marginBottom:"1.5rem" }}>
             <div style={{ display:"flex", gap:"1.25rem", alignItems:"flex-start" }}>
               <div style={{ width:72, height:72, background:"var(--parchment)", borderRadius:"var(--radius)", overflow:"hidden", flexShrink:0, display:"flex", alignItems:"center", justifyContent:"center", fontSize:"2rem" }}>
@@ -149,8 +180,62 @@ const CreatePage = ({ artist, onNavigate, store, updateStore, galleryItemId }) =
               ))}
             </div>
           </div>
-          <div className="alert alert-info"><i className="fa-solid fa-circle-info"></i> Once published, your drop goes live immediately. You'll get a shareable link to send to collectors.</div>
-          <div className="form-actions"><button className="btn btn-ghost" onClick={() => setStep(3)}><i className="fa-solid fa-arrow-left"></i> Back</button><button className="btn btn-primary btn-lg" onClick={publish} disabled={busy}>{busy ? "Publishing…" : <><i className="fa-solid fa-rocket"></i> Publish Drop</>}</button></div>
+
+          {/* Info banner */}
+          <div className="alert alert-info" style={{ marginBottom:"1rem" }}>
+            <i className="fa-solid fa-circle-info"></i>{" "}
+            {editDraftId
+              ? "Update your draft, schedule for a future date, or publish now."
+              : "Save as a draft to finish later, schedule for a specific date, or go live now."}
+          </div>
+
+          {/* Inline schedule picker */}
+          {showSchedulePicker && (
+            <div style={{ background:"white", border:"1px solid var(--border)", borderRadius:"var(--radius)", padding:"1.25rem", marginBottom:"1rem" }}>
+              <label className="form-label" style={{ marginBottom:"0.5rem", display:"block" }}>
+                <i className="fa-solid fa-calendar"></i> Publish date &amp; time
+              </label>
+              <input
+                type="datetime-local"
+                className="form-input"
+                min={minDatetime}
+                value={scheduleInput}
+                onChange={e => setScheduleInput(e.target.value)}
+                style={{ marginBottom:"0.75rem" }}
+              />
+              <button
+                className="btn btn-primary"
+                disabled={!scheduleInput || busy}
+                onClick={() => save("schedule", scheduleInput)}
+                style={{ width:"100%" }}
+              >
+                <i className="fa-solid fa-calendar-check"></i>{" "}
+                {busy ? "Scheduling…" : "Confirm Schedule"}
+              </button>
+            </div>
+          )}
+
+          {/* Action row */}
+          <div className="form-actions" style={{ flexWrap:"wrap", gap:"0.5rem" }}>
+            <button className="btn btn-ghost" onClick={() => setStep(3)} disabled={busy}>
+              <i className="fa-solid fa-arrow-left"></i> Back
+            </button>
+            <div style={{ display:"flex", gap:"0.5rem", flexWrap:"wrap", marginLeft:"auto" }}>
+              <button className="btn btn-ghost" onClick={() => save("draft")} disabled={busy}>
+                {busy ? "Saving…" : <><i className="fa-solid fa-floppy-disk"></i> Save as Draft</>}
+              </button>
+              <button
+                className={`btn btn-outline${showSchedulePicker ? " active" : ""}`}
+                onClick={() => setShowSchedulePicker(s => !s)}
+                disabled={busy}
+              >
+                <i className="fa-solid fa-calendar"></i> Schedule
+              </button>
+              <button className="btn btn-primary btn-lg" onClick={() => save("now")} disabled={busy}>
+                {busy ? "Publishing…" : <><i className="fa-solid fa-rocket"></i> Publish Now</>}
+              </button>
+            </div>
+          </div>
         </div>
       )}
     </div>

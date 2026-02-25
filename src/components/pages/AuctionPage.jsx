@@ -63,7 +63,7 @@ const AuctionPage = ({ auctionId, onNavigate, store, updateStore, loadAuctionDet
   }, [auctionId, updateStore, loadAuctionDetail, currentUserId]);
 
   // Auction-ended email: fire once when the owner is watching and the auction ends
-  const status = getStatus(auction || { endDate: new Date(0).toISOString(), paused: false });
+  const status = getStatus(auction || { startDate: new Date(0).toISOString(), endDate: new Date(0).toISOString(), paused: false });
   const sortedBids = [...bids].sort((a, b) => b.amount - a.amount);
   const topBid = sortedBids[0] || null;
   const isOwner = artist?.id === auction?.artistId;
@@ -101,6 +101,8 @@ const AuctionPage = ({ auctionId, onNavigate, store, updateStore, loadAuctionDet
   }, [currentUserId, auctionId]);
 
   if (!auction) return <div className="page-container" style={{ textAlign:"center", paddingTop:"6rem" }}><div style={{ fontSize:"3rem", marginBottom:"1rem" }}>🔍</div><h2 style={{ fontFamily:"var(--font-display)", marginBottom:"0.75rem" }}>Drop Not Found</h2><button className="btn btn-primary" onClick={() => onNavigate("home")}>Back to Home</button></div>;
+  // Drafts are only visible to their owner
+  if (status === "draft" && !isOwner) return <div className="page-container" style={{ textAlign:"center", paddingTop:"6rem" }}><div style={{ fontSize:"3rem", marginBottom:"1rem" }}>🔍</div><h2 style={{ fontFamily:"var(--font-display)", marginBottom:"0.75rem" }}>Drop Not Found</h2><button className="btn btn-primary" onClick={() => onNavigate("home")}>Back to Home</button></div>;
 
   const isLive = status === "live";
   const currentTop = topBid ? topBid.amount : auction.startingPrice;
@@ -244,6 +246,17 @@ const AuctionPage = ({ auctionId, onNavigate, store, updateStore, loadAuctionDet
         </div>
       )}
 
+      {status === "draft" && isOwner && (
+        <div className="alert alert-info" style={{ marginBottom:"1.5rem" }}>
+          <i className="fa-solid fa-pencil"></i> <strong>Draft preview</strong> — only you can see this.
+          <button className="btn btn-outline btn-sm" style={{ marginLeft:"1rem" }} onClick={() => onNavigate("edit-draft", auctionId)}>Edit Draft</button>
+        </div>
+      )}
+      {status === "scheduled" && isOwner && (
+        <div className="alert alert-info" style={{ marginBottom:"1.5rem" }}>
+          <i className="fa-solid fa-clock"></i> Scheduled to go live <strong>{fmtDate(auction.startDate)}</strong>
+        </div>
+      )}
       {isWinner && <div className="alert alert-success" style={{ marginBottom:"1.5rem" }}><i className="fa-solid fa-trophy"></i> You won! <button className="btn btn-primary btn-sm" style={{ marginLeft:"1rem" }} onClick={() => onNavigate("payment", auctionId)}>Proceed to Payment <i className="fa-solid fa-arrow-right"></i></button></div>}
       {!isLive && topBid && !isWinner && <div className="alert" style={{ background:"var(--parchment)", border:"1px solid var(--border)", color:"var(--slate)", marginBottom:"1.5rem" }}>Drop ended. Winner: <strong>{shortName(topBid.bidder)}</strong> · {fmt$(topBid.amount)}</div>}
       {bidMsg && <div className={`alert alert-${bidMsg.type}`} style={{ marginBottom:"1rem" }}>{bidMsg.text}</div>}

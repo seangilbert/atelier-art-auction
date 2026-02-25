@@ -75,18 +75,21 @@ const useSupabaseStore = () => {
       });
 
       // Normalize auction rows to camelCase shape
-      const auctionList = (auctions || []).filter(a => !a.removed).map(a => ({
-        id: a.id, published: true, paused: a.paused, removed: a.removed,
-        artistId: a.artist_id, artistName: a.artist_name, artistAvatar: a.artist_avatar,
-        title: a.title, description: a.description, medium: a.medium, dimensions: a.dimensions,
-        startingPrice: Number(a.starting_price), minIncrement: Number(a.min_increment),
-        endDate: a.end_date, durationDays: a.duration_days,
-        paymentMethods: a.payment_methods || [],
-        venmoHandle: a.venmo_handle, paypalEmail: a.paypal_email, cashappHandle: a.cashapp_handle,
-        imageUrl: a.image_url, emoji: a.emoji, createdAt: a.created_at,
-        remainingMs: a.remaining_ms ? Number(a.remaining_ms) : undefined,
-        galleryItemId: a.gallery_item_id || null,
-      }));
+      // Exclude other artists' drafts (start_date=null) for privacy; own drafts always included
+      const auctionList = (auctions || [])
+        .filter(a => !a.removed && (a.start_date !== null || a.artist_id === userId))
+        .map(a => ({
+          id: a.id, published: true, paused: a.paused, removed: a.removed,
+          artistId: a.artist_id, artistName: a.artist_name, artistAvatar: a.artist_avatar,
+          title: a.title, description: a.description, medium: a.medium, dimensions: a.dimensions,
+          startingPrice: Number(a.starting_price), minIncrement: Number(a.min_increment),
+          startDate: a.start_date || null, endDate: a.end_date || null, durationDays: a.duration_days,
+          paymentMethods: a.payment_methods || [],
+          venmoHandle: a.venmo_handle, paypalEmail: a.paypal_email, cashappHandle: a.cashapp_handle,
+          imageUrl: a.image_url, emoji: a.emoji, createdAt: a.created_at,
+          remainingMs: a.remaining_ms ? Number(a.remaining_ms) : undefined,
+          galleryItemId: a.gallery_item_id || null,
+        }));
 
       // Fetch this user's personal invite row + watchlist (if logged in)
       let myInvite = null;
@@ -114,7 +117,7 @@ const useSupabaseStore = () => {
           for (const [wAuctionId, entry] of Object.entries(watchlistMap)) {
             if (entry.reminderSent) continue;
             const wAuction = auctionList.find(a => a.id === wAuctionId);
-            if (!wAuction) continue;
+            if (!wAuction || !wAuction.endDate) continue;
             const msLeft = new Date(wAuction.endDate) - now;
             if (msLeft >= 50 * 60 * 1000 && msLeft <= 70 * 60 * 1000) {
               // Mark sent immediately to prevent double-send on concurrent loads
