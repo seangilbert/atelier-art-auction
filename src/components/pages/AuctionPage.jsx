@@ -5,6 +5,7 @@ import { saveBidderIdentity, getOohCount } from "../../utils/storage.js";
 import AvatarImg from "../ui/AvatarImg.jsx";
 import { Countdown } from "../ui/Countdown.jsx";
 import OohButton from "../ui/OohButton.jsx";
+import WatchButton from "../ui/WatchButton.jsx";
 import ConfirmModal from "../ui/ConfirmModal.jsx";
 import StatusPill from "../ui/StatusPill.jsx";
 
@@ -276,6 +277,12 @@ const AuctionPage = ({ auctionId, onNavigate, store, updateStore, loadAuctionDet
                 : `${getOohCount(store, auctionId)} collector${getOohCount(store, auctionId) !== 1 ? "s" : ""} went Ooh`}
             </span>
           </div>
+          {!isOwner && (
+            <div className="ooh-detail-wrap" style={{ marginTop:"0.5rem" }}>
+              <WatchButton auctionId={auctionId} store={store} updateStore={updateStore}
+                meUser={meCollector || artist} onNavigate={onNavigate} />
+            </div>
+          )}
 
           {status === "paused" && <div className="paused-notice"><i className="fa-solid fa-pause"></i> This drop is currently paused. Bidding is suspended.</div>}
 

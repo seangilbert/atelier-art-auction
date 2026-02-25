@@ -3,6 +3,7 @@ import { supabase } from "../../supabase.js";
 import { getStatus, fmt$ } from "../../utils/helpers.js";
 import { getOohedSet } from "../../utils/storage.js";
 import AvatarImg from "../ui/AvatarImg.jsx";
+import WatchButton from "../ui/WatchButton.jsx";
 import { RatingModal } from "../ui/StarPicker.jsx";
 
 const CollectorDashboardPage = ({ meCollector, onNavigate, store, updateStore }) => {
@@ -67,7 +68,12 @@ const CollectorDashboardPage = ({ meCollector, onNavigate, store, updateStore })
       return (store.oohs[b.id] || 0) - (store.oohs[a.id] || 0);
     });
 
-  // Section 3: Artists I Follow
+  // Section 3: Drops I'm Watching
+  const watchedAuctions = store.auctions
+    .filter((a) => !a.removed && a.published && store.watchlist?.[a.id])
+    .sort((a, b) => new Date(a.endDate) - new Date(b.endDate));
+
+  // Section 4: Artists I Follow
   const following = store.collectors?.[meCollector.id]?.following || [];
   const followedArtists = following
     .map((id) => store.artists[id])
@@ -145,6 +151,39 @@ const CollectorDashboardPage = ({ meCollector, onNavigate, store, updateStore })
                 </div>
               </div>
             ))}
+          </div>
+        )}
+      </div>
+
+      {/* Drops I'm Watching */}
+      <div className="cdash-section">
+        <div className="cdash-section-title">👀 Watching</div>
+        {watchedAuctions.length === 0 ? (
+          <p style={{ color:"var(--mist)", fontSize:"0.88rem" }}>Click 👀 Watch on any live drop to track it here and get an email reminder 1 hour before it closes.</p>
+        ) : (
+          <div className="cdash-bid-list">
+            {watchedAuctions.map((auction) => {
+              const summary = store.bidSummaries[auction.id] || { count: 0, topAmount: 0 };
+              const status = getStatus(auction);
+              return (
+                <div key={auction.id} className="cdash-bid-card">
+                  <div className="cdash-bid-thumb" onClick={() => onNavigate("auction", auction.id)} style={{ cursor:"pointer" }}>
+                    {auction.imageUrl ? <img src={auction.imageUrl} alt="" /> : (auction.emoji || "🎨")}
+                  </div>
+                  <div className="cdash-bid-info" onClick={() => onNavigate("auction", auction.id)} style={{ cursor:"pointer" }}>
+                    <div className="cdash-bid-title">{auction.title}</div>
+                    <div className="cdash-bid-meta">by {auction.artistName} · {summary.count} bid{summary.count !== 1 ? "s" : ""} · {fmt$(summary.topAmount || auction.startingPrice)}</div>
+                  </div>
+                  <div className="cdash-bid-status">
+                    {status === "live"
+                      ? <span className="bid-badge bid-badge-winning">Live</span>
+                      : <span className="bid-badge bid-badge-lost">Ended</span>}
+                    <WatchButton auctionId={auction.id} store={store} updateStore={updateStore}
+                      meUser={meCollector} onNavigate={onNavigate} />
+                  </div>
+                </div>
+              );
+            })}
           </div>
         )}
       </div>

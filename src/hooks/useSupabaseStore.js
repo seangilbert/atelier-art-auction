@@ -9,7 +9,7 @@ const useSupabaseStore = () => {
   const [store, setStoreState] = useState({
     artists: {}, collectors: {}, auctions: [], bids: {}, payments: {}, oohs: {}, myInvite: null,
     comments: {}, commentReactions: {}, myReactions: {},
-    bidSummaries: {}, commentCounts: {}, gallery: {},
+    bidSummaries: {}, commentCounts: {}, gallery: {}, watchlist: {},
     ratings: { byRatee: {}, byAuction: {} },
   });
 
@@ -88,15 +88,14 @@ const useSupabaseStore = () => {
         galleryItemId: a.gallery_item_id || null,
       }));
 
-      // Fetch this user's personal invite row (if logged in)
+      // Fetch this user's personal invite row + watchlist (if logged in)
       let myInvite = null;
+      let watchlistMap = {};
       if (userId) {
-        const { data: inviteRow } = await supabase
-          .from("invites")
-          .select("code, uses_count, max_uses")
-          .eq("owner_id", userId)
-          .neq("code", "ARTDROP2026")
-          .maybeSingle();
+        const [{ data: inviteRow }, { data: watchlistRows }] = await Promise.all([
+          supabase.from("invites").select("code, uses_count, max_uses").eq("owner_id", userId).neq("code", "ARTDROP2026").maybeSingle(),
+          supabase.from("watchlist").select("auction_id, reminder_sent").eq("user_id", userId),
+        ]);
         if (inviteRow) {
           myInvite = {
             code: inviteRow.code,
@@ -104,6 +103,36 @@ const useSupabaseStore = () => {
             maxUses: inviteRow.max_uses,
             remaining: inviteRow.max_uses - inviteRow.uses_count,
           };
+        }
+        (watchlistRows || []).forEach(w => {
+          watchlistMap[w.auction_id] = { reminderSent: w.reminder_sent };
+        });
+        // Ending-soon check: if a watched auction ends in [50, 70] minutes, send reminder
+        const currentUser = collectorsMap[userId] || artistsMap[userId];
+        if (currentUser) {
+          const now = Date.now();
+          for (const [wAuctionId, entry] of Object.entries(watchlistMap)) {
+            if (entry.reminderSent) continue;
+            const wAuction = auctionList.find(a => a.id === wAuctionId);
+            if (!wAuction) continue;
+            const msLeft = new Date(wAuction.endDate) - now;
+            if (msLeft >= 50 * 60 * 1000 && msLeft <= 70 * 60 * 1000) {
+              // Mark sent immediately to prevent double-send on concurrent loads
+              supabase.from("watchlist")
+                .update({ reminder_sent: true })
+                .eq("user_id", userId)
+                .eq("auction_id", wAuctionId);
+              supabase.functions.invoke("send-ending-soon", {
+                body: {
+                  auctionId: wAuctionId,
+                  auctionTitle: wAuction.title,
+                  artistName: wAuction.artistName,
+                  recipientEmail: currentUser.email,
+                  recipientName: currentUser.name,
+                },
+              }).catch(() => {});
+            }
+          }
         }
       }
 
@@ -139,6 +168,7 @@ const useSupabaseStore = () => {
         artists: artistsMap, collectors: collectorsMap, auctions: auctionList,
         oohs: oohsMap, payments: paymentsMap, myInvite,
         bidSummaries: bidSummariesMap, commentCounts: commentCountsMap, gallery: galleryMap,
+        watchlist: watchlistMap,
         ratings: { byRatee: ratingsByRatee, byAuction: ratingsByAuction },
       }));
     } catch (err) {

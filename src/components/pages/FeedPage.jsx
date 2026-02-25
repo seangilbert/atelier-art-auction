@@ -2,6 +2,7 @@ import { useState, useEffect } from "react";
 import { getStatus, fmt$, timeAgo, shortName } from "../../utils/helpers.js";
 import { CardTimer } from "../ui/Countdown.jsx";
 import OohButton from "../ui/OohButton.jsx";
+import WatchButton from "../ui/WatchButton.jsx";
 import AvatarImg from "../ui/AvatarImg.jsx";
 
 const FeedPage = ({ onNavigate, store, updateStore, me, meCollector }) => {
@@ -115,6 +116,8 @@ const FeedPage = ({ onNavigate, store, updateStore, me, meCollector }) => {
                   </div>
                   <div className="card-ooh-row feed-ooh">
                     <OohButton auctionId={auction.id} store={store} updateStore={updateStore} />
+                    <WatchButton auctionId={auction.id} store={store} updateStore={updateStore}
+                      meUser={me || meCollector} onNavigate={onNavigate} />
                   </div>
                 </div>
               </div>
