@@ -331,7 +331,7 @@ const AuctionPage = ({ auctionId, onNavigate, store, updateStore, loadAuctionDet
                     value={commentText} onChange={(e) => setCommentText(e.target.value)}
                     onKeyDown={(e) => { if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); postComment(); } }}
                     maxLength={1000} />
-                  <button className="btn btn-primary btn-sm" onClick={postComment}
+                  <button className="btn btn-ghost btn-sm" onClick={postComment}
                     disabled={!commentText.trim()} style={{ flexShrink:0 }}>Post</button>
                 </div>
               </>

@@ -223,7 +223,7 @@ const DashboardPage = ({ artist, onNavigate, store, updateStore }) => {
                   onChange={(e) => setTrackingInput((prev) => ({ ...prev, [auction.id]: e.target.value }))}
                 />
                 <button
-                  className="btn btn-primary btn-sm"
+                  className="btn btn-outline btn-sm"
                   disabled={markingShipped === auction.id}
                   onClick={() => markShipped(auction.id)}
                 >
@@ -265,7 +265,7 @@ const DashboardPage = ({ artist, onNavigate, store, updateStore }) => {
                   <i className={`fa-solid ${artist.galleryPublic ? "fa-eye-slash" : "fa-eye"}`}></i>
                   {artist.galleryPublic ? " Make Private" : " Make Public"}
                 </button>
-                <button className="btn btn-primary btn-sm" onClick={() => onNavigate("add-artwork")}>
+                <button className="btn btn-outline btn-sm" onClick={() => onNavigate("add-artwork")}>
                   <i className="fa-solid fa-plus"></i> Add Artwork
                 </button>
               </div>
@@ -315,7 +315,7 @@ const DashboardPage = ({ artist, onNavigate, store, updateStore }) => {
                               View Drop <i className="fa-solid fa-arrow-right"></i>
                             </button>
                           ) : (
-                            <button className="btn btn-primary btn-sm" onClick={() => onNavigate("create", item.id)}>
+                            <button className="btn btn-outline btn-sm" onClick={() => onNavigate("create", item.id)}>
                               <i className="fa-solid fa-rocket"></i> Launch Drop
                             </button>
                           )}
