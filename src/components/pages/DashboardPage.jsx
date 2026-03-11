@@ -453,6 +453,11 @@ const DashboardPage = ({ artist, onNavigate, store, updateStore }) => {
                   {status === "paused" && (
                     <><button className="btn btn-success btn-sm" onClick={() => setConfirm({ type: "resume", id: auction.id })}><i className="fa-solid fa-play"></i> Resume</button><button className="btn btn-danger btn-sm" onClick={() => setConfirm({ type: "end", id: auction.id })}>End</button></>
                   )}
+                  {status === "ended" && (
+                    <button className="btn btn-outline btn-sm" onClick={() => onNavigate("redrop", auction.id)}>
+                      <i className="fa-solid fa-rotate-right"></i> Re-drop
+                    </button>
+                  )}
                   {status === "ended" && store.payments[auction.id]?.submitted
                     && !store.ratings?.byAuction?.[auction.id]?.artistRated && (() => {
                     const payment = store.payments[auction.id];

@@ -4,28 +4,31 @@ import { generateId, fmt$ } from "../../utils/helpers.js";
 import ImagePicker from "../ui/ImagePicker.jsx";
 import AvatarImg from "../ui/AvatarImg.jsx";
 
-const CreatePage = ({ artist, onNavigate, store, updateStore, galleryItemId, editDraftId }) => {
+const CreatePage = ({ artist, onNavigate, store, updateStore, galleryItemId, editDraftId, reDropId }) => {
   const galleryItem   = galleryItemId ? store.gallery[galleryItemId] : null;
   const draftAuction  = editDraftId   ? store.auctions.find(a => a.id === editDraftId) : null;
+  const reDropSource  = reDropId      ? store.auctions.find(a => a.id === reDropId)    : null;
+  // Pre-fill source: draft edit > re-drop source > gallery item > blank
+  const src = draftAuction || reDropSource || null;
 
-  const [step, setStep] = useState(draftAuction ? 0 : galleryItemId ? 2 : 0);
+  const [step, setStep] = useState(src || galleryItemId ? 0 : 0);
   const [f, setF] = useState({
-    title:          draftAuction?.title          || galleryItem?.title       || "",
-    description:    draftAuction?.description    || galleryItem?.description || "",
-    medium:         draftAuction?.medium         || galleryItem?.medium      || "",
-    dimensions:     draftAuction?.dimensions     || galleryItem?.dimensions  || "",
-    imageUrl:       draftAuction?.imageUrl       || galleryItem?.imageUrl    || "",
-    emoji:          draftAuction?.emoji          || galleryItem?.emoji       || "🎨",
-    startingPrice:  draftAuction?.startingPrice?.toString() || "",
-    minIncrement:   draftAuction?.minIncrement?.toString()  || "25",
-    durationDays:   draftAuction?.durationDays?.toString()  || "7",
-    paymentMethods: draftAuction?.paymentMethods || ["venmo","paypal"],
-    venmoHandle:    draftAuction?.venmoHandle    || "",
-    paypalEmail:    draftAuction?.paypalEmail    || "",
-    cashappHandle:  draftAuction?.cashappHandle  || "",
-    reservePrice:   draftAuction?.reservePrice?.toString() || "",
-    buyNowPrice:    draftAuction?.buyNowPrice?.toString()  || "",
-    teaserText:     draftAuction?.teaserText     || "",
+    title:          src?.title          || galleryItem?.title       || "",
+    description:    src?.description    || galleryItem?.description || "",
+    medium:         src?.medium         || galleryItem?.medium      || "",
+    dimensions:     src?.dimensions     || galleryItem?.dimensions  || "",
+    imageUrl:       src?.imageUrl       || galleryItem?.imageUrl    || "",
+    emoji:          src?.emoji          || galleryItem?.emoji       || "🎨",
+    startingPrice:  src?.startingPrice?.toString() || "",
+    minIncrement:   src?.minIncrement?.toString()  || "25",
+    durationDays:   src?.durationDays?.toString()  || "7",
+    paymentMethods: src?.paymentMethods || ["venmo","paypal"],
+    venmoHandle:    src?.venmoHandle    || "",
+    paypalEmail:    src?.paypalEmail    || "",
+    cashappHandle:  src?.cashappHandle  || "",
+    reservePrice:   src?.reservePrice?.toString() || "",
+    buyNowPrice:    src?.buyNowPrice?.toString()  || "",
+    teaserText:     src?.teaserText     || "",
   });
   const [busy, setBusy] = useState(false);
   const [showSchedulePicker, setShowSchedulePicker] = useState(false);
@@ -80,7 +83,7 @@ const CreatePage = ({ artist, onNavigate, store, updateStore, galleryItemId, edi
 
   return (
     <div className="page-container">
-      <h1 className="page-title">{editDraftId ? "Edit Draft" : <>New <em>Drop</em></>}</h1>
+      <h1 className="page-title">{editDraftId ? "Edit Draft" : reDropId ? <>Re-drop <em>Artwork</em></> : <>New <em>Drop</em></>}</h1>
       <p className="page-subtitle">Listing as <strong><span style={{ display:"inline-flex", width:"1.2rem", height:"1.2rem", borderRadius:"50%", overflow:"hidden", verticalAlign:"middle", marginRight:"0.25rem", background:"var(--grad-accent)", fontSize:"0.85rem" }}><AvatarImg avatar={artist.avatar} alt={artist.name} /></span>{artist.name}</strong></p>
 
       {galleryItem && !editDraftId && (
@@ -215,6 +218,8 @@ const CreatePage = ({ artist, onNavigate, store, updateStore, galleryItemId, edi
             <i className="fa-solid fa-circle-info"></i>{" "}
             {editDraftId
               ? "Update your draft, schedule for a future date, or publish now."
+              : reDropId
+              ? "Review the details from your previous drop, adjust if needed, then publish."
               : "Save as a draft to finish later, schedule for a specific date, or go live now."}
           </div>
 
