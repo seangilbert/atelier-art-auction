@@ -7,6 +7,11 @@ const HomePage = ({ onNavigate, store, updateStore }) => {
   const topOohs = [...liveAuctions]
     .sort((a, b) => (store.oohs[b.id] || 0) - (store.oohs[a.id] || 0))
     .slice(0, 6);
+  const ONE_HOUR = 60 * 60 * 1000;
+  const endingSoon = [...liveAuctions]
+    .filter(a => a.endDate && new Date(a.endDate) - new Date() < ONE_HOUR)
+    .sort((a, b) => new Date(a.endDate) - new Date(b.endDate))
+    .slice(0, 4);
 
   return (
     <>
@@ -32,6 +37,41 @@ const HomePage = ({ onNavigate, store, updateStore }) => {
           ))}
         </div>
       </div>
+
+      {endingSoon.length > 0 && (
+        <div className="top-oohs-section browse-section">
+          <div className="section">
+            <div className="section-header">
+              <h2 className="section-title"><i className="fa-solid fa-fire" style={{ color:"var(--rouge)" }}></i> <em>Ending Soon</em></h2>
+            </div>
+            <div className="auction-grid">
+              {endingSoon.map((auction) => {
+                const summary = store.bidSummaries[auction.id] || { count: 0, topAmount: 0 };
+                const topBidAmt = summary.topAmount || auction.startingPrice;
+                return (
+                  <div key={auction.id} className="auction-card" onClick={() => onNavigate("auction", auction.id)}>
+                    <div className="card-image">
+                      {auction.imageUrl ? <img src={auction.imageUrl} alt={auction.title} /> : <span>{auction.emoji || "🎨"}</span>}
+                      <div className="badge" style={{ background:"var(--rouge)", color:"white" }}><i className="fa-solid fa-fire"></i> Ending Soon</div>
+                    </div>
+                    <div className="card-body">
+                      <div className="card-artist">by {auction.artistName}</div>
+                      <div className="card-title">{auction.title}</div>
+                      <div className="card-meta">
+                        <div><div className="card-price-label">{summary.count ? "Current Bid" : "Starting at"}</div><div className="card-price">{fmt$(topBidAmt)}</div></div>
+                        <div><div className="card-timer-label" style={{ color:"var(--rouge)" }}>Closes</div><div className="card-timer-val" style={{ color:"var(--rouge)" }}><CardTimer endDate={auction.endDate} /></div></div>
+                      </div>
+                      <div className="card-ooh-row">
+                        <OohButton auctionId={auction.id} store={store} updateStore={updateStore} />
+                      </div>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+        </div>
+      )}
 
       <div className="top-oohs-section browse-section">
         <div className="section">

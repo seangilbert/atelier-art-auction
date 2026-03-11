@@ -11,20 +11,26 @@ const FeedPage = ({ onNavigate, store, updateStore, me, meCollector }) => {
   const [query, setQuery] = useState("");
   const [minPrice, setMinPrice] = useState("");
   const [maxPrice, setMaxPrice] = useState("");
+  const [medium, setMedium] = useState("");
+  const [endingSoon, setEndingSoon] = useState(false);
   const [visibleCount, setVisibleCount] = useState(PAGE_SIZE);
 
   // Reset pagination when sort/filter changes
-  useEffect(() => { setVisibleCount(PAGE_SIZE); }, [sort, query, minPrice, maxPrice]);
+  useEffect(() => { setVisibleCount(PAGE_SIZE); }, [sort, query, minPrice, maxPrice, medium, endingSoon]);
 
   const live = store.auctions.filter((a) => !a.removed && a.published && getStatus(a) === "live");
+  const mediums = [...new Set(live.filter(a => a.medium).map(a => a.medium))].sort();
   const sorted = [...live].sort((a, b) => {
-    if (sort === "oohs")   return (store.oohs[b.id] || 0) - (store.oohs[a.id] || 0);
-    if (sort === "ending") return new Date(a.endDate) - new Date(b.endDate);
+    if (sort === "oohs")        return (store.oohs[b.id] || 0) - (store.oohs[a.id] || 0);
+    if (sort === "ending")      return new Date(a.endDate) - new Date(b.endDate);
+    if (sort === "bids")        return (store.bidSummaries[b.id]?.count || 0) - (store.bidSummaries[a.id]?.count || 0);
+    if (sort === "price-asc")   return (store.bidSummaries[a.id]?.topAmount || a.startingPrice) - (store.bidSummaries[b.id]?.topAmount || b.startingPrice);
+    if (sort === "price-desc")  return (store.bidSummaries[b.id]?.topAmount || b.startingPrice) - (store.bidSummaries[a.id]?.topAmount || a.startingPrice);
     return new Date(b.createdAt) - new Date(a.createdAt);
   });
 
-  const hasFilters = query.trim() !== "" || minPrice !== "" || maxPrice !== "";
-  const clearFilters = () => { setQuery(""); setMinPrice(""); setMaxPrice(""); };
+  const hasFilters = query.trim() !== "" || minPrice !== "" || maxPrice !== "" || medium !== "" || endingSoon;
+  const clearFilters = () => { setQuery(""); setMinPrice(""); setMaxPrice(""); setMedium(""); setEndingSoon(false); };
 
   const filtered = sorted.filter((auction) => {
     const summary = store.bidSummaries[auction.id] || { count: 0, topAmount: 0 };
@@ -33,6 +39,8 @@ const FeedPage = ({ onNavigate, store, updateStore, me, meCollector }) => {
     if (q && !auction.title.toLowerCase().includes(q) && !auction.artistName.toLowerCase().includes(q)) return false;
     if (minPrice !== "" && currentPrice < parseFloat(minPrice)) return false;
     if (maxPrice !== "" && currentPrice > parseFloat(maxPrice)) return false;
+    if (medium && auction.medium !== medium) return false;
+    if (endingSoon && auction.endDate && new Date(auction.endDate) - new Date() > 6 * 3600 * 1000) return false;
     return true;
   });
 
@@ -45,7 +53,7 @@ const FeedPage = ({ onNavigate, store, updateStore, me, meCollector }) => {
       <div className="feed-header">
         <div className="feed-title">{activeUser?.name ? `Hi ${activeUser.name.split(" ")[0]} ✦` : "Discover"}</div>
         <div className="sort-tabs">
-          {[["oohs","Most Loved"],["ending","Ending Soon"],["newest","Newest"]].map(([key,label]) => (
+          {[["oohs","Most Loved"],["ending","Ending Soon"],["newest","Newest"],["bids","Most Bids"],["price-asc","Price ↑"],["price-desc","Price ↓"]].map(([key,label]) => (
             <button key={key} className={`sort-tab ${sort === key ? "active" : ""}`} onClick={() => setSort(key)}>{label}</button>
           ))}
         </div>
@@ -62,6 +70,15 @@ const FeedPage = ({ onNavigate, store, updateStore, me, meCollector }) => {
             <input className="feed-filter-input" type="number" min="0" placeholder="0" value={minPrice} onChange={(e) => setMinPrice(e.target.value)} />
             <span className="feed-filter-label">Max $</span>
             <input className="feed-filter-input" type="number" min="0" placeholder="Any" value={maxPrice} onChange={(e) => setMaxPrice(e.target.value)} />
+            {mediums.length > 0 && (
+              <select className="feed-filter-input" value={medium} onChange={(e) => setMedium(e.target.value)} style={{ minWidth:0 }}>
+                <option value="">All mediums</option>
+                {mediums.map(m => <option key={m} value={m}>{m}</option>)}
+              </select>
+            )}
+            <button className={`feed-clear-btn${endingSoon ? " active" : ""}`} style={{ whiteSpace:"nowrap", color: endingSoon ? "var(--rouge)" : undefined }} onClick={() => setEndingSoon(s => !s)}>
+              <i className="fa-solid fa-fire"></i> Ending soon
+            </button>
             {hasFilters && <button className="feed-clear-btn" onClick={clearFilters}>✕ Clear</button>}
           </div>
         </div>

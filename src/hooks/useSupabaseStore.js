@@ -92,6 +92,9 @@ const useSupabaseStore = () => {
           imageUrl: a.image_url, emoji: a.emoji, createdAt: a.created_at,
           remainingMs: a.remaining_ms ? Number(a.remaining_ms) : undefined,
           galleryItemId: a.gallery_item_id || null,
+          reservePrice: a.reserve_price ? Number(a.reserve_price) : null,
+          buyNowPrice:  a.buy_now_price  ? Number(a.buy_now_price)  : null,
+          teaserText:   a.teaser_text    || null,
         }));
 
       // Fetch this user's personal invite row + watchlist (if logged in)

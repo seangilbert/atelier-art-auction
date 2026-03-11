@@ -23,6 +23,9 @@ const CreatePage = ({ artist, onNavigate, store, updateStore, galleryItemId, edi
     venmoHandle:    draftAuction?.venmoHandle    || "",
     paypalEmail:    draftAuction?.paypalEmail    || "",
     cashappHandle:  draftAuction?.cashappHandle  || "",
+    reservePrice:   draftAuction?.reservePrice?.toString() || "",
+    buyNowPrice:    draftAuction?.buyNowPrice?.toString()  || "",
+    teaserText:     draftAuction?.teaserText     || "",
   });
   const [busy, setBusy] = useState(false);
   const [showSchedulePicker, setShowSchedulePicker] = useState(false);
@@ -51,6 +54,9 @@ const CreatePage = ({ artist, onNavigate, store, updateStore, galleryItemId, edi
       payment_methods: f.paymentMethods,
       venmo_handle: f.venmoHandle, paypal_email: f.paypalEmail, cashapp_handle: f.cashappHandle,
       image_url: f.imageUrl, emoji: f.emoji,
+      reserve_price: f.reservePrice ? parseFloat(f.reservePrice) : null,
+      buy_now_price: f.buyNowPrice  ? parseFloat(f.buyNowPrice)  : null,
+      teaser_text:   f.teaserText   || null,
       paused: false, removed: false,
       gallery_item_id: galleryItemId || draftAuction?.galleryItemId || null,
     };
@@ -128,6 +134,23 @@ const CreatePage = ({ artist, onNavigate, store, updateStore, galleryItemId, edi
             <div className="form-group"><label className="form-label">Minimum Increment</label><div className="input-prefix"><span className="input-prefix-sym">$</span><input className="form-input" type="number" min="1" placeholder="25" value={f.minIncrement} onChange={(e) => set("minIncrement", e.target.value)} /></div><p className="form-hint">Each new bid must raise by at least this amount</p></div>
           </div>
           <div className="form-group"><label className="form-label">Drop Duration</label><select className="form-select" value={f.durationDays} onChange={(e) => set("durationDays", e.target.value)}>{[["1","1 day"],["3","3 days"],["5","5 days"],["7","7 days (recommended)"],["14","14 days"],["30","30 days"]].map(([v,l]) => <option key={v} value={v}>{l}</option>)}</select></div>
+
+          <div style={{ borderTop:"1px solid var(--border)", paddingTop:"1rem", marginTop:"0.5rem" }}>
+            <p className="form-hint" style={{ marginBottom:"0.75rem", textTransform:"uppercase", letterSpacing:"0.06em", fontSize:"0.72rem" }}>Optional Pricing</p>
+            <div className="form-row">
+              <div className="form-group">
+                <label className="form-label">Reserve Price</label>
+                <div className="input-prefix"><span className="input-prefix-sym">$</span><input className="form-input" type="number" min="1" placeholder="e.g. 500" value={f.reservePrice} onChange={(e) => set("reservePrice", e.target.value)} /></div>
+                <p className="form-hint">Minimum to sell. Shown to collectors.</p>
+              </div>
+              <div className="form-group">
+                <label className="form-label">Buy It Now</label>
+                <div className="input-prefix"><span className="input-prefix-sym">$</span><input className="form-input" type="number" min="1" placeholder="e.g. 2000" value={f.buyNowPrice} onChange={(e) => set("buyNowPrice", e.target.value)} /></div>
+                <p className="form-hint">First to click wins at this price, ending the auction.</p>
+              </div>
+            </div>
+          </div>
+
           <div className="form-actions">
             <button className="btn btn-ghost" onClick={() => galleryItemId && !editDraftId ? onNavigate("dashboard") : setStep(1)}><i className="fa-solid fa-arrow-left"></i> Back</button>
             <button className="btn btn-primary" onClick={() => setStep(3)} disabled={!f.startingPrice}>Continue <i className="fa-solid fa-arrow-right"></i></button>
@@ -175,10 +198,16 @@ const CreatePage = ({ artist, onNavigate, store, updateStore, galleryItemId, edi
             </div>
             <div className="divider" />
             <div className="publish-summary-grid">
-              {[["Starting Bid", fmt$(f.startingPrice||0)], ["Duration", `${f.durationDays} days`], ["Payments", `${f.paymentMethods.length} method${f.paymentMethods.length!==1?"s":""}`]].map(([l,v]) => (
+              {[["Starting Bid", fmt$(f.startingPrice||0)], ["Duration", `${f.durationDays} days`], ["Payments", `${f.paymentMethods.length} method${f.paymentMethods.length!==1?"s":""}`], ...(f.reservePrice ? [["Reserve", fmt$(f.reservePrice)]] : []), ...(f.buyNowPrice ? [["Buy Now", fmt$(f.buyNowPrice)]] : [])].map(([l,v]) => (
                 <div key={l}><div style={{ color:"var(--mist)", fontSize:"0.7rem", textTransform:"uppercase", letterSpacing:"0.06em" }}>{l}</div><div style={{ fontWeight:600, marginTop:"0.15rem" }}>{v}</div></div>
               ))}
             </div>
+          </div>
+
+          {/* Teaser copy */}
+          <div className="form-group" style={{ marginBottom:"1rem" }}>
+            <label className="form-label">Teaser copy <span className="form-hint">— shown to collectors before your drop goes live</span></label>
+            <textarea className="form-input" rows={3} placeholder="Build excitement before your drop launches…" value={f.teaserText} onChange={(e) => set("teaserText", e.target.value)} style={{ resize:"vertical" }} />
           </div>
 
           {/* Info banner */}

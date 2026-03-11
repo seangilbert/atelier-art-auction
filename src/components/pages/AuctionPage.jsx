@@ -30,6 +30,7 @@ const AuctionPage = ({ auctionId, onNavigate, store, updateStore, loadAuctionDet
   }, [meCollector?.email, meCollector?.name]);
   const [copied, setCopied] = useState(false);
   const [showModal, setShowModal] = useState(false);
+  const [isBuyNow, setIsBuyNow] = useState(false);
   const [confirm, setConfirm] = useState(null);
   const endedEmailSent = useRef(false);
 
@@ -108,7 +109,8 @@ const AuctionPage = ({ auctionId, onNavigate, store, updateStore, loadAuctionDet
   const currentTop = topBid ? topBid.amount : auction.startingPrice;
   const minBid = topBid ? currentTop + (auction.minIncrement || 25) : currentTop;
   const shareUrl = `${window.location.origin}${window.location.pathname}#auction-${auctionId}`;
-  const isWinner = !isLive && topBid && (topBid.bidder === bidderName || (bidderEmail && topBid.email === bidderEmail));
+  const reserveMet = !auction.reservePrice || (topBid && topBid.amount >= auction.reservePrice);
+  const isWinner = !isLive && topBid && reserveMet && (topBid.bidder === bidderName || (bidderEmail && topBid.email === bidderEmail));
 
   const copyLink = () => { navigator.clipboard.writeText(shareUrl).then(() => { setCopied(true); setTimeout(() => setCopied(false), 2500); }); };
   const shareVia = (m) => {
@@ -135,6 +137,11 @@ const AuctionPage = ({ auctionId, onNavigate, store, updateStore, loadAuctionDet
     setBidAmt("");
     setBidMsg({ type:"success", text:`Bid of ${fmt$(amt)} placed!` });
     setShowModal(false);
+    // Buy It Now: end auction immediately
+    if (isBuyNow) {
+      await supabase.from("auctions").update({ end_date: new Date(Date.now() - 1000).toISOString(), paused: false }).eq("id", auctionId);
+      setIsBuyNow(false);
+    }
     loadAuctionDetail(auctionId, currentUserId); // refresh bids for this auction
     setTimeout(() => setBidMsg(null), 4000);
     // Fire-and-forget bid notification email to the artist
@@ -228,6 +235,72 @@ const AuctionPage = ({ auctionId, onNavigate, store, updateStore, loadAuctionDet
     loadAuctionDetail(auctionId, currentUserId);
   };
 
+  // ── Scheduled drop: full teaser layout ────────────────────────────────────
+  if (status === "scheduled") {
+    return (
+      <div className="page-container" style={{ maxWidth:640, margin:"0 auto", padding:"1.5rem 1rem" }}>
+        <button className="btn btn-ghost btn-sm" style={{ marginBottom:"1.5rem" }} onClick={() => onNavigate("home")}><i className="fa-solid fa-arrow-left"></i> Back</button>
+        {isOwner && (
+          <div className="artist-mgmt-bar" style={{ marginBottom:"1.5rem" }}>
+            <div className="artist-mgmt-label"><i className="fa-solid fa-palette"></i> Your Listing &nbsp;·&nbsp; <StatusPill status="scheduled" /></div>
+            <div className="artist-mgmt-actions">
+              <button className="btn btn-ghost btn-sm" onClick={copyLink}>{copied ? <><i className="fa-solid fa-check"></i> Copied!</> : <><i className="fa-solid fa-link"></i> Copy Link</>}</button>
+              <button className="btn btn-dark btn-sm" onClick={() => onNavigate("dashboard")}>Dashboard</button>
+            </div>
+          </div>
+        )}
+
+        {/* Blurred artwork reveal */}
+        <div style={{ borderRadius:"var(--radius-lg)", overflow:"hidden", aspectRatio:"1/1", position:"relative", marginBottom:"1.5rem", background:"var(--parchment)", display:"flex", alignItems:"center", justifyContent:"center" }}>
+          <div style={{ position:"absolute", inset:0, filter:"blur(20px)", transform:"scale(1.06)", display:"flex", alignItems:"center", justifyContent:"center", fontSize:"8rem" }}>
+            {auction.imageUrl ? <img src={auction.imageUrl} alt="" style={{ width:"100%", height:"100%", objectFit:"cover" }} /> : <span>{auction.emoji || "🎨"}</span>}
+          </div>
+          <div style={{ position:"absolute", inset:0, background:"rgba(0,0,0,0.38)", display:"flex", flexDirection:"column", alignItems:"center", justifyContent:"center", gap:"0.75rem" }}>
+            <div style={{ color:"white", fontFamily:"var(--font-display)", fontSize:"1.5rem", fontWeight:800, letterSpacing:"0.01em", textAlign:"center", padding:"0 1rem" }}>Dropping Soon</div>
+            <StatusPill status="scheduled" />
+          </div>
+        </div>
+
+        {/* Artist + title */}
+        <div style={{ color:"var(--mist)", fontSize:"0.82rem", marginBottom:"0.25rem" }}>
+          by <span style={{ cursor:"pointer", textDecoration:"underline" }} onClick={() => onNavigate("artist", auction.artistId)}>{auction.artistName}</span>
+        </div>
+        <h1 style={{ fontFamily:"var(--font-display)", fontSize:"1.6rem", fontWeight:800, marginBottom:"0.75rem", lineHeight:1.2 }}>{auction.title}</h1>
+
+        {auction.teaserText && (
+          <p style={{ color:"var(--slate)", marginBottom:"1.25rem", lineHeight:1.6 }}>{auction.teaserText}</p>
+        )}
+
+        {/* Countdown to startDate */}
+        <div style={{ background:"white", border:"1px solid var(--border)", borderRadius:"var(--radius-lg)", padding:"1.25rem", textAlign:"center", marginBottom:"1.25rem" }}>
+          <div style={{ color:"var(--mist)", fontSize:"0.7rem", textTransform:"uppercase", letterSpacing:"0.08em", marginBottom:"0.5rem" }}>Goes live in</div>
+          <Countdown endDate={auction.startDate} label="This drop is now live!" />
+          <div style={{ color:"var(--mist)", fontSize:"0.78rem", marginTop:"0.5rem" }}>{fmtDate(auction.startDate)}</div>
+        </div>
+
+        {/* Starting price teaser */}
+        <div style={{ color:"var(--mist)", fontSize:"0.82rem", marginBottom:"1.25rem" }}>
+          Starting at <strong style={{ color:"var(--slate)", fontFamily:"var(--font-display)" }}>{fmt$(auction.startingPrice)}</strong> · {auction.durationDays}-day auction
+          {auction.reservePrice && <> · Reserve: {fmt$(auction.reservePrice)}</>}
+        </div>
+
+        {/* CTA */}
+        {!isOwner ? (
+          <div className="ooh-detail-wrap">
+            <WatchButton auctionId={auctionId} store={store} updateStore={updateStore}
+              meUser={meCollector || artist} onNavigate={onNavigate} />
+          </div>
+        ) : (
+          <div style={{ display:"flex", gap:"0.5rem", flexWrap:"wrap" }}>
+            <button className="btn btn-outline" onClick={() => onNavigate("edit-draft", auctionId)}>
+              <i className="fa-solid fa-pencil"></i> Edit Drop
+            </button>
+          </div>
+        )}
+      </div>
+    );
+  }
+
   return (
     <div className="auction-detail">
       <button className="btn btn-ghost btn-sm" style={{ marginBottom:"1.5rem" }} onClick={() => onNavigate("home")}><i className="fa-solid fa-arrow-left"></i> Back</button>
@@ -252,13 +325,9 @@ const AuctionPage = ({ auctionId, onNavigate, store, updateStore, loadAuctionDet
           <button className="btn btn-outline btn-sm" style={{ marginLeft:"1rem" }} onClick={() => onNavigate("edit-draft", auctionId)}>Edit Draft</button>
         </div>
       )}
-      {status === "scheduled" && isOwner && (
-        <div className="alert alert-info" style={{ marginBottom:"1.5rem" }}>
-          <i className="fa-solid fa-clock"></i> Scheduled to go live <strong>{fmtDate(auction.startDate)}</strong>
-        </div>
-      )}
       {isWinner && <div className="alert alert-success" style={{ marginBottom:"1.5rem" }}><i className="fa-solid fa-trophy"></i> You won! <button className="btn btn-primary btn-sm" style={{ marginLeft:"1rem" }} onClick={() => onNavigate("payment", auctionId)}>Proceed to Payment <i className="fa-solid fa-arrow-right"></i></button></div>}
-      {!isLive && topBid && !isWinner && <div className="alert" style={{ background:"var(--parchment)", border:"1px solid var(--border)", color:"var(--slate)", marginBottom:"1.5rem" }}>Drop ended. Winner: <strong>{shortName(topBid.bidder)}</strong> · {fmt$(topBid.amount)}</div>}
+      {!isLive && topBid && !reserveMet && <div className="alert" style={{ background:"var(--parchment)", border:"1px solid var(--border)", color:"var(--slate)", marginBottom:"1.5rem" }}>Drop ended — reserve of {fmt$(auction.reservePrice)} was not met.</div>}
+      {!isLive && topBid && reserveMet && !isWinner && <div className="alert" style={{ background:"var(--parchment)", border:"1px solid var(--border)", color:"var(--slate)", marginBottom:"1.5rem" }}>Drop ended. Winner: <strong>{shortName(topBid.bidder)}</strong> · {fmt$(topBid.amount)}</div>}
       {bidMsg && <div className={`alert alert-${bidMsg.type}`} style={{ marginBottom:"1rem" }}>{bidMsg.text}</div>}
 
       <div className="auction-layout">
@@ -309,8 +378,24 @@ const AuctionPage = ({ auctionId, onNavigate, store, updateStore, loadAuctionDet
             <div className="bid-current-label">{topBid ? "Current Bid" : "Starting Price"}</div>
             <div className="bid-current-amount">{fmt$(currentTop)}</div>
             <div className="bid-count">{bids.length} bid{bids.length!==1?"s":""} placed</div>
+            {auction.reservePrice && (
+              <div style={{ fontSize:"0.78rem", marginTop:"0.2rem", marginBottom:"0.2rem" }}>
+                {reserveMet
+                  ? <span style={{ color:"var(--emerald)" }}><i className="fa-solid fa-check"></i> Reserve met</span>
+                  : <span style={{ color:"var(--mist)" }}>Reserve: {fmt$(auction.reservePrice)}</span>}
+              </div>
+            )}
             {isLive && !isOwner && (
-              <><div className="bid-input-row"><div className="input-prefix" style={{ flex:1 }}><span className="input-prefix-sym">$</span><input className="form-input" style={{ borderRadius:"0 var(--radius) var(--radius) 0" }} type="number" placeholder={minBid} value={bidAmt} onChange={(e) => setBidAmt(e.target.value)} /></div><button className="btn btn-primary" onClick={() => setShowModal(true)} disabled={!bidAmt || parseFloat(bidAmt) < minBid}>Place Bid</button></div><div className="bid-min-hint">Minimum bid: {fmt$(minBid)}</div></>
+              <>
+                <div className="bid-input-row"><div className="input-prefix" style={{ flex:1 }}><span className="input-prefix-sym">$</span><input className="form-input" style={{ borderRadius:"0 var(--radius) var(--radius) 0" }} type="number" placeholder={minBid} value={bidAmt} onChange={(e) => setBidAmt(e.target.value)} /></div><button className="btn btn-primary" onClick={() => setShowModal(true)} disabled={!bidAmt || parseFloat(bidAmt) < minBid}>Place Bid</button></div>
+                <div className="bid-min-hint">Minimum bid: {fmt$(minBid)}</div>
+                {auction.buyNowPrice && (
+                  <button className="btn btn-success" style={{ width:"100%", marginTop:"0.5rem" }}
+                    onClick={() => { setBidAmt(String(auction.buyNowPrice)); setIsBuyNow(true); setShowModal(true); }}>
+                    <i className="fa-solid fa-bolt"></i> Buy It Now · {fmt$(auction.buyNowPrice)}
+                  </button>
+                )}
+              </>
             )}
             {isOwner && isLive && <div className="alert alert-info" style={{ marginTop:"0.5rem", marginBottom:0 }}>You can't bid on your own drop.</div>}
             {!currentUserId && isLive && <div className="alert alert-info" style={{ marginTop:"0.5rem", marginBottom:0, fontSize:"0.84rem" }}><button className="btn-follow-hint" onClick={() => onNavigate("login")}>Sign in</button> to place a bid and track your collection.</div>}
@@ -426,11 +511,11 @@ const AuctionPage = ({ auctionId, onNavigate, store, updateStore, loadAuctionDet
       </div>
 
       {showModal && (
-        <div className="modal-overlay" onClick={() => setShowModal(false)}>
+        <div className="modal-overlay" onClick={() => { setShowModal(false); setIsBuyNow(false); }}>
           <div className="modal" onClick={(e) => e.stopPropagation()}>
-            <button className="modal-close" onClick={() => setShowModal(false)}><i className="fa-solid fa-xmark"></i></button>
-            <div className="modal-title">Confirm Your Bid</div>
-            <div className="modal-sub">Bidding <strong style={{ color:"var(--gold-dark)", fontFamily:"var(--font-display)", fontSize:"1.1rem" }}>{fmt$(bidAmt)}</strong> on <em>{auction.title}</em></div>
+            <button className="modal-close" onClick={() => { setShowModal(false); setIsBuyNow(false); }}><i className="fa-solid fa-xmark"></i></button>
+            <div className="modal-title">{isBuyNow ? "Buy It Now — Confirm Purchase" : "Confirm Your Bid"}</div>
+            <div className="modal-sub">{isBuyNow ? "Purchasing" : "Bidding"} <strong style={{ color:"var(--gold-dark)", fontFamily:"var(--font-display)", fontSize:"1.1rem" }}>{fmt$(bidAmt)}</strong> on <em>{auction.title}</em></div>
             {meCollector && (
               <div className="alert alert-info" style={{ fontSize:"0.81rem", marginBottom:"0.5rem" }}>
                 Bidding as <strong>{meCollector.name}</strong> · {meCollector.email}
@@ -440,7 +525,7 @@ const AuctionPage = ({ auctionId, onNavigate, store, updateStore, loadAuctionDet
             <div className="form-group"><label className="form-label">Email *</label><input className="form-input" type="email" placeholder="your@email.com" value={bidEmail} onChange={(e) => { if (!meCollector) setBidEmail(e.target.value); }} readOnly={!!meCollector} style={meCollector ? { opacity: 0.7, cursor: "default" } : {}} /><p className="form-hint">{meCollector ? "Bids are linked to your collector account." : "Only used to notify you if you win."}</p></div>
             {bidMsg && <div className={`alert alert-${bidMsg.type}`}>{bidMsg.text}</div>}
             <div className="alert alert-info" style={{ fontSize:"0.81rem" }}>By bidding, you agree to pay if you win. Payment required within 48 hours.</div>
-            <div className="modal-actions"><button className="btn btn-ghost" style={{ flex:1 }} onClick={() => setShowModal(false)}>Cancel</button><button className="btn btn-primary" style={{ flex:2 }} onClick={placeBid}><i className="fa-solid fa-check"></i> Confirm {fmt$(bidAmt)}</button></div>
+            <div className="modal-actions"><button className="btn btn-ghost" style={{ flex:1 }} onClick={() => { setShowModal(false); setIsBuyNow(false); }}>Cancel</button><button className="btn btn-primary" style={{ flex:2 }} onClick={placeBid}><i className="fa-solid fa-check"></i> {isBuyNow ? `Buy Now · ${fmt$(bidAmt)}` : `Confirm ${fmt$(bidAmt)}`}</button></div>
           </div>
         </div>
       )}
