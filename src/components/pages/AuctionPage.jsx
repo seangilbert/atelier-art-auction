@@ -22,6 +22,7 @@ const AuctionPage = ({ auctionId, onNavigate, store, updateStore, loadAuctionDet
   const [localName, setLocalName] = useState(meCollector?.name || bidderName || "");
   const [bidEmail, setBidEmail] = useState(meCollector?.email || bidderEmail || "");
   const [bidMsg, setBidMsg] = useState(null);
+  const [watcherCount, setWatcherCount] = useState(null);
 
   // Keep bid name/email in sync with collector account (in case store loads after mount)
   useEffect(() => {
@@ -59,6 +60,10 @@ const AuctionPage = ({ auctionId, onNavigate, store, updateStore, loadAuctionDet
       .on("postgres_changes", { event: "*",      schema: "public", table: "oohs",     filter: `auction_id=eq.${auctionId}` }, () => updateStore())
       .on("postgres_changes", { event: "INSERT", schema: "public", table: "comments", filter: `auction_id=eq.${auctionId}` }, () => loadAuctionDetail(auctionId, currentUserId))
       .on("postgres_changes", { event: "DELETE", schema: "public", table: "comments", filter: `auction_id=eq.${auctionId}` }, () => loadAuctionDetail(auctionId, currentUserId))
+      .on("postgres_changes", { event: "*",      schema: "public", table: "watchlist", filter: `auction_id=eq.${auctionId}` }, () => {
+        supabase.from("watchlist").select("id", { count: "exact", head: true }).eq("auction_id", auctionId)
+          .then(({ count }) => setWatcherCount(count ?? 0));
+      })
       .subscribe();
     return () => { supabase.removeChannel(channel); };
   }, [auctionId, updateStore, loadAuctionDetail, currentUserId]);
@@ -89,6 +94,12 @@ const AuctionPage = ({ auctionId, onNavigate, store, updateStore, loadAuctionDet
     }
   }, [status, topBid, isOwner]);
 
+  // Watcher count
+  useEffect(() => {
+    supabase.from("watchlist").select("id", { count: "exact", head: true }).eq("auction_id", auctionId)
+      .then(({ count }) => setWatcherCount(count ?? 0));
+  }, [auctionId]);
+
   // Load which comments the current user has already reported (must be before early return)
   useEffect(() => {
     if (!currentUserId || !auctionId) return;
@@ -111,6 +122,8 @@ const AuctionPage = ({ auctionId, onNavigate, store, updateStore, loadAuctionDet
   const shareUrl = `${window.location.origin}${window.location.pathname}#auction-${auctionId}`;
   const reserveMet = !auction.reservePrice || (topBid && topBid.amount >= auction.reservePrice);
   const isWinner = !isLive && topBid && reserveMet && (topBid.bidder === bidderName || (bidderEmail && topBid.email === bidderEmail));
+  const isCurrentlyWinning = isLive && topBid && bidderEmail && topBid.email === bidderEmail;
+  const isOutbid = isLive && topBid && bidderEmail && topBid.email !== bidderEmail && bids.some(b => b.email === bidderEmail);
 
   const copyLink = () => { navigator.clipboard.writeText(shareUrl).then(() => { setCopied(true); setTimeout(() => setCopied(false), 2500); }); };
   const shareVia = (m) => {
@@ -377,7 +390,10 @@ const AuctionPage = ({ auctionId, onNavigate, store, updateStore, loadAuctionDet
           <div className="bid-block">
             <div className="bid-current-label">{topBid ? "Current Bid" : "Starting Price"}</div>
             <div className="bid-current-amount">{fmt$(currentTop)}</div>
-            <div className="bid-count">{bids.length} bid{bids.length!==1?"s":""} placed</div>
+            <div className="bid-count">
+              {bids.length} bid{bids.length!==1?"s":""} placed
+              {watcherCount !== null && isLive && <> · <i className="fa-regular fa-eye"></i> {watcherCount} watching</>}
+            </div>
             {auction.reservePrice && (
               <div style={{ fontSize:"0.78rem", marginTop:"0.2rem", marginBottom:"0.2rem" }}>
                 {reserveMet
@@ -387,8 +403,32 @@ const AuctionPage = ({ auctionId, onNavigate, store, updateStore, loadAuctionDet
             )}
             {isLive && !isOwner && (
               <>
-                <div className="bid-input-row"><div className="input-prefix" style={{ flex:1 }}><span className="input-prefix-sym">$</span><input className="form-input" style={{ borderRadius:"0 var(--radius) var(--radius) 0" }} type="number" placeholder={minBid} value={bidAmt} onChange={(e) => setBidAmt(e.target.value)} /></div><button className="btn btn-primary" onClick={() => setShowModal(true)} disabled={!bidAmt || parseFloat(bidAmt) < minBid}>Place Bid</button></div>
-                <div className="bid-min-hint">Minimum bid: {fmt$(minBid)}</div>
+                {isCurrentlyWinning && (
+                  <div className="bid-status bid-status-winning">
+                    <i className="fa-solid fa-trophy"></i> You're winning!
+                  </div>
+                )}
+                {isOutbid && (
+                  <div className="bid-status bid-status-outbid">
+                    <i className="fa-solid fa-arrow-up"></i> You've been outbid — raise your bid to take the lead
+                  </div>
+                )}
+                <div className="bid-min-hint" style={{ marginBottom:"0.5rem" }}>Min bid: <strong>{fmt$(minBid)}</strong></div>
+                <div className="bid-quick-row">
+                  {[minBid, minBid + (auction.minIncrement || 25), minBid + 2 * (auction.minIncrement || 25)].map((amt) => (
+                    <button key={amt} className={`bid-quick-btn${parseFloat(bidAmt) === amt ? " active" : ""}`}
+                      onClick={() => setBidAmt(String(amt))}>
+                      {fmt$(amt)}
+                    </button>
+                  ))}
+                </div>
+                <div className="bid-input-row">
+                  <div className="input-prefix" style={{ flex:1 }}>
+                    <span className="input-prefix-sym">$</span>
+                    <input className="form-input" style={{ borderRadius:"0 var(--radius) var(--radius) 0" }} type="number" placeholder={String(minBid)} value={bidAmt} onChange={(e) => setBidAmt(e.target.value)} />
+                  </div>
+                  <button className="btn btn-primary" onClick={() => setShowModal(true)} disabled={!bidAmt || parseFloat(bidAmt) < minBid}>Place Bid</button>
+                </div>
                 {auction.buyNowPrice && (
                   <button className="btn btn-success" style={{ width:"100%", marginTop:"0.5rem" }}
                     onClick={() => { setBidAmt(String(auction.buyNowPrice)); setIsBuyNow(true); setShowModal(true); }}>
@@ -535,11 +575,15 @@ const AuctionPage = ({ auctionId, onNavigate, store, updateStore, loadAuctionDet
       {isLive && !isOwner && (
         <div className="sticky-bid-bar">
           <div className="sticky-bid-bar-price">
-            <span className="sticky-bid-bar-label">{topBid ? "Current Bid" : "Starting at"}</span>
+            {isCurrentlyWinning
+              ? <span style={{ color:"var(--emerald)", fontWeight:700, fontSize:"0.78rem" }}><i className="fa-solid fa-trophy"></i> You're winning</span>
+              : isOutbid
+              ? <span style={{ color:"var(--rouge)", fontWeight:700, fontSize:"0.78rem" }}><i className="fa-solid fa-arrow-up"></i> You've been outbid</span>
+              : <span className="sticky-bid-bar-label">{topBid ? "Current Bid" : "Starting at"}</span>}
             <span className="sticky-bid-bar-amount">{fmt$(currentTop)}</span>
           </div>
           <button className="btn btn-primary" onClick={() => setShowModal(true)}>
-            Place Bid →
+            {isOutbid ? "Bid Again →" : "Place Bid →"}
           </button>
         </div>
       )}

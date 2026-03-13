@@ -240,6 +240,13 @@ const STYLES = `
   .bid-count { font-size: 0.8rem; color: var(--mist); margin-bottom: 1.25rem; }
   .bid-input-row { display: flex; gap: 0.65rem; margin-bottom: 0.4rem; }
   .bid-min-hint { font-size: 0.76rem; color: var(--mist); }
+  .bid-status { font-size: 0.82rem; font-weight: 600; padding: 0.55rem 0.85rem; border-radius: var(--radius); margin-bottom: 0.75rem; display: flex; align-items: center; gap: 0.4rem; }
+  .bid-status-winning { background: rgba(16,185,129,0.08); color: var(--emerald); border: 1.5px solid rgba(16,185,129,0.25); }
+  .bid-status-outbid { background: rgba(220,38,38,0.06); color: var(--rouge); border: 1.5px solid rgba(220,38,38,0.2); }
+  .bid-quick-row { display: flex; gap: 0.5rem; margin-bottom: 0.65rem; }
+  .bid-quick-btn { flex: 1; padding: 0.5rem 0.25rem; font-size: 0.82rem; font-weight: 600; font-family: var(--font-display); border: 1.5px solid var(--border); border-radius: var(--radius); background: white; color: var(--slate); cursor: pointer; transition: all 0.15s; min-height: 40px; }
+  .bid-quick-btn:hover { border-color: var(--gold); color: var(--gold-dark); background: var(--gold-light); }
+  .bid-quick-btn.active { border-color: var(--gold); background: var(--gold-light); color: var(--gold-dark); }
   .bid-history { margin-top: 1.4rem; }
   .bid-history-title { font-size: 0.92rem; font-weight: 700; margin-bottom: 0.65rem; letter-spacing: -0.01em; }
   .bid-list { list-style: none; }
