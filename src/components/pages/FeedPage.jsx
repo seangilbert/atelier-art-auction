@@ -108,7 +108,7 @@ const FeedPage = ({ onNavigate, store, updateStore, me, meCollector }) => {
   return (
     <div className="feed-page">
       <div className="feed-header">
-        <div className="feed-title">{activeUser?.name ? <>Hi {activeUser.name.split(" ")[0]} <i className="fa-solid fa-star"></i></> : "Discover"}</div>
+        <div className="feed-title">{activeUser?.name ? `Hi ${activeUser.name.split(" ")[0]}` : "Discover"}</div>
         <div className="sort-tabs">
           {sortTabs.map(([key, label]) => (
             <button key={key} className={`sort-tab ${sort === key ? "active" : ""}`} onClick={() => setSort(key)}>{label}</button>
