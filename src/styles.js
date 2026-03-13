@@ -268,6 +268,46 @@ const STYLES = `
   .share-btn:hover { border-color: var(--gold); color: var(--gold-dark); background: var(--gold-light); }
   .copied-toast { font-size: 0.76rem; color: var(--success); font-weight: 600; }
 
+  /* Winner next-steps card */
+  .winner-next-card { background: linear-gradient(135deg, rgba(232,82,106,0.06) 0%, rgba(255,200,80,0.06) 100%); border: 1.5px solid rgba(232,82,106,0.2); border-radius: var(--radius-xl); padding: 1.4rem 1.5rem; }
+  .winner-next-header { display: flex; align-items: flex-start; gap: 0.85rem; margin-bottom: 1.25rem; }
+  .winner-next-icon { font-size: 2rem; line-height: 1; flex-shrink: 0; }
+  .winner-next-title { font-family: var(--font-display); font-size: 1.25rem; font-weight: 800; color: var(--ink); }
+  .winner-next-sub { font-size: 0.85rem; color: var(--slate); margin-top: 0.15rem; }
+  .winner-steps { display: flex; flex-direction: column; gap: 1rem; }
+  .winner-step { display: flex; align-items: flex-start; gap: 0.85rem; }
+  .step-num { width: 1.75rem; height: 1.75rem; border-radius: 50%; background: var(--grad-primary); color: white; font-size: 0.78rem; font-weight: 700; display: flex; align-items: center; justify-content: center; flex-shrink: 0; margin-top: 0.1rem; }
+  .step-body { flex: 1; }
+  .step-label { font-weight: 700; font-size: 0.9rem; color: var(--ink); margin-bottom: 0.15rem; }
+  .step-desc { font-size: 0.8rem; color: var(--mist); line-height: 1.4; }
+
+  /* Artist winner info */
+  .artist-winner-info { background: var(--parchment); border: 1.5px solid var(--border); border-radius: var(--radius-lg); padding: 1rem 1.25rem; display: flex; flex-direction: column; gap: 0.2rem; }
+  .artist-winner-info-label { font-size: 0.68rem; font-weight: 700; color: var(--gold-dark); text-transform: uppercase; letter-spacing: 0.06em; margin-bottom: 0.2rem; }
+  .artist-winner-info-name { font-size: 1rem; font-weight: 700; color: var(--ink); }
+  .artist-winner-info-email { font-size: 0.85rem; color: var(--slate); }
+  .artist-winner-info-email a { color: var(--rose); text-decoration: none; }
+  .artist-winner-info-email a:hover { text-decoration: underline; }
+  .artist-winner-info-amount { font-size: 0.82rem; color: var(--mist); margin-top: 0.1rem; }
+
+  /* Message thread */
+  .message-thread { background: white; border: 1.5px solid var(--border); border-radius: var(--radius-lg); margin-bottom: 1.25rem; overflow: hidden; }
+  .message-thread-header { padding: 0.85rem 1.1rem; font-size: 0.8rem; font-weight: 700; color: var(--slate); text-transform: uppercase; letter-spacing: 0.05em; border-bottom: 1px solid var(--border); background: var(--parchment); display: flex; align-items: center; gap: 0.5rem; }
+  .message-thread-list { padding: 1rem 1.1rem; display: flex; flex-direction: column; gap: 0.75rem; max-height: 320px; overflow-y: auto; }
+  .message-thread-empty { font-size: 0.82rem; color: var(--mist); text-align: center; padding: 1rem 0; }
+  .message-bubble { max-width: 80%; display: flex; flex-direction: column; gap: 0.15rem; }
+  .message-bubble.mine { align-self: flex-end; align-items: flex-end; }
+  .message-bubble.theirs { align-self: flex-start; align-items: flex-start; }
+  .message-sender-name { font-size: 0.7rem; font-weight: 600; color: var(--mist); }
+  .message-body { background: var(--parchment); border-radius: 12px; padding: 0.55rem 0.85rem; font-size: 0.88rem; color: var(--ink); line-height: 1.45; border: 1px solid var(--border); }
+  .message-bubble.mine .message-body { background: var(--grad-primary); color: white; border-color: transparent; }
+  .message-attachment { font-size: 0.78rem; color: var(--rose); display: flex; align-items: center; gap: 0.3rem; margin-top: 0.15rem; }
+  .message-meta { font-size: 0.68rem; color: var(--mist); }
+  .message-read { color: var(--emerald); }
+  .message-input-row { display: flex; gap: 0.5rem; padding: 0.75rem 1rem; border-top: 1px solid var(--border); background: var(--parchment); align-items: center; }
+  .message-input { flex: 1; padding: 0.55rem 0.85rem; border: 1.5px solid var(--border); border-radius: 100px; font-family: var(--font-body); font-size: 0.85rem; color: var(--ink); background: white; transition: border-color 0.2s; }
+  .message-input:focus { outline: none; border-color: var(--gold); }
+
   /* Payment */
   .payment-page { max-width: 620px; margin: 0 auto; padding: 3rem 2rem 5rem; }
   .winner-banner { background: var(--grad-primary); border-radius: var(--radius-xl); padding: 2rem; margin-bottom: 2rem; text-align: center; box-shadow: 0 8px 32px rgba(232,82,106,0.35); }

@@ -8,6 +8,8 @@ import OohButton from "../ui/OohButton.jsx";
 import WatchButton from "../ui/WatchButton.jsx";
 import ConfirmModal from "../ui/ConfirmModal.jsx";
 import StatusPill from "../ui/StatusPill.jsx";
+import MessageThread from "../ui/MessageThread.jsx";
+import { RatingModal } from "../ui/StarPicker.jsx";
 
 const AuctionPage = ({ auctionId, onNavigate, store, updateStore, loadAuctionDetail, artist, meCollector, bidderName, setBidderName, bidderEmail, setBidderEmail }) => {
   const auction = store.auctions.find((a) => a.id === auctionId);
@@ -33,6 +35,8 @@ const AuctionPage = ({ auctionId, onNavigate, store, updateStore, loadAuctionDet
   const [showModal, setShowModal] = useState(false);
   const [isBuyNow, setIsBuyNow] = useState(false);
   const [confirm, setConfirm] = useState(null);
+  const [showReviewModal, setShowReviewModal] = useState(false);
+  const [reviewBusy, setReviewBusy] = useState(false);
   const endedEmailSent = useRef(false);
 
   // ── Comments state ────────────────────────────────────────────────────────
@@ -124,6 +128,14 @@ const AuctionPage = ({ auctionId, onNavigate, store, updateStore, loadAuctionDet
   const isWinner = !isLive && topBid && reserveMet && (topBid.bidder === bidderName || (bidderEmail && topBid.email === bidderEmail));
   const isCurrentlyWinning = isLive && topBid && bidderEmail && topBid.email === bidderEmail;
   const isOutbid = isLive && topBid && bidderEmail && topBid.email !== bidderEmail && bids.some(b => b.email === bidderEmail);
+  const auctionReview = (store.ratings?.byRatee?.[auction.artistId] || []).find(r => r.auctionId === auctionId && r.raterType === "collector");
+  const alreadyReviewed = !!store.ratings?.byAuction?.[auctionId]?.collectorRated;
+  const canReview = isWinner && !alreadyReviewed;
+  // Who is in the message thread
+  const msgSenderType = isOwner ? "artist" : "winner";
+  const msgSenderName = isOwner ? (artist?.name || auction.artistName) : (meCollector?.name || bidderName || topBid?.bidder || "");
+  const msgSenderId   = isOwner ? artist?.id : meCollector?.id || null;
+  const showMsgThread = (isWinner || isOwner) && !isLive && topBid && reserveMet;
 
   const copyLink = () => { navigator.clipboard.writeText(shareUrl).then(() => { setCopied(true); setTimeout(() => setCopied(false), 2500); }); };
   const shareVia = (m) => {
@@ -171,6 +183,19 @@ const AuctionPage = ({ auctionId, onNavigate, store, updateStore, loadAuctionDet
         }
       }).catch(() => {});
     }
+  };
+
+  const submitReview = async (score, comment) => {
+    setReviewBusy(true);
+    const reviewerId = meCollector?.id || null;
+    await supabase.from("ratings").insert({
+      id: generateId(), auction_id: auctionId,
+      rater_id: reviewerId, ratee_id: auction.artistId,
+      rater_type: "collector", score, comment: comment || null,
+    });
+    setShowReviewModal(false);
+    setReviewBusy(false);
+    updateStore();
   };
 
   const doManage = async (type) => {
@@ -338,9 +363,67 @@ const AuctionPage = ({ auctionId, onNavigate, store, updateStore, loadAuctionDet
           <button className="btn btn-outline btn-sm" style={{ marginLeft:"1rem" }} onClick={() => onNavigate("edit-draft", auctionId)}>Edit Draft</button>
         </div>
       )}
-      {isWinner && <div className="alert alert-success" style={{ marginBottom:"1.5rem" }}><i className="fa-solid fa-trophy"></i> You won! <button className="btn btn-primary btn-sm" style={{ marginLeft:"1rem" }} onClick={() => onNavigate("payment", auctionId)}>Proceed to Payment <i className="fa-solid fa-arrow-right"></i></button></div>}
+      {/* ── Winner next-steps card ─────────────────────────────────────────── */}
+      {isWinner && (
+        <div className="winner-next-card" style={{ marginBottom:"1.5rem" }}>
+          <div className="winner-next-header">
+            <span className="winner-next-icon">🏆</span>
+            <div>
+              <div className="winner-next-title">You won!</div>
+              <div className="winner-next-sub">"{auction.title}" · Winning bid: <strong>{fmt$(topBid.amount)}</strong></div>
+            </div>
+          </div>
+          <div className="winner-steps">
+            <div className="winner-step">
+              <div className="step-num">1</div>
+              <div className="step-body">
+                <div className="step-label">Complete payment</div>
+                <div className="step-desc">Pay within 48 hours to claim your artwork.</div>
+                <button className="btn btn-primary btn-sm" style={{ marginTop:"0.5rem" }} onClick={() => onNavigate("payment", auctionId)}>
+                  Go to Payment <i className="fa-solid fa-arrow-right"></i>
+                </button>
+              </div>
+            </div>
+            <div className="winner-step">
+              <div className="step-num">2</div>
+              <div className="step-body">
+                <div className="step-label">Message the artist</div>
+                <div className="step-desc">Coordinate shipping and any questions below.</div>
+              </div>
+            </div>
+            <div className="winner-step">
+              <div className="step-num">3</div>
+              <div className="step-body">
+                <div className="step-label">Leave a review</div>
+                <div className="step-desc">Help other collectors discover great artists.</div>
+                {canReview && (
+                  <button className="btn btn-outline btn-sm" style={{ marginTop:"0.5rem" }} onClick={() => setShowReviewModal(true)}>
+                    <i className="fa-solid fa-star"></i> Rate {auction.artistName}
+                  </button>
+                )}
+                {alreadyReviewed && auctionReview && (
+                  <div style={{ marginTop:"0.4rem", fontSize:"0.82rem", color:"var(--emerald)" }}>
+                    <i className="fa-solid fa-check"></i> You left {"★".repeat(auctionReview.score)} — thanks!
+                  </div>
+                )}
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ── Artist: winner info ────────────────────────────────────────────── */}
+      {isOwner && !isLive && topBid && reserveMet && (
+        <div className="artist-winner-info" style={{ marginBottom:"1.5rem" }}>
+          <div className="artist-winner-info-label"><i className="fa-solid fa-trophy"></i> Winner</div>
+          <div className="artist-winner-info-name">{topBid.bidder}</div>
+          <div className="artist-winner-info-email"><a href={`mailto:${topBid.email}`}>{topBid.email}</a></div>
+          <div className="artist-winner-info-amount">Winning bid: <strong>{fmt$(topBid.amount)}</strong></div>
+        </div>
+      )}
+
       {!isLive && topBid && !reserveMet && <div className="alert" style={{ background:"var(--parchment)", border:"1px solid var(--border)", color:"var(--slate)", marginBottom:"1.5rem" }}>Drop ended — reserve of {fmt$(auction.reservePrice)} was not met.</div>}
-      {!isLive && topBid && reserveMet && !isWinner && <div className="alert" style={{ background:"var(--parchment)", border:"1px solid var(--border)", color:"var(--slate)", marginBottom:"1.5rem" }}>Drop ended. Winner: <strong>{shortName(topBid.bidder)}</strong> · {fmt$(topBid.amount)}</div>}
+      {!isLive && topBid && reserveMet && !isWinner && !isOwner && <div className="alert" style={{ background:"var(--parchment)", border:"1px solid var(--border)", color:"var(--slate)", marginBottom:"1.5rem" }}>Drop ended. Winner: <strong>{shortName(topBid.bidder)}</strong> · {fmt$(topBid.amount)}</div>}
       {bidMsg && <div className={`alert alert-${bidMsg.type}`} style={{ marginBottom:"1rem" }}>{bidMsg.text}</div>}
 
       <div className="auction-layout">
@@ -532,6 +615,16 @@ const AuctionPage = ({ auctionId, onNavigate, store, updateStore, loadAuctionDet
             )}
           </div>
 
+          {/* ── In-app message thread ───────────────────────────────────────── */}
+          {showMsgThread && (
+            <MessageThread
+              auctionId={auctionId}
+              senderType={msgSenderType}
+              senderName={msgSenderName}
+              senderId={msgSenderId}
+            />
+          )}
+
           <div className="share-block">
             <div className="share-title"><i className="fa-solid fa-share-nodes"></i> Share This Drop</div>
             <div className="share-url"><div className="share-url-text">{shareUrl}</div><button className="btn btn-sm btn-dark" onClick={copyLink}>{copied ? <><i className="fa-solid fa-check"></i> Copied!</> : "Copy"}</button></div>
@@ -571,6 +664,15 @@ const AuctionPage = ({ auctionId, onNavigate, store, updateStore, loadAuctionDet
       )}
 
       {confirm && <ConfirmModal {...mgmtCfg[confirm]} onConfirm={() => doManage(confirm)} onCancel={() => setConfirm(null)} />}
+      {showReviewModal && (
+        <RatingModal
+          title={`Rate ${auction.artistName}`}
+          subtitle={`Share your experience buying "${auction.title}"`}
+          onSubmit={submitReview}
+          onClose={() => setShowReviewModal(false)}
+          busy={reviewBusy}
+        />
+      )}
 
       {isLive && !isOwner && (
         <div className="sticky-bid-bar">
