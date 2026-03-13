@@ -7,8 +7,10 @@ import { CardTimer } from "../ui/Countdown.jsx";
 const StarDisplay = ({ score }) => {
   const s = Math.round(score);
   return (
-    <span style={{ color: "#e8526a", letterSpacing: "0.05em", fontSize: "1rem" }}>
-      {"★".repeat(s)}{"☆".repeat(5 - s)}
+    <span style={{ color: "#e8526a" }}>
+      {Array.from({ length: 5 }, (_, i) => (
+        <i key={i} className={i < s ? "fa-solid fa-star" : "fa-regular fa-star"} style={{ marginRight: "0.1em" }}></i>
+      ))}
     </span>
   );
 };
@@ -19,7 +21,7 @@ const ArtistPage = ({ artistId, onNavigate, store, updateStore, me, meCollector 
   const artist = store.artists[artistId];
   if (!artist) return (
     <div className="page-container" style={{ textAlign:"center", paddingTop:"6rem" }}>
-      <div style={{ fontSize:"3rem", marginBottom:"1rem" }}>🔍</div>
+      <div style={{ fontSize:"3rem", marginBottom:"1rem" }}><i className="fa-solid fa-magnifying-glass"></i></div>
       <h2 style={{ marginBottom:"0.75rem" }}>Artist Not Found</h2>
       <button className="btn btn-primary" onClick={() => onNavigate("home")}>Back to Home</button>
     </div>
@@ -99,7 +101,7 @@ const ArtistPage = ({ artistId, onNavigate, store, updateStore, me, meCollector 
               <span className="artist-profile-stat-label">Sold</span>
             </div>
             <div className="artist-profile-stat">
-              <span className="artist-profile-stat-num">{avgRating ? `★ ${avgRating}` : "—"}</span>
+              <span className="artist-profile-stat-num">{avgRating ? <><i className="fa-solid fa-star" style={{fontSize:"0.85em"}}></i> {avgRating}</> : "—"}</span>
               <span className="artist-profile-stat-label">Rating</span>
             </div>
           </div>
@@ -115,7 +117,7 @@ const ArtistPage = ({ artistId, onNavigate, store, updateStore, me, meCollector 
             <button className="btn-follow-hint" onClick={toggleFollow}>Sign in to follow</button>
           )}
           {!isOwnProfile && meCollector && !isFollowing && (
-            <button className="btn btn-primary btn-sm" onClick={toggleFollow}>✦ Follow</button>
+            <button className="btn btn-primary btn-sm" onClick={toggleFollow}><i className="fa-solid fa-star"></i> Follow</button>
           )}
           {!isOwnProfile && meCollector && isFollowing && (
             <button className="btn btn-outline btn-sm" onClick={toggleFollow}><i className="fa-solid fa-check"></i> Following</button>
@@ -150,7 +152,7 @@ const ArtistPage = ({ artistId, onNavigate, store, updateStore, me, meCollector 
               return (
                 <div key={auction.id} className={`auction-card${status === "paused" ? " is-paused" : ""}`} onClick={() => onNavigate("auction", auction.id)}>
                   <div className="card-image">
-                    {auction.imageUrl ? <img src={auction.imageUrl} alt={auction.title} /> : <span>{auction.emoji || "🎨"}</span>}
+                    {auction.imageUrl ? <img src={auction.imageUrl} alt={auction.title} /> : <span>{auction.emoji || <i className="fa-solid fa-palette"></i>}</span>}
                     {status === "live"   && <div className="badge badge-live"><div className="pulse" style={{ background:"white" }} /> Live</div>}
                     {status === "paused" && <div className="badge badge-paused"><i className="fa-solid fa-pause"></i> Paused</div>}
                     {status === "ended"  && <div className="badge badge-ended">Ended</div>}
@@ -183,7 +185,7 @@ const ArtistPage = ({ artistId, onNavigate, store, updateStore, me, meCollector 
               return (
                 <div key={auction.id} className="auction-card" onClick={() => onNavigate("auction", auction.id)}>
                   <div className="card-image">
-                    {auction.imageUrl ? <img src={auction.imageUrl} alt={auction.title} /> : <span>{auction.emoji || "🎨"}</span>}
+                    {auction.imageUrl ? <img src={auction.imageUrl} alt={auction.title} /> : <span>{auction.emoji || <i className="fa-solid fa-palette"></i>}</span>}
                     <div className="badge badge-ended">Sold</div>
                   </div>
                   <div className="card-body">

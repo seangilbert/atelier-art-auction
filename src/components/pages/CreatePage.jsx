@@ -165,12 +165,12 @@ const CreatePage = ({ artist, onNavigate, store, updateStore, galleryItemId, edi
         <div>
           <p style={{ color: "var(--mist)", fontSize: "0.88rem", marginBottom: "1.5rem" }}>Choose which payment methods you'll accept from the winning bidder.</p>
           {[
-            { key: "venmo",   label: "Venmo",          icon: "💙", field: "venmoHandle",   ph: "@your-venmo" },
-            { key: "paypal",  label: "PayPal",          icon: "🅿️", field: "paypalEmail",   ph: "your@email.com" },
-            { key: "cashapp", label: "Cash App",        icon: "💚", field: "cashappHandle", ph: "$yourcashtag" },
-            { key: "zelle",   label: "Zelle",           icon: "💜", field: null },
-            { key: "check",   label: "Personal Check",  icon: "📝", field: null },
-            { key: "contact", label: "Contact Artist",  icon: "📧", field: null },
+            { key: "venmo",   label: "Venmo",          icon: <i className="fa-brands fa-venmo" style={{color:"#008CFF"}}></i>, field: "venmoHandle",   ph: "@your-venmo" },
+            { key: "paypal",  label: "PayPal",          icon: <i className="fa-brands fa-paypal" style={{color:"#003087"}}></i>, field: "paypalEmail",   ph: "your@email.com" },
+            { key: "cashapp", label: "Cash App",        icon: <i className="fa-solid fa-dollar-sign" style={{color:"#00C244"}}></i>, field: "cashappHandle", ph: "$yourcashtag" },
+            { key: "zelle",   label: "Zelle",           icon: <i className="fa-solid fa-bolt" style={{color:"#6D1ED4"}}></i>, field: null },
+            { key: "check",   label: "Personal Check",  icon: <i className="fa-solid fa-file-lines"></i>, field: null },
+            { key: "contact", label: "Contact Artist",  icon: <i className="fa-solid fa-envelope"></i>, field: null },
           ].map(({ key, label, icon, field, ph }) => (
             <div key={key} style={{ marginBottom: "0.6rem" }}>
               <div style={{ display:"flex", alignItems:"center", gap:"0.75rem", padding:"0.85rem 1rem", border:`1px solid ${f.paymentMethods.includes(key)?"var(--gold)":"var(--border)"}`, borderRadius:"var(--radius)", background:f.paymentMethods.includes(key)?"rgba(201,168,76,0.05)":"white", cursor:"pointer", transition:"all 0.15s" }} onClick={() => togglePay(key)}>

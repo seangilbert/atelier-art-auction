@@ -61,7 +61,7 @@ const FeedPage = ({ onNavigate, store, updateStore, me, meCollector }) => {
   const sortTabs = [
     ["oohs","Most Loved"], ["ending","Ending Soon"], ["newest","Newest"],
     ["bids","Most Bids"], ["price-asc","Price ↑"], ["price-desc","Price ↓"],
-    ...(hasFollowing ? [["following","✦ Following"]] : []),
+    ...(hasFollowing ? [["following", <><i className="fa-solid fa-star"></i> Following</>]] : []),
   ];
 
   const activeUser = me || meCollector;
@@ -108,7 +108,7 @@ const FeedPage = ({ onNavigate, store, updateStore, me, meCollector }) => {
   return (
     <div className="feed-page">
       <div className="feed-header">
-        <div className="feed-title">{activeUser?.name ? `Hi ${activeUser.name.split(" ")[0]} ✦` : "Discover"}</div>
+        <div className="feed-title">{activeUser?.name ? <>Hi {activeUser.name.split(" ")[0]} <i className="fa-solid fa-star"></i></> : "Discover"}</div>
         <div className="sort-tabs">
           {sortTabs.map(([key, label]) => (
             <button key={key} className={`sort-tab ${sort === key ? "active" : ""}`} onClick={() => setSort(key)}>{label}</button>
@@ -119,7 +119,7 @@ const FeedPage = ({ onNavigate, store, updateStore, me, meCollector }) => {
       {live.length > 0 && sort !== "following" && (
         <div className="feed-search-bar">
           <div className="feed-search-input-wrap">
-            <span className="feed-search-icon">🔍</span>
+            <span className="feed-search-icon"><i className="fa-solid fa-magnifying-glass"></i></span>
             <input className="feed-search-input" type="text" placeholder="Search by title or artist…" value={query} onChange={(e) => setQuery(e.target.value)} />
           </div>
           <div className="feed-filter-row">
@@ -136,7 +136,7 @@ const FeedPage = ({ onNavigate, store, updateStore, me, meCollector }) => {
             <button className={`feed-clear-btn${endingSoon ? " active" : ""}`} style={{ whiteSpace:"nowrap", color: endingSoon ? "var(--rouge)" : undefined }} onClick={() => setEndingSoon(s => !s)}>
               <i className="fa-solid fa-fire"></i> Ending soon
             </button>
-            {hasFilters && <button className="feed-clear-btn" onClick={clearFilters}>✕ Clear</button>}
+            {hasFilters && <button className="feed-clear-btn" onClick={clearFilters}><i className="fa-solid fa-xmark"></i> Clear</button>}
           </div>
         </div>
       )}
@@ -145,7 +145,7 @@ const FeedPage = ({ onNavigate, store, updateStore, me, meCollector }) => {
       {forYouDrops.length > 0 && (
         <div className="for-you-section">
           <div className="for-you-header">
-            <span className="for-you-label">✦ From artists you follow</span>
+            <span className="for-you-label"><i className="fa-solid fa-star"></i> From artists you follow</span>
             <button className="btn btn-ghost btn-sm" onClick={() => setSort("following")}>See all</button>
           </div>
           <div className="for-you-scroll">

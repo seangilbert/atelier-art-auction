@@ -46,7 +46,7 @@ const CollectorProfilePage = ({ collectorId, meCollector, store, onNavigate }) =
 
   if (!collector) return (
     <div className="page-container" style={{ textAlign:"center", paddingTop:"6rem" }}>
-      <div style={{ fontSize:"3rem", marginBottom:"1rem" }}>🔍</div>
+      <div style={{ fontSize:"3rem", marginBottom:"1rem" }}><i className="fa-solid fa-magnifying-glass"></i></div>
       <h2 style={{ marginBottom:"0.75rem" }}>Collector Not Found</h2>
       <button className="btn btn-primary" onClick={() => onNavigate("home")}>Back to Home</button>
     </div>
@@ -122,7 +122,7 @@ const CollectorProfilePage = ({ collectorId, meCollector, store, onNavigate }) =
                 <div key={auction.id} className="auction-card" onClick={() => onNavigate("auction", auction.id)}>
                   <div className="card-image">
                     {auction.imageUrl ? <img src={auction.imageUrl} alt={auction.title} /> : <span>{auction.emoji || "🎨"}</span>}
-                    <div className="badge badge-ended" style={{ background:"var(--gold)", color:"var(--ink)" }}>🏆 Won</div>
+                    <div className="badge badge-ended" style={{ background:"var(--gold)", color:"var(--ink)" }}><i className="fa-solid fa-trophy"></i> Won</div>
                   </div>
                   <div className="card-body">
                     <div className="card-artist">by {auction.artistName}</div>

@@ -120,7 +120,7 @@ const MessageThread = ({ auctionId, senderType, senderName, senderId }) => {
       {attachmentFile && (
         <div style={{ fontSize:"0.76rem", color:"var(--mist)", marginTop:"0.3rem", display:"flex", alignItems:"center", gap:"0.4rem" }}>
           <i className="fa-solid fa-paperclip"></i> {attachmentFile.name}
-          <button onClick={() => setAttachmentFile(null)} style={{ background:"none", border:"none", cursor:"pointer", color:"var(--rouge)", padding:0 }}>✕</button>
+          <button onClick={() => setAttachmentFile(null)} style={{ background:"none", border:"none", cursor:"pointer", color:"var(--rouge)", padding:0 }}><i className="fa-solid fa-xmark"></i></button>
         </div>
       )}
     </div>

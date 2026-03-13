@@ -32,7 +32,7 @@ const WatchButton = ({ auctionId, store, updateStore, meUser, onNavigate }) => {
         onClick={toggle}
         title="Sign in to watch this drop"
       >
-        <span className="ooh-icon">👀</span>
+        <span className="ooh-icon"><i className="fa-regular fa-eye"></i></span>
         <span>Watch</span>
       </button>
     );
@@ -45,7 +45,7 @@ const WatchButton = ({ auctionId, store, updateStore, meUser, onNavigate }) => {
       disabled={loading}
       title={isWatching ? "Watching — click to unwatch" : "Watch this drop for a 1hr reminder"}
     >
-      <span className="ooh-icon">{isWatching ? "👁️" : "👀"}</span>
+      <span className="ooh-icon"><i className={`fa-${isWatching ? "solid" : "regular"} fa-eye`}></i></span>
       <span>{loading ? "…" : isWatching ? "Watching" : "Watch"}</span>
     </button>
   );

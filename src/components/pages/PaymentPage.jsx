@@ -22,12 +22,12 @@ const PaymentPage = ({ auctionId, onNavigate, store, updateStore, loadAuctionDet
   const topBid = bids.length ? bids.reduce((a,b) => a.amount>b.amount?a:b) : null;
 
   const pmInfo = {
-    venmo:   { name:"Venmo",          icon:"💙", instruction:`Send ${fmt$(topBid?.amount)} to ${auction.venmoHandle||"@artist"} on Venmo. Note: "${auction.title} — Art Auction"` },
-    paypal:  { name:"PayPal",         icon:"🅿️", instruction:`Send ${fmt$(topBid?.amount)} to ${auction.paypalEmail||"artist@email.com"} on PayPal.` },
-    cashapp: { name:"Cash App",       icon:"💚", instruction:`Send ${fmt$(topBid?.amount)} to ${auction.cashappHandle||"$artist"} on Cash App.` },
-    zelle:   { name:"Zelle",          icon:"💜", instruction:"Contact the artist for their Zelle details." },
-    check:   { name:"Check",          icon:"📝", instruction:"Make check payable to the artist. Contact them for mailing address." },
-    contact: { name:"Contact Artist", icon:"📧", instruction:"The artist will reach out to arrange payment directly." },
+    venmo:   { name:"Venmo",          icon:<i className="fa-brands fa-venmo" style={{color:"#008CFF"}}></i>, instruction:`Send ${fmt$(topBid?.amount)} to ${auction.venmoHandle||"@artist"} on Venmo. Note: "${auction.title} — Art Auction"` },
+    paypal:  { name:"PayPal",         icon:<i className="fa-brands fa-paypal" style={{color:"#003087"}}></i>, instruction:`Send ${fmt$(topBid?.amount)} to ${auction.paypalEmail||"artist@email.com"} on PayPal.` },
+    cashapp: { name:"Cash App",       icon:<i className="fa-solid fa-dollar-sign" style={{color:"#00C244"}}></i>, instruction:`Send ${fmt$(topBid?.amount)} to ${auction.cashappHandle||"$artist"} on Cash App.` },
+    zelle:   { name:"Zelle",          icon:<i className="fa-solid fa-bolt" style={{color:"#6D1ED4"}}></i>, instruction:"Contact the artist for their Zelle details." },
+    check:   { name:"Check",          icon:<i className="fa-solid fa-file-lines"></i>, instruction:"Make check payable to the artist. Contact them for mailing address." },
+    contact: { name:"Contact Artist", icon:<i className="fa-solid fa-envelope"></i>, instruction:"The artist will reach out to arrange payment directly." },
   };
 
   const submit = async () => {
@@ -69,7 +69,7 @@ const PaymentPage = ({ auctionId, onNavigate, store, updateStore, loadAuctionDet
 
   if (submitted) return (
     <div className="payment-page" style={{ textAlign:"center", paddingTop:"4rem" }}>
-      <div style={{ fontSize:"4rem", marginBottom:"1rem" }}>🎉</div>
+      <div style={{ fontSize:"4rem", marginBottom:"1rem" }}><i className="fa-solid fa-champagne-glasses"></i></div>
       <h2 style={{ fontFamily:"var(--font-display)", fontSize:"2rem", marginBottom:"0.75rem" }}>Order Confirmed!</h2>
       <p style={{ color:"var(--mist)", marginBottom:"2rem" }}>The artist has been notified. Your artwork is on its way!</p>
       <div style={{ background:"var(--parchment)", border:"1px solid var(--border)", borderRadius:"var(--radius-lg)", padding:"1.5rem", marginBottom:"2rem", textAlign:"left" }}>

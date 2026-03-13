@@ -66,7 +66,7 @@ const ImagePicker = ({ imageUrl, emoji, onImageUrl, onEmoji }) => {
           <input ref={fileRef} type="file" accept="image/*" style={{ display:"none" }} onChange={(e) => handleFile(e.target.files[0])} />
           {preview
             ? <><img src={preview} alt="preview" className="upload-preview" /><p className="upload-sub">{uploading ? "Uploading…" : "Click or drag to replace"}</p></>
-            : <><div className="upload-icon">🖼️</div><div className="upload-label">{uploading ? "Uploading…" : "Drag & drop your artwork photo"}</div><div className="upload-sub">JPG, PNG, WEBP · Compressed automatically · or click to browse</div></>
+            : <><div className="upload-icon"><i className="fa-solid fa-image"></i></div><div className="upload-label">{uploading ? "Uploading…" : "Drag & drop your artwork photo"}</div><div className="upload-sub">JPG, PNG, WEBP · Compressed automatically · or click to browse</div></>
           }
         </div>
       )}

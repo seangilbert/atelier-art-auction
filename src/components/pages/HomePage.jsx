@@ -32,7 +32,12 @@ const HomePage = ({ onNavigate, store, updateStore }) => {
 
       <div className="features-strip">
         <div className="features-inner">
-          {[["🖼️","List Your Art","Upload photos, set your price, publish in minutes"],["⏱️","Live Countdown","Real-time drops with transparent bidding"],["🔗","Share Anywhere","Links for email, social media, and text"],["💸","Flexible Payment","Venmo, PayPal, Cash App & more"]].map(([icon, label, desc]) => (
+          {[
+            [<i className="fa-solid fa-image"></i>,"List Your Art","Upload photos, set your price, publish in minutes"],
+            [<i className="fa-regular fa-clock"></i>,"Live Countdown","Real-time drops with transparent bidding"],
+            [<i className="fa-solid fa-link"></i>,"Share Anywhere","Links for email, social media, and text"],
+            [<i className="fa-solid fa-credit-card"></i>,"Flexible Payment","Venmo, PayPal, Cash App & more"],
+          ].map(([icon, label, desc]) => (
             <div key={label} className="feature-item"><div className="feature-icon">{icon}</div><div className="feature-label">{label}</div><div className="feature-desc">{desc}</div></div>
           ))}
         </div>
@@ -51,7 +56,7 @@ const HomePage = ({ onNavigate, store, updateStore }) => {
                 return (
                   <div key={auction.id} className="auction-card" onClick={() => onNavigate("auction", auction.id)}>
                     <div className="card-image">
-                      {auction.imageUrl ? <img src={auction.imageUrl} alt={auction.title} /> : <span>{auction.emoji || "🎨"}</span>}
+                      {auction.imageUrl ? <img src={auction.imageUrl} alt={auction.title} /> : <span>{auction.emoji || <i className="fa-solid fa-palette"></i>}</span>}
                       <div className="badge" style={{ background:"var(--rouge)", color:"white" }}><i className="fa-solid fa-fire"></i> Ending Soon</div>
                     </div>
                     <div className="card-body">
@@ -92,7 +97,7 @@ const HomePage = ({ onNavigate, store, updateStore }) => {
                 return (
                   <div key={auction.id} className="auction-card" onClick={() => onNavigate("auction", auction.id)}>
                     <div className="card-image">
-                      {auction.imageUrl ? <img src={auction.imageUrl} alt={auction.title} /> : <span>{auction.emoji || "🎨"}</span>}
+                      {auction.imageUrl ? <img src={auction.imageUrl} alt={auction.title} /> : <span>{auction.emoji || <i className="fa-solid fa-palette"></i>}</span>}
                       <div className="badge badge-live"><div className="pulse" style={{ background: "white" }} /> Live</div>
                     </div>
                     <div className="card-body">

@@ -116,9 +116,9 @@ const AuctionPage = ({ auctionId, onNavigate, store, updateStore, loadAuctionDet
       });
   }, [currentUserId, auctionId]);
 
-  if (!auction) return <div className="page-container" style={{ textAlign:"center", paddingTop:"6rem" }}><div style={{ fontSize:"3rem", marginBottom:"1rem" }}>🔍</div><h2 style={{ fontFamily:"var(--font-display)", marginBottom:"0.75rem" }}>Drop Not Found</h2><button className="btn btn-primary" onClick={() => onNavigate("home")}>Back to Home</button></div>;
+  if (!auction) return <div className="page-container" style={{ textAlign:"center", paddingTop:"6rem" }}><div style={{ fontSize:"3rem", marginBottom:"1rem" }}><i className="fa-solid fa-magnifying-glass"></i></div><h2 style={{ fontFamily:"var(--font-display)", marginBottom:"0.75rem" }}>Drop Not Found</h2><button className="btn btn-primary" onClick={() => onNavigate("home")}>Back to Home</button></div>;
   // Drafts are only visible to their owner
-  if (status === "draft" && !isOwner) return <div className="page-container" style={{ textAlign:"center", paddingTop:"6rem" }}><div style={{ fontSize:"3rem", marginBottom:"1rem" }}>🔍</div><h2 style={{ fontFamily:"var(--font-display)", marginBottom:"0.75rem" }}>Drop Not Found</h2><button className="btn btn-primary" onClick={() => onNavigate("home")}>Back to Home</button></div>;
+  if (status === "draft" && !isOwner) return <div className="page-container" style={{ textAlign:"center", paddingTop:"6rem" }}><div style={{ fontSize:"3rem", marginBottom:"1rem" }}><i className="fa-solid fa-magnifying-glass"></i></div><h2 style={{ fontFamily:"var(--font-display)", marginBottom:"0.75rem" }}>Drop Not Found</h2><button className="btn btn-primary" onClick={() => onNavigate("home")}>Back to Home</button></div>;
 
   const isLive = status === "live";
   const currentTop = topBid ? topBid.amount : auction.startingPrice;
@@ -291,7 +291,7 @@ const AuctionPage = ({ auctionId, onNavigate, store, updateStore, loadAuctionDet
         {/* Blurred artwork reveal */}
         <div style={{ borderRadius:"var(--radius-lg)", overflow:"hidden", aspectRatio:"1/1", position:"relative", marginBottom:"1.5rem", background:"var(--parchment)", display:"flex", alignItems:"center", justifyContent:"center" }}>
           <div style={{ position:"absolute", inset:0, filter:"blur(20px)", transform:"scale(1.06)", display:"flex", alignItems:"center", justifyContent:"center", fontSize:"8rem" }}>
-            {auction.imageUrl ? <img src={auction.imageUrl} alt="" style={{ width:"100%", height:"100%", objectFit:"cover" }} /> : <span>{auction.emoji || "🎨"}</span>}
+            {auction.imageUrl ? <img src={auction.imageUrl} alt="" style={{ width:"100%", height:"100%", objectFit:"cover" }} /> : <span>{auction.emoji || <i className="fa-solid fa-palette"></i>}</span>}
           </div>
           <div style={{ position:"absolute", inset:0, background:"rgba(0,0,0,0.38)", display:"flex", flexDirection:"column", alignItems:"center", justifyContent:"center", gap:"0.75rem" }}>
             <div style={{ color:"white", fontFamily:"var(--font-display)", fontSize:"1.5rem", fontWeight:800, letterSpacing:"0.01em", textAlign:"center", padding:"0 1rem" }}>Dropping Soon</div>
@@ -367,7 +367,7 @@ const AuctionPage = ({ auctionId, onNavigate, store, updateStore, loadAuctionDet
       {isWinner && (
         <div className="winner-next-card" style={{ marginBottom:"1.5rem" }}>
           <div className="winner-next-header">
-            <span className="winner-next-icon">🏆</span>
+            <span className="winner-next-icon"><i className="fa-solid fa-trophy"></i></span>
             <div>
               <div className="winner-next-title">You won!</div>
               <div className="winner-next-sub">"{auction.title}" · Winning bid: <strong>{fmt$(topBid.amount)}</strong></div>
@@ -403,7 +403,7 @@ const AuctionPage = ({ auctionId, onNavigate, store, updateStore, loadAuctionDet
                 )}
                 {alreadyReviewed && auctionReview && (
                   <div style={{ marginTop:"0.4rem", fontSize:"0.82rem", color:"var(--emerald)" }}>
-                    <i className="fa-solid fa-check"></i> You left {"★".repeat(auctionReview.score)} — thanks!
+                    <i className="fa-solid fa-check"></i> You left {Array.from({length: auctionReview.score}, (_, i) => <i key={i} className="fa-solid fa-star"></i>)} — thanks!
                   </div>
                 )}
               </div>
@@ -429,11 +429,11 @@ const AuctionPage = ({ auctionId, onNavigate, store, updateStore, loadAuctionDet
       <div className="auction-layout">
         <div>
           <div className="auction-art-frame">
-            {auction.imageUrl ? <img src={auction.imageUrl} alt={auction.title} /> : <div className="auction-art-placeholder">{auction.emoji||"🎨"}</div>}
+            {auction.imageUrl ? <img src={auction.imageUrl} alt={auction.title} /> : <div className="auction-art-placeholder">{auction.emoji || <i className="fa-solid fa-palette"></i>}</div>}
           </div>
           <div style={{ padding:"0.75rem 0.25rem", display:"flex", gap:"0.5rem", flexWrap:"wrap" }}>
-            {auction.medium && <span className="tag">🖌️ {auction.medium}</span>}
-            {auction.dimensions && <span className="tag">📐 {auction.dimensions}</span>}
+            {auction.medium && <span className="tag"><i className="fa-solid fa-paintbrush"></i> {auction.medium}</span>}
+            {auction.dimensions && <span className="tag"><i className="fa-solid fa-ruler"></i> {auction.dimensions}</span>}
           </div>
         </div>
 

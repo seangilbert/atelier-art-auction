@@ -94,7 +94,7 @@ const CollectorDashboardPage = ({ meCollector, onNavigate, store, updateStore })
 
       {/* My Bids */}
       <div className="cdash-section">
-        <div className="cdash-section-title">🏷️ My Bids</div>
+        <div className="cdash-section-title"><i className="fa-solid fa-tag"></i> My Bids</div>
         {myBidAuctions.length === 0 ? (
           <p style={{ color:"var(--mist)", fontSize:"0.88rem" }}>You haven't placed any bids yet. <button className="btn-follow-hint" onClick={() => onNavigate("home")}>Browse live drops <i className="fa-solid fa-arrow-right"></i></button></p>
         ) : (
@@ -105,7 +105,7 @@ const CollectorDashboardPage = ({ meCollector, onNavigate, store, updateStore })
               return (
                 <div key={auction.id} className="cdash-bid-card" onClick={() => onNavigate("auction", auction.id)}>
                   <div className="cdash-bid-thumb">
-                    {auction.imageUrl ? <img src={auction.imageUrl} alt="" /> : (auction.emoji || "🎨")}
+                    {auction.imageUrl ? <img src={auction.imageUrl} alt="" /> : (auction.emoji || <i className="fa-solid fa-palette"></i>)}
                   </div>
                   <div className="cdash-bid-info">
                     <div className="cdash-bid-title">{auction.title}</div>
@@ -135,19 +135,19 @@ const CollectorDashboardPage = ({ meCollector, onNavigate, store, updateStore })
 
       {/* Artworks I've Ooh'd */}
       <div className="cdash-section">
-        <div className="cdash-section-title">✨ Artworks I've Ooh'd</div>
+        <div className="cdash-section-title"><i className="fa-solid fa-heart"></i> Artworks I've Ooh'd</div>
         {oohedAuctions.length === 0 ? (
-          <p style={{ color:"var(--mist)", fontSize:"0.88rem" }}>Tap ✦ Ooh on any artwork to save it here.</p>
+          <p style={{ color:"var(--mist)", fontSize:"0.88rem" }}>Tap Ooh on any artwork to save it here.</p>
         ) : (
           <div className="cdash-ooh-grid">
             {oohedAuctions.map((auction) => (
               <div key={auction.id} className="cdash-ooh-card" onClick={() => onNavigate("auction", auction.id)}>
                 <div className="cdash-ooh-thumb">
-                  {auction.imageUrl ? <img src={auction.imageUrl} alt={auction.title} /> : (auction.emoji || "🎨")}
+                  {auction.imageUrl ? <img src={auction.imageUrl} alt={auction.title} /> : (auction.emoji || <i className="fa-solid fa-palette"></i>)}
                 </div>
                 <div className="cdash-ooh-body">
                   <div className="cdash-ooh-title">{auction.title}</div>
-                  <div className="cdash-ooh-count">✨ {store.oohs?.[auction.id] || 0} Ooh{(store.oohs?.[auction.id] || 0) !== 1 ? "s" : ""}</div>
+                  <div className="cdash-ooh-count"><i className="fa-solid fa-heart"></i> {store.oohs?.[auction.id] || 0} Ooh{(store.oohs?.[auction.id] || 0) !== 1 ? "s" : ""}</div>
                 </div>
               </div>
             ))}
@@ -157,9 +157,9 @@ const CollectorDashboardPage = ({ meCollector, onNavigate, store, updateStore })
 
       {/* Drops I'm Watching */}
       <div className="cdash-section">
-        <div className="cdash-section-title">👀 Watching</div>
+        <div className="cdash-section-title"><i className="fa-regular fa-eye"></i> Watching</div>
         {watchedAuctions.length === 0 ? (
-          <p style={{ color:"var(--mist)", fontSize:"0.88rem" }}>Click 👀 Watch on any live drop to track it here and get an email reminder 1 hour before it closes.</p>
+          <p style={{ color:"var(--mist)", fontSize:"0.88rem" }}>Click Watch on any live drop to track it here and get an email reminder 1 hour before it closes.</p>
         ) : (
           <div className="cdash-bid-list">
             {watchedAuctions.map((auction) => {
@@ -168,7 +168,7 @@ const CollectorDashboardPage = ({ meCollector, onNavigate, store, updateStore })
               return (
                 <div key={auction.id} className="cdash-bid-card">
                   <div className="cdash-bid-thumb" onClick={() => onNavigate("auction", auction.id)} style={{ cursor:"pointer" }}>
-                    {auction.imageUrl ? <img src={auction.imageUrl} alt="" /> : (auction.emoji || "🎨")}
+                    {auction.imageUrl ? <img src={auction.imageUrl} alt="" /> : (auction.emoji || <i className="fa-solid fa-palette"></i>)}
                   </div>
                   <div className="cdash-bid-info" onClick={() => onNavigate("auction", auction.id)} style={{ cursor:"pointer" }}>
                     <div className="cdash-bid-title">{auction.title}</div>
@@ -190,7 +190,7 @@ const CollectorDashboardPage = ({ meCollector, onNavigate, store, updateStore })
 
       {/* Artists I Follow */}
       <div className="cdash-section">
-        <div className="cdash-section-title">✦ Artists I Follow</div>
+        <div className="cdash-section-title"><i className="fa-solid fa-star"></i> Artists I Follow</div>
         {followedArtists.length === 0 ? (
           <p style={{ color:"var(--mist)", fontSize:"0.88rem" }}>Visit an artist's profile and click Follow to see them here.</p>
         ) : (
