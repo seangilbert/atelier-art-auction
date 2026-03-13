@@ -18,6 +18,7 @@ import CreatePage from "./src/components/pages/CreatePage.jsx";
 import AuctionPage from "./src/components/pages/AuctionPage.jsx";
 import PaymentPage from "./src/components/pages/PaymentPage.jsx";
 import EditPage from "./src/components/pages/EditPage.jsx";
+import CollectorProfilePage from "./src/components/pages/CollectorProfilePage.jsx";
 
 // ─────────────────────────────────────────────────────────────────────────────
 // MOBILE BOTTOM NAV
@@ -284,6 +285,7 @@ export default function App() {
       {view.page === "edit"                && me          && <EditPage auctionId={view.id} artist={me} onNavigate={go} store={store} updateStore={updateStore} />}
       {view.page === "artist"              && (isLoggedIn ? <ArtistPage artistId={view.id} onNavigate={go} store={store} updateStore={updateStore} me={me} meCollector={meCollector} /> : <AuthPage store={store} updateStore={updateStore} onLogin={onLogin} onCollectorLogin={onCollectorLogin} initialMode="login" initialInviteCode={pendingInviteCode} />)}
       {view.page === "collector-dashboard" && meCollector && <CollectorDashboardPage meCollector={meCollector} onNavigate={go} store={store} updateStore={updateStore} />}
+      {view.page === "collector"           && <CollectorProfilePage collectorId={view.id} meCollector={meCollector} store={store} onNavigate={go} />}
       {view.page === "invites"             && isLoggedIn  && <InvitePage user={me || meCollector} store={store} updateStore={updateStore} onNavigate={go} />}
     </>
   );

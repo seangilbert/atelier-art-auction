@@ -571,6 +571,21 @@ const STYLES = `
   .feed-clear-btn { font-size:0.78rem; font-weight:600; padding:0.45rem 1rem; border-radius:100px; border:1.5px solid var(--border); background:white; color:var(--mist); cursor:pointer; font-family:var(--font-body); transition:all 0.15s; }
   .feed-clear-btn:hover { border-color:var(--gold); color:var(--gold-dark); background:var(--gold-light); }
 
+  /* ── "Because you follow" strip ─────────────────────────────────────────── */
+  .for-you-section { margin-bottom:1.75rem; }
+  .for-you-header { display:flex; align-items:center; justify-content:space-between; margin-bottom:0.75rem; }
+  .for-you-label { font-size:0.82rem; font-weight:700; color:var(--gold-dark); text-transform:uppercase; letter-spacing:0.06em; }
+  .for-you-scroll { display:flex; gap:0.85rem; overflow-x:auto; -webkit-overflow-scrolling:touch; scrollbar-width:none; padding-bottom:4px; }
+  .for-you-scroll::-webkit-scrollbar { display:none; }
+  .for-you-card { flex-shrink:0; width:160px; background:white; border:1px solid var(--border); border-radius:var(--radius-lg); overflow:hidden; cursor:pointer; transition:all 0.2s; box-shadow:var(--shadow-sm); }
+  .for-you-card:hover { transform:translateY(-3px); box-shadow:var(--shadow-md); }
+  .for-you-img { aspect-ratio:1/1; background:var(--parchment); display:flex; align-items:center; justify-content:center; overflow:hidden; }
+  .for-you-img img { width:100%; height:100%; object-fit:cover; }
+  .for-you-body { padding:0.65rem 0.75rem; }
+  .for-you-artist { font-size:0.7rem; color:var(--mist); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+  .for-you-title { font-size:0.82rem; font-weight:600; color:var(--ink); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; margin-top:0.1rem; }
+  .for-you-price { font-size:0.78rem; color:var(--gold-dark); font-weight:700; margin-top:0.25rem; }
+
   /* ── Clickable artist header in feed card ────────────────────────────────── */
   .feed-card-header-link { cursor:pointer; border-radius:var(--radius); padding:0.2rem 0.4rem; margin:-0.2rem -0.4rem; transition:background 0.15s; }
   .feed-card-header-link:hover { background:var(--parchment); }
