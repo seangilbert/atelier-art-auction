@@ -829,6 +829,7 @@ const STYLES = `
   [data-theme="dark"] select { background: var(--parchment); color: var(--ink); border-color: var(--border); }
   [data-theme="dark"] .modal::before { background: rgba(255,255,255,0.15); }
   [data-theme="dark"] .dropdown-divider { border-color: var(--border); }
+  [data-theme="dark"] .countdown-block { background: #0d0f1a; }
   [data-theme="dark"] .feed-card,
   [data-theme="dark"] .auction-card,
   [data-theme="dark"] .artist-browse-card,
