@@ -261,6 +261,7 @@ export default function App() {
         </div>
       )}
 
+      <div key={`${view.page}-${view.id || ''}`} className="page-transition">
       {view.page === "home" && (
         isLoggedIn
           ? <FeedPage onNavigate={go} store={store} updateStore={updateStore} me={me} meCollector={meCollector} />
@@ -289,6 +290,7 @@ export default function App() {
       {view.page === "collector"           && <CollectorProfilePage collectorId={view.id} meCollector={meCollector} store={store} onNavigate={go} />}
       {view.page === "artists"             && <ArtistBrowsePage onNavigate={go} store={store} updateStore={updateStore} me={me} meCollector={meCollector} />}
       {view.page === "invites"             && isLoggedIn  && <InvitePage user={me || meCollector} store={store} updateStore={updateStore} onNavigate={go} />}
+      </div>
     </>
   );
 }

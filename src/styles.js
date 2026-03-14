@@ -34,7 +34,7 @@ const STYLES = `
   }
 
   html { scroll-behavior: auto; overflow-x: hidden; }
-  body { font-family: var(--font-body); background: var(--cream); color: var(--ink); font-size: 16px; line-height: 1.6; min-height: 100vh; overflow-x: hidden; }
+  body { font-family: var(--font-body); background: var(--cream); color: var(--ink); font-size: 16px; line-height: 1.6; min-height: 100vh; }
   #root { min-height: 100vh; }
   .app-loading-screen { min-height: 100vh; background: var(--cream); }
 
@@ -730,6 +730,75 @@ const STYLES = `
   .coming-soon-body { padding:0.65rem 0.75rem; }
   .coming-soon-timer { font-size:0.7rem; font-weight:600; color:var(--slate); margin-top:0.25rem; }
   .coming-soon-price { font-size:0.72rem; color:var(--mist); margin-top:0.2rem; }
+
+  /* ── Mobile-native UX ───────────────────────────────────────────────────── */
+  html, body { overscroll-behavior: none; }
+
+  @keyframes pageEnter {
+    from { opacity:0; transform:translateY(10px); }
+    to   { opacity:1; transform:translateY(0); }
+  }
+  .page-transition { animation:pageEnter 0.22s ease both; }
+
+  /* Sticky frosted-glass headers on mobile */
+  @media (max-width:768px) {
+    .feed-header {
+      position:sticky; top:68px; z-index:100;
+      background:rgba(248,246,243,0.92);
+      backdrop-filter:saturate(180%) blur(16px);
+      -webkit-backdrop-filter:saturate(180%) blur(16px);
+      box-shadow:0 1px 0 rgba(0,0,0,0.06);
+      margin:-1.25rem -1.25rem 1rem;
+      padding:1rem 1.25rem 0.75rem;
+    }
+    .artist-browse-header {
+      position:sticky; top:68px; z-index:100;
+      background:rgba(248,246,243,0.92);
+      backdrop-filter:saturate(180%) blur(16px);
+      -webkit-backdrop-filter:saturate(180%) blur(16px);
+      box-shadow:0 1px 0 rgba(0,0,0,0.06);
+      margin:-1.25rem -1.25rem 1rem;
+      padding:1rem 1.25rem 0.75rem;
+    }
+  }
+
+  /* Bottom sheet modals on mobile */
+  @media (max-width:768px) {
+    .modal-overlay { align-items:flex-end; }
+    .modal {
+      width:100%; max-width:100%; margin:0;
+      border-radius:20px 20px 0 0;
+      max-height:90vh; overflow-y:auto;
+      padding-bottom:max(env(safe-area-inset-bottom,0px),1rem);
+    }
+    .modal::before {
+      content:''; display:block;
+      width:36px; height:4px;
+      background:rgba(0,0,0,0.13); border-radius:2px;
+      margin:0.6rem auto 0.5rem;
+    }
+  }
+
+  /* Touch press feedback on cards */
+  .feed-card, .auction-card, .artist-browse-card,
+  .for-you-card, .coming-soon-card, .gallery-card {
+    transition:transform 0.12s ease, box-shadow 0.12s ease;
+  }
+  .feed-card:active, .auction-card:active, .artist-browse-card:active,
+  .for-you-card:active, .coming-soon-card:active, .gallery-card:active {
+    transform:scale(0.97); box-shadow:var(--shadow-sm);
+  }
+  .btn:active:not(:disabled) { transform:scale(0.96); transition:transform 0.08s ease; }
+
+  /* Bottom nav tap animation + active icon scale */
+  .mobile-nav-tab { transition:transform 0.12s ease, color 0.15s ease; }
+  .mobile-nav-tab:active { transform:scale(0.85); transition:transform 0.06s ease; }
+  .mobile-nav-tab.active i { display:inline-block; transform:scale(1.15); transition:transform 0.18s cubic-bezier(0.34,1.56,0.64,1); }
+
+  /* Larger sort-tab tap targets on mobile */
+  @media (max-width:768px) {
+    .sort-tab { padding:0.5rem 1.1rem; font-size:0.8rem; min-height:34px; }
+  }
 `;
 
 export default STYLES;
