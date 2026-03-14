@@ -876,7 +876,7 @@ const STYLES = `
   [data-theme="dark"] .step-num { background: var(--parchment); border-color: var(--border); color: var(--ink); }
 
   /* ── Search Page ─────────────────────────────────────────────────────────── */
-  .search-page { }
+  .search-page { overflow-x: hidden; }
   .search-header { margin-bottom: 0.75rem; }
   .search-filter-chips { display:flex; gap:0.5rem; flex-wrap:wrap; margin-bottom:0.5rem; align-items:center; }
 
@@ -899,8 +899,7 @@ const STYLES = `
       backdrop-filter:saturate(180%) blur(16px);
       -webkit-backdrop-filter:saturate(180%) blur(16px);
       box-shadow:0 1px 0 rgba(0,0,0,0.06);
-      margin:-1.25rem -1.25rem 0;
-      padding:1rem 1.25rem 0.75rem;
+      padding-bottom:0.75rem;
     }
   }
 
