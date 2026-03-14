@@ -31,6 +31,24 @@ const STYLES = `
     --grad-accent: linear-gradient(135deg, #f09433 0%, #e6683c 25%, #dc2743 50%, #cc2366 75%, #bc1888 100%);
     --grad-primary: linear-gradient(135deg, #e8526a 0%, #cc2366 100%);
     --grad-cool: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    --surface: #ffffff;
+  }
+
+  [data-theme="dark"] {
+    --ink: #e2e8f0;
+    --parchment: #1e2130;
+    --cream: #13141f;
+    --surface: #1e2130;
+    --slate: #94a3b8;
+    --mist: #64748b;
+    --border: #2d3250;
+    --gold-light: #3d1f25;
+    --accent2-light: #1e2140;
+    --shadow-sm: 0 2px 12px rgba(0,0,0,0.3);
+    --shadow-md: 0 8px 30px rgba(0,0,0,0.4);
+    --shadow-lg: 0 20px 60px rgba(0,0,0,0.5);
+    --shadow-card: 0 4px 24px rgba(0,0,0,0.35);
+    color-scheme: dark;
   }
 
   html { scroll-behavior: auto; overflow-x: hidden; }
@@ -799,6 +817,60 @@ const STYLES = `
   @media (max-width:768px) {
     .sort-tab { padding:0.5rem 1.1rem; font-size:0.8rem; min-height:34px; }
   }
+
+  /* ── Dark mode element overrides ──────────────────────────────────────────── */
+  [data-theme="dark"] .nav { background: rgba(19,20,31,0.88); }
+  [data-theme="dark"] .modal,
+  [data-theme="dark"] .artist-dropdown { background: var(--surface); border-color: var(--border); }
+  [data-theme="dark"] .feed-header,
+  [data-theme="dark"] .artist-browse-header { background: rgba(19,20,31,0.92); }
+  [data-theme="dark"] input,
+  [data-theme="dark"] textarea,
+  [data-theme="dark"] select { background: var(--parchment); color: var(--ink); border-color: var(--border); }
+  [data-theme="dark"] .modal::before { background: rgba(255,255,255,0.15); }
+  [data-theme="dark"] .dropdown-divider { border-color: var(--border); }
+  [data-theme="dark"] .feed-card,
+  [data-theme="dark"] .auction-card,
+  [data-theme="dark"] .artist-browse-card,
+  [data-theme="dark"] .for-you-card,
+  [data-theme="dark"] .coming-soon-card,
+  [data-theme="dark"] .gallery-card,
+  [data-theme="dark"] .auth-card,
+  [data-theme="dark"] .stat-card,
+  [data-theme="dark"] .mgmt-card,
+  [data-theme="dark"] .bid-block,
+  [data-theme="dark"] .bid-quick-btn,
+  [data-theme="dark"] .comments-block,
+  [data-theme="dark"] .comment-input,
+  [data-theme="dark"] .message-thread,
+  [data-theme="dark"] .message-input,
+  [data-theme="dark"] .cdash-bid-card,
+  [data-theme="dark"] .cdash-ooh-card,
+  [data-theme="dark"] .cdash-artist-row,
+  [data-theme="dark"] .artist-profile-card,
+  [data-theme="dark"] .pending-payment-card,
+  [data-theme="dark"] .invite-send-section,
+  [data-theme="dark"] .artist-mgmt-bar,
+  [data-theme="dark"] .payment-opt,
+  [data-theme="dark"] .upload-zone,
+  [data-theme="dark"] .avatar-upload-zone,
+  [data-theme="dark"] .preview-card,
+  [data-theme="dark"] .preview-card-content,
+  [data-theme="dark"] .features-strip,
+  [data-theme="dark"] .top-oohs-section { background: var(--surface); border-color: var(--border); }
+  [data-theme="dark"] .mobile-bottom-nav { background: var(--parchment); border-color: var(--border); }
+  [data-theme="dark"] .sticky-bid-bar { background: var(--parchment); border-color: var(--border); }
+  [data-theme="dark"] .sort-tab,
+  [data-theme="dark"] .feed-clear-btn,
+  [data-theme="dark"] .share-btn,
+  [data-theme="dark"] .reaction-btn,
+  [data-theme="dark"] .btn-ghost { background: var(--parchment); border-color: var(--border); color: var(--slate); }
+  [data-theme="dark"] .sort-tab.active { background: var(--grad-primary); color: white; border-color: transparent; }
+  [data-theme="dark"] .auth-type-tab.active { background: var(--parchment); color: var(--ink); }
+  [data-theme="dark"] .feed-search-input,
+  [data-theme="dark"] .feed-filter-input,
+  [data-theme="dark"] .share-url-text,
+  [data-theme="dark"] .step-num { background: var(--parchment); border-color: var(--border); color: var(--ink); }
 `;
 
 export default STYLES;

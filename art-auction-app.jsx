@@ -87,6 +87,18 @@ export default function App() {
   const dropRef = useRef();
   const collectorDropRef = useRef();
 
+  const THEME_KEY = "artdrop_theme";
+  const [darkMode, setDarkMode] = useState(() => {
+    const stored = localStorage.getItem(THEME_KEY);
+    if (stored) return stored === "dark";
+    return window.matchMedia("(prefers-color-scheme: dark)").matches;
+  });
+  useEffect(() => {
+    document.documentElement.setAttribute("data-theme", darkMode ? "dark" : "light");
+    localStorage.setItem(THEME_KEY, darkMode ? "dark" : "light");
+  }, [darkMode]);
+  const toggleDark = () => setDarkMode((d) => !d);
+
   // Restore session from Supabase auth on mount
   useEffect(() => {
     supabase.auth.getSession().then(async ({ data: { session } }) => {
@@ -210,6 +222,7 @@ export default function App() {
                     <button className="dropdown-item" onClick={() => go("create")}><i className="fa-solid fa-plus"></i> New Drop</button>
                     <button className="dropdown-item" onClick={() => go("invites")}><i className="fa-solid fa-envelope"></i> Invites</button>
                     <button className="dropdown-item" onClick={() => go("edit-profile")}><i className="fa-solid fa-user-pen"></i> Edit Profile</button>
+                    <button className="dropdown-item" onClick={toggleDark}><i className={`fa-solid fa-${darkMode ? "sun" : "moon"}`}></i>{darkMode ? " Light mode" : " Dark mode"}</button>
                     <div className="dropdown-divider" />
                     <button className="dropdown-item danger" onClick={onLogout}>Sign Out</button>
                   </div>
@@ -229,6 +242,7 @@ export default function App() {
                   <button className="dropdown-item" onClick={() => go("collector-dashboard")}><i className="fa-solid fa-folder-open"></i> My Collection</button>
                   <button className="dropdown-item" onClick={() => go("invites")}><i className="fa-solid fa-envelope"></i> Invites</button>
                   <button className="dropdown-item" onClick={() => go("edit-profile")}><i className="fa-solid fa-user-pen"></i> Edit Profile</button>
+                  <button className="dropdown-item" onClick={toggleDark}><i className={`fa-solid fa-${darkMode ? "sun" : "moon"}`}></i>{darkMode ? " Light mode" : " Dark mode"}</button>
                   <div className="dropdown-divider" />
                   <button className="dropdown-item danger" onClick={onCollectorLogout}>Sign Out</button>
                 </div>
@@ -239,6 +253,7 @@ export default function App() {
           {/* Logged out */}
           {!me && !meCollector && (
             <>
+              <button className="nav-link" onClick={toggleDark} title={darkMode ? "Light mode" : "Dark mode"}><i className={`fa-solid fa-${darkMode ? "sun" : "moon"}`}></i></button>
               <button className="nav-link" onClick={() => go("login")}>Sign In</button>
               <button className="nav-link" onClick={() => go("collector-signup")}>Collect Art</button>
               <button className="btn btn-primary btn-sm" onClick={() => go("signup")}>Join as Artist</button>
