@@ -20,6 +20,7 @@ import PaymentPage from "./src/components/pages/PaymentPage.jsx";
 import EditPage from "./src/components/pages/EditPage.jsx";
 import CollectorProfilePage from "./src/components/pages/CollectorProfilePage.jsx";
 import ArtistBrowsePage from "./src/components/pages/ArtistBrowsePage.jsx";
+import SearchPage from "./src/components/pages/SearchPage.jsx";
 
 // ─────────────────────────────────────────────────────────────────────────────
 // MOBILE BOTTOM NAV
@@ -31,27 +32,18 @@ function MobileBottomNav({ page, isArtist, isCollector, onNavigate }) {
     { id: "home",      icon: <i className="fa-solid fa-paintbrush"></i>,       label: "Drops"     },
     { id: "create",    icon: <i className="fa-solid fa-plus"></i>,             label: "New"       },
     { id: "dashboard", icon: <i className="fa-solid fa-chart-simple"></i>,     label: "Dashboard" },
-    { id: "home",      icon: <i className="fa-solid fa-magnifying-glass"></i>, label: "Search", searchFocus: true },
+    { id: "search",    icon: <i className="fa-solid fa-magnifying-glass"></i>, label: "Search"    },
   ];
 
   const collectorTabs = [
-    { id: "home",                icon: <i className="fa-solid fa-paintbrush"></i>,      label: "Drops" },
-    { id: "collector-dashboard", icon: <i className="fa-solid fa-folder-open"></i>,     label: "Bids" },
-    { id: "artists",             icon: <i className="fa-solid fa-magnifying-glass"></i>, label: "Artists" },
+    { id: "home",                icon: <i className="fa-solid fa-paintbrush"></i>,       label: "Drops"  },
+    { id: "collector-dashboard", icon: <i className="fa-solid fa-folder-open"></i>,      label: "Bids"   },
+    { id: "search",              icon: <i className="fa-solid fa-magnifying-glass"></i>, label: "Search" },
   ];
 
   const tabs = isArtist ? artistTabs : collectorTabs;
 
-  const handleTab = (tab) => {
-    onNavigate(tab.id);
-    if (tab.searchFocus) {
-      window.scrollTo({ top: 0, behavior: "instant" });
-      setTimeout(() => {
-        const el = document.querySelector(".feed-search-input");
-        if (el) el.focus();
-      }, 150);
-    }
-  };
+  const handleTab = (tab) => { onNavigate(tab.id); };
 
   return (
     <div className="mobile-bottom-nav">
@@ -304,6 +296,7 @@ export default function App() {
       {view.page === "collector-dashboard" && meCollector && <CollectorDashboardPage meCollector={meCollector} onNavigate={go} store={store} updateStore={updateStore} />}
       {view.page === "collector"           && <CollectorProfilePage collectorId={view.id} meCollector={meCollector} store={store} onNavigate={go} />}
       {view.page === "artists"             && <ArtistBrowsePage onNavigate={go} store={store} updateStore={updateStore} me={me} meCollector={meCollector} />}
+      {view.page === "search"              && <SearchPage onNavigate={go} store={store} updateStore={updateStore} me={me} meCollector={meCollector} />}
       {view.page === "invites"             && isLoggedIn  && <InvitePage user={me || meCollector} store={store} updateStore={updateStore} onNavigate={go} />}
       </div>
     </>

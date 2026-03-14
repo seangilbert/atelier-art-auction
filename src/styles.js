@@ -874,6 +874,40 @@ const STYLES = `
   [data-theme="dark"] .feed-filter-input,
   [data-theme="dark"] .share-url-text,
   [data-theme="dark"] .step-num { background: var(--parchment); border-color: var(--border); color: var(--ink); }
+
+  /* ── Search Page ─────────────────────────────────────────────────────────── */
+  .search-page { }
+  .search-header { margin-bottom: 0.75rem; }
+  .search-filter-chips { display:flex; gap:0.5rem; flex-wrap:wrap; margin-bottom:0.5rem; align-items:center; }
+
+  .search-chip { font-size:0.78rem; font-weight:600; padding:0.4rem 0.85rem; border-radius:100px; border:1.5px solid var(--border); background:var(--surface); color:var(--slate); cursor:pointer; font-family:var(--font-body); transition:all 0.15s; display:inline-flex; align-items:center; gap:0.35rem; white-space:nowrap; }
+  .search-chip:hover { border-color:var(--gold); color:var(--gold-dark); }
+  .search-chip.active { background:var(--grad-primary); color:white; border-color:transparent; }
+  .search-chip-panel { background:var(--surface); border:1px solid var(--border); border-radius:var(--radius); padding:0.75rem 1rem; margin-bottom:0.75rem; display:flex; gap:0.5rem; align-items:center; flex-wrap:wrap; }
+
+  .search-section { margin-bottom:2rem; }
+  .search-section-header { display:flex; align-items:center; justify-content:space-between; margin-bottom:0.85rem; }
+  .search-section-title { font-size:0.8rem; font-weight:700; color:var(--mist); text-transform:uppercase; letter-spacing:0.06em; display:flex; align-items:center; gap:0.4rem; }
+  .search-section-count { font-size:0.75rem; color:var(--mist); }
+
+  .sold-badge { position:absolute; top:0.6rem; left:0.6rem; background:rgba(26,26,46,0.78); color:white; font-size:0.65rem; font-weight:700; padding:0.18rem 0.55rem; border-radius:100px; letter-spacing:0.04em; text-transform:uppercase; z-index:1; }
+
+  @media (max-width:768px) {
+    .search-header {
+      position:sticky; top:68px; z-index:100;
+      background:rgba(248,246,243,0.92);
+      backdrop-filter:saturate(180%) blur(16px);
+      -webkit-backdrop-filter:saturate(180%) blur(16px);
+      box-shadow:0 1px 0 rgba(0,0,0,0.06);
+      margin:-1.25rem -1.25rem 0;
+      padding:1rem 1.25rem 0.75rem;
+    }
+  }
+
+  [data-theme="dark"] .search-chip { background:var(--parchment); border-color:var(--border); color:var(--slate); }
+  [data-theme="dark"] .search-chip.active { background:var(--grad-primary); color:white; border-color:transparent; }
+  [data-theme="dark"] .search-chip-panel { background:var(--parchment); border-color:var(--border); }
+  [data-theme="dark"] .search-header { background:rgba(19,20,31,0.92); }
 `;
 
 export default STYLES;

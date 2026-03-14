@@ -8,18 +8,12 @@ import AvatarImg from "../ui/AvatarImg.jsx";
 const FeedPage = ({ onNavigate, store, updateStore, me, meCollector }) => {
   const PAGE_SIZE = 12;
   const [sort, setSort] = useState("oohs");
-  const [query, setQuery] = useState("");
-  const [minPrice, setMinPrice] = useState("");
-  const [maxPrice, setMaxPrice] = useState("");
-  const [medium, setMedium] = useState("");
-  const [endingSoon, setEndingSoon] = useState(false);
   const [visibleCount, setVisibleCount] = useState(PAGE_SIZE);
 
-  // Reset pagination when sort/filter changes
-  useEffect(() => { setVisibleCount(PAGE_SIZE); }, [sort, query, minPrice, maxPrice, medium, endingSoon]);
+  // Reset pagination when sort changes
+  useEffect(() => { setVisibleCount(PAGE_SIZE); }, [sort]);
 
   const live = store.auctions.filter((a) => !a.removed && a.published && getStatus(a) === "live");
-  const mediums = [...new Set(live.filter(a => a.medium).map(a => a.medium))].sort();
 
   const followingIds = new Set(store.collectors?.[meCollector?.id]?.following || []);
   const hasFollowing = !!(meCollector && followingIds.size > 0);
@@ -34,19 +28,8 @@ const FeedPage = ({ onNavigate, store, updateStore, me, meCollector }) => {
     return new Date(b.createdAt) - new Date(a.createdAt);
   });
 
-  const hasFilters = query.trim() !== "" || minPrice !== "" || maxPrice !== "" || medium !== "" || endingSoon;
-  const clearFilters = () => { setQuery(""); setMinPrice(""); setMaxPrice(""); setMedium(""); setEndingSoon(false); };
-
   const filtered = sorted.filter((auction) => {
     if (sort === "following" && !followingIds.has(auction.artistId)) return false;
-    const summary = store.bidSummaries[auction.id] || { count: 0, topAmount: 0 };
-    const currentPrice = summary.topAmount || auction.startingPrice;
-    const q = query.trim().toLowerCase();
-    if (q && !auction.title.toLowerCase().includes(q) && !auction.artistName.toLowerCase().includes(q)) return false;
-    if (minPrice !== "" && currentPrice < parseFloat(minPrice)) return false;
-    if (maxPrice !== "" && currentPrice > parseFloat(maxPrice)) return false;
-    if (medium && auction.medium !== medium) return false;
-    if (endingSoon && auction.endDate && new Date(auction.endDate) - new Date() > 6 * 3600 * 1000) return false;
     return true;
   });
 
@@ -132,31 +115,6 @@ const FeedPage = ({ onNavigate, store, updateStore, me, meCollector }) => {
         </div>
       </div>
 
-      {live.length > 0 && sort !== "following" && (
-        <div className="feed-search-bar">
-          <div className="feed-search-input-wrap">
-            <span className="feed-search-icon"><i className="fa-solid fa-magnifying-glass"></i></span>
-            <input className="feed-search-input" type="text" placeholder="Search by title or artist…" value={query} onChange={(e) => setQuery(e.target.value)} />
-          </div>
-          <div className="feed-filter-row">
-            <span className="feed-filter-label">Min $</span>
-            <input className="feed-filter-input" type="number" min="0" placeholder="0" value={minPrice} onChange={(e) => setMinPrice(e.target.value)} />
-            <span className="feed-filter-label">Max $</span>
-            <input className="feed-filter-input" type="number" min="0" placeholder="Any" value={maxPrice} onChange={(e) => setMaxPrice(e.target.value)} />
-            {mediums.length > 0 && (
-              <select className="feed-filter-input" value={medium} onChange={(e) => setMedium(e.target.value)} style={{ minWidth:0 }}>
-                <option value="">All mediums</option>
-                {mediums.map(m => <option key={m} value={m}>{m}</option>)}
-              </select>
-            )}
-            <button className={`feed-clear-btn${endingSoon ? " active" : ""}`} style={{ whiteSpace:"nowrap", color: endingSoon ? "var(--rouge)" : undefined }} onClick={() => setEndingSoon(s => !s)}>
-              <i className="fa-solid fa-fire"></i> Ending soon
-            </button>
-            {hasFilters && <button className="feed-clear-btn" onClick={clearFilters}><i className="fa-solid fa-xmark"></i> Clear</button>}
-          </div>
-        </div>
-      )}
-
       {/* ── "Because you follow" strip ───────────────────────────────────── */}
       {forYouDrops.length > 0 && (
         <div className="for-you-section">
@@ -227,12 +185,6 @@ const FeedPage = ({ onNavigate, store, updateStore, me, meCollector }) => {
           <h3>No live drops from artists you follow</h3>
           <p style={{ marginBottom:"1.5rem" }}>Follow more artists on their profile pages, or browse all drops.</p>
           <button className="btn btn-ghost" onClick={() => setSort("oohs")}>Browse all drops</button>
-        </div>
-      ) : filtered.length === 0 ? (
-        <div className="empty-state">
-          <h3>No results{query.trim() ? ` for "${query.trim()}"` : ""}</h3>
-          <p style={{ marginBottom:"1.5rem" }}>Try a different search or adjust the price range.</p>
-          <button className="btn btn-ghost" onClick={clearFilters}>✕ Clear Filters</button>
         </div>
       ) : (
         <>
