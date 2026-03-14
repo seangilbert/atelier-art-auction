@@ -63,7 +63,7 @@ const CollectorProfilePage = ({ collectorId, meCollector, store, onNavigate }) =
 
   return (
     <div className="artist-page">
-      <button className="btn btn-ghost btn-sm" style={{ marginBottom:"1.5rem" }} onClick={() => onNavigate("home")}>
+      <button className="btn btn-ghost btn-sm" style={{ marginBottom:"1.5rem" }} onClick={() => onNavigate("back")}>
         <i className="fa-solid fa-arrow-left"></i> Back
       </button>
 

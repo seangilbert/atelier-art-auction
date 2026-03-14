@@ -25,7 +25,7 @@ import SearchPage from "./src/components/pages/SearchPage.jsx";
 // ─────────────────────────────────────────────────────────────────────────────
 // MOBILE BOTTOM NAV
 // ─────────────────────────────────────────────────────────────────────────────
-function MobileBottomNav({ page, isArtist, isCollector, onNavigate }) {
+function MobileBottomNav({ page, isArtist, isCollector, onNavigate, onClearHistory }) {
   if (!isArtist && !isCollector) return null;
 
   const artistTabs = [
@@ -43,7 +43,7 @@ function MobileBottomNav({ page, isArtist, isCollector, onNavigate }) {
 
   const tabs = isArtist ? artistTabs : collectorTabs;
 
-  const handleTab = (tab) => { onNavigate(tab.id); };
+  const handleTab = (tab) => { onClearHistory(); onNavigate(tab.id); };
 
   return (
     <div className="mobile-bottom-nav">
@@ -125,10 +125,11 @@ export default function App() {
   }, []);
 
   const [returnToAuction, setReturnToAuction] = useState(null);
+  const [navHistory, setNavHistory] = useState([]);
 
-  const go = (page, id = null) => {
+  // Internal: change view without touching history
+  const navigate = (page, id = null) => {
     if ((page === "create" || page === "dashboard") && !artist) { setView({ page: "login", id: null }); return; }
-    // When navigating to auth from an auction page, remember which auction to return to after login
     if ((page === "login" || page === "signup" || page === "collector-signup") && view.page === "auction" && view.id) {
       setReturnToAuction(view.id);
     } else if (page !== "login" && page !== "signup" && page !== "collector-signup") {
@@ -140,6 +141,22 @@ export default function App() {
     window.scrollTo({ top: 0, behavior: "instant" });
     if (page === "auction" && id) window.history.pushState(null, "", `${window.location.pathname}#auction-${id}`);
     else window.history.pushState(null, "", window.location.pathname);
+  };
+
+  // Public: used by all pages — handles "back" and pushes history
+  const go = (page, id = null) => {
+    if (page === "back") {
+      if (navHistory.length > 0) {
+        const prev = navHistory[navHistory.length - 1];
+        setNavHistory(h => h.slice(0, -1));
+        navigate(prev.page, prev.id);
+      } else {
+        navigate("home");
+      }
+      return;
+    }
+    setNavHistory(h => [...h, { page: view.page, id: view.id }]);
+    navigate(page, id);
   };
 
   const onLogin = (a) => { setArtist(a); updateStore(a.id); setView(returnToAuction ? { page: "auction", id: returnToAuction } : { page: "dashboard", id: null }); setReturnToAuction(null); };
@@ -258,6 +275,7 @@ export default function App() {
         isArtist={!!me}
         isCollector={!!meCollector}
         onNavigate={go}
+        onClearHistory={() => setNavHistory([])}
       />
       {meCollector && outbidCount > 0 && !bannerDismissed && (
         <div className="outbid-banner">

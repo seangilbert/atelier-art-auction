@@ -38,7 +38,7 @@ const InvitePage = ({ user, store, updateStore, onNavigate }) => {
 
   return (
     <div className="invite-page">
-      <button className="btn btn-ghost btn-sm" style={{ marginBottom:"1.5rem" }} onClick={() => onNavigate("home")}><i className="fa-solid fa-arrow-left"></i> Back</button>
+      <button className="btn btn-ghost btn-sm" style={{ marginBottom:"1.5rem" }} onClick={() => onNavigate("back")}><i className="fa-solid fa-arrow-left"></i> Back</button>
       <div className="page-title"><i className="fa-solid fa-envelope"></i> Your <em>Invites</em></div>
       <div className="page-subtitle">Share ArtDrop with people you trust. Each code allows up to 5 new members.</div>
 
