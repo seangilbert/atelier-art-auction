@@ -11,7 +11,7 @@ const SearchPage = ({ onNavigate, store, updateStore, me, meCollector }) => {
   const [openChip, setOpenChip] = useState(null);
   const [visibleCount, setVisibleCount] = useState(PAGE_SIZE);
 
-  const allAuctions = store.auctions.filter(a => a.published && !a.removed);
+  const allAuctions = store.auctions.filter(a => a.published && !a.removed && a.startDate !== null);
   const mediums = [...new Set(allAuctions.filter(a => a.medium).map(a => a.medium))].sort();
 
   const hasFilters = query.trim() !== "" || medium !== "" || minPrice !== "" || maxPrice !== "";

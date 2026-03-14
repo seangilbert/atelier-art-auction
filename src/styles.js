@@ -51,7 +51,8 @@ const STYLES = `
     color-scheme: dark;
   }
 
-  html { scroll-behavior: auto; overflow-x: hidden; }
+  html, body { overflow-x: hidden; }
+  html { scroll-behavior: auto; }
   body { font-family: var(--font-body); background: var(--cream); color: var(--ink); font-size: 16px; line-height: 1.6; min-height: 100vh; }
   #root { min-height: 100vh; }
   .app-loading-screen { min-height: 100vh; background: var(--cream); }
@@ -203,7 +204,7 @@ const STYLES = `
   .sp-ended { background: var(--parchment); color: var(--mist); }
 
   /* Create / Forms */
-  .page-container { max-width: 760px; margin: 0 auto; padding: 3rem 2rem 5rem; }
+  .page-container { max-width: 760px; margin: 0 auto; padding: 3rem 2rem 5rem; overflow-x: hidden; }
   .page-title { font-size: 2.1rem; color: var(--ink); margin-bottom: 0.4rem; font-weight: 700; letter-spacing: -0.03em; }
   .page-title em { font-style: normal; background: var(--grad-primary); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text; }
   .page-subtitle { color: var(--mist); font-size: 0.9rem; margin-bottom: 3rem; }

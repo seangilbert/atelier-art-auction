@@ -84,7 +84,7 @@ const PaymentPage = ({ auctionId, onNavigate, store, updateStore, loadAuctionDet
     <div className="payment-page">
       <button className="btn btn-ghost btn-sm" style={{ marginBottom:"2rem" }} onClick={() => onNavigate("auction", auctionId)}><i className="fa-solid fa-arrow-left"></i> Back</button>
       <div className="winner-banner"><div className="winner-crown"><i className="fa-solid fa-trophy"></i></div><div className="winner-title">You won!</div><div className="winner-sub">"{auction.title}" by {auction.artistName}</div></div>
-      <div style={{ background:"white", border:"1px solid var(--border)", borderRadius:"var(--radius-lg)", padding:"1.25rem 1.5rem", marginBottom:"1.75rem" }}>
+      <div style={{ background:"var(--surface)", border:"1px solid var(--border)", borderRadius:"var(--radius-lg)", padding:"1.25rem 1.5rem", marginBottom:"1.75rem" }}>
         <div className="winner-summary-row">
           <div><div style={{ fontSize:"0.7rem", color:"var(--mist)", textTransform:"uppercase", letterSpacing:"0.06em" }}>Winning Bid</div><div style={{ fontFamily:"var(--font-display)", fontSize:"2rem", fontWeight:700, color:"var(--gold-dark)" }}>{fmt$(topBid?.amount)}</div></div>
           <div style={{ textAlign:"right" }}><div style={{ fontSize:"0.7rem", color:"var(--mist)", textTransform:"uppercase", letterSpacing:"0.06em" }}>Pay Within</div><div style={{ fontWeight:600, color:"var(--rouge)" }}>48 hours</div></div>

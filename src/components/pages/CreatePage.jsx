@@ -173,7 +173,7 @@ const CreatePage = ({ artist, onNavigate, store, updateStore, galleryItemId, edi
             { key: "contact", label: "Contact Artist",  icon: <i className="fa-solid fa-envelope"></i>, field: null },
           ].map(({ key, label, icon, field, ph }) => (
             <div key={key} style={{ marginBottom: "0.6rem" }}>
-              <div style={{ display:"flex", alignItems:"center", gap:"0.75rem", padding:"0.85rem 1rem", border:`1px solid ${f.paymentMethods.includes(key)?"var(--gold)":"var(--border)"}`, borderRadius:"var(--radius)", background:f.paymentMethods.includes(key)?"rgba(201,168,76,0.05)":"white", cursor:"pointer", transition:"all 0.15s" }} onClick={() => togglePay(key)}>
+              <div style={{ display:"flex", alignItems:"center", gap:"0.75rem", padding:"0.85rem 1rem", border:`1px solid ${f.paymentMethods.includes(key)?"var(--gold)":"var(--border)"}`, borderRadius:"var(--radius)", background:f.paymentMethods.includes(key)?"rgba(201,168,76,0.05)":"var(--surface)", cursor:"pointer", transition:"all 0.15s" }} onClick={() => togglePay(key)}>
                 <span style={{ fontSize:"1.15rem" }}>{icon}</span>
                 <span style={{ flex:1, fontWeight:500, fontSize:"0.92rem" }}>{label}</span>
                 <span style={{ color:f.paymentMethods.includes(key)?"var(--gold-dark)":"var(--border)" }}>{f.paymentMethods.includes(key) ? <i className="fa-solid fa-check"></i> : <i className="fa-solid fa-plus"></i>}</span>
@@ -188,7 +188,7 @@ const CreatePage = ({ artist, onNavigate, store, updateStore, galleryItemId, edi
       {step === 4 && (
         <div>
           {/* Summary card */}
-          <div style={{ background:"white", border:"1px solid var(--border)", borderRadius:"var(--radius-lg)", padding:"1.5rem", marginBottom:"1.5rem" }}>
+          <div style={{ background:"var(--surface)", border:"1px solid var(--border)", borderRadius:"var(--radius-lg)", padding:"1.5rem", marginBottom:"1.5rem" }}>
             <div style={{ display:"flex", gap:"1.25rem", alignItems:"flex-start" }}>
               <div style={{ width:72, height:72, background:"var(--parchment)", borderRadius:"var(--radius)", overflow:"hidden", flexShrink:0, display:"flex", alignItems:"center", justifyContent:"center", fontSize:"2rem" }}>
                 {f.imageUrl ? <img src={f.imageUrl} alt="" style={{ width:"100%", height:"100%", objectFit:"cover" }} /> : f.emoji}
@@ -225,7 +225,7 @@ const CreatePage = ({ artist, onNavigate, store, updateStore, galleryItemId, edi
 
           {/* Inline schedule picker */}
           {showSchedulePicker && (
-            <div style={{ background:"white", border:"1px solid var(--border)", borderRadius:"var(--radius)", padding:"1.25rem", marginBottom:"1rem" }}>
+            <div style={{ background:"var(--surface)", border:"1px solid var(--border)", borderRadius:"var(--radius)", padding:"1.25rem", marginBottom:"1rem" }}>
               <label className="form-label" style={{ marginBottom:"0.5rem", display:"block" }}>
                 <i className="fa-solid fa-calendar"></i> Publish date &amp; time
               </label>
