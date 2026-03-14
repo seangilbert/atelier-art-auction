@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { getStatus, fmt$, timeAgo } from "../../utils/helpers.js";
+import { getStatus, fmt$, timeAgo, timeLeft } from "../../utils/helpers.js";
 import { CardTimer } from "../ui/Countdown.jsx";
 import OohButton from "../ui/OohButton.jsx";
 import WatchButton from "../ui/WatchButton.jsx";
@@ -57,6 +57,22 @@ const FeedPage = ({ onNavigate, store, updateStore, me, meCollector }) => {
   const forYouDrops = sort !== "following" && hasFollowing
     ? live.filter(a => followingIds.has(a.artistId)).sort((a, b) => new Date(a.endDate) - new Date(b.endDate)).slice(0, 8)
     : [];
+
+  const scheduled = store.auctions
+    .filter(a => !a.removed && a.published && getStatus(a) === "scheduled")
+    .sort((a, b) => new Date(a.startDate) - new Date(b.startDate))
+    .slice(0, 10);
+
+  const ScheduledTimer = ({ startDate }) => {
+    const [left, setLeft] = useState(() => timeLeft(startDate));
+    useEffect(() => {
+      const id = setInterval(() => setLeft(timeLeft(startDate)), 10000);
+      return () => clearInterval(id);
+    }, [startDate]);
+    if (!left) return <span>Starting soon</span>;
+    if (left.d > 0) return <span>Starts in {left.d}d {left.h}h</span>;
+    return <span style={{ color: "var(--rouge)" }}>Starts in {left.h}h {left.m}m</span>;
+  };
 
   const sortTabs = [
     ["oohs","Most Loved"], ["ending","Ending Soon"], ["newest","Newest"],
@@ -164,6 +180,37 @@ const FeedPage = ({ onNavigate, store, updateStore, me, meCollector }) => {
                 </div>
               );
             })}
+          </div>
+        </div>
+      )}
+
+      {/* ── Coming Soon strip ─────────────────────────────────────────────── */}
+      {scheduled.length > 0 && (
+        <div className="coming-soon-section">
+          <div className="for-you-header">
+            <span className="for-you-label"><i className="fa-regular fa-clock"></i> Coming Soon</span>
+          </div>
+          <div className="coming-soon-scroll">
+            {scheduled.map(auction => (
+              <div key={auction.id} className="coming-soon-card" onClick={() => onNavigate("auction", auction.id)}>
+                <div className="coming-soon-img">
+                  {auction.imageUrl
+                    ? <img src={auction.imageUrl} alt={auction.title} />
+                    : <i className="fa-solid fa-palette" style={{ fontSize: "2rem" }}></i>}
+                  <div className="coming-soon-img-overlay" />
+                </div>
+                <div className="coming-soon-body">
+                  <div className="for-you-artist">{auction.artistName}</div>
+                  <div className="for-you-title">{auction.title}</div>
+                  <div className="coming-soon-timer"><ScheduledTimer startDate={auction.startDate} /></div>
+                  <div className="coming-soon-price">from {fmt$(auction.startingPrice)}</div>
+                  <div onClick={e => e.stopPropagation()} style={{ marginTop: "0.5rem" }}>
+                    <WatchButton auctionId={auction.id} store={store} updateStore={updateStore}
+                      meUser={me || meCollector} onNavigate={onNavigate} />
+                  </div>
+                </div>
+              </div>
+            ))}
           </div>
         </div>
       )}

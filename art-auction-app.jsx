@@ -19,6 +19,7 @@ import AuctionPage from "./src/components/pages/AuctionPage.jsx";
 import PaymentPage from "./src/components/pages/PaymentPage.jsx";
 import EditPage from "./src/components/pages/EditPage.jsx";
 import CollectorProfilePage from "./src/components/pages/CollectorProfilePage.jsx";
+import ArtistBrowsePage from "./src/components/pages/ArtistBrowsePage.jsx";
 
 // ─────────────────────────────────────────────────────────────────────────────
 // MOBILE BOTTOM NAV
@@ -36,7 +37,7 @@ function MobileBottomNav({ page, isArtist, isCollector, onNavigate }) {
   const collectorTabs = [
     { id: "home",                icon: <i className="fa-solid fa-paintbrush"></i>,      label: "Drops" },
     { id: "collector-dashboard", icon: <i className="fa-solid fa-folder-open"></i>,     label: "Bids" },
-    { id: "home",                icon: <i className="fa-solid fa-magnifying-glass"></i>, label: "Search", searchFocus: true },
+    { id: "artists",             icon: <i className="fa-solid fa-magnifying-glass"></i>, label: "Artists" },
   ];
 
   const tabs = isArtist ? artistTabs : collectorTabs;
@@ -286,6 +287,7 @@ export default function App() {
       {view.page === "artist"              && (isLoggedIn ? <ArtistPage artistId={view.id} onNavigate={go} store={store} updateStore={updateStore} me={me} meCollector={meCollector} /> : <AuthPage store={store} updateStore={updateStore} onLogin={onLogin} onCollectorLogin={onCollectorLogin} initialMode="login" initialInviteCode={pendingInviteCode} />)}
       {view.page === "collector-dashboard" && meCollector && <CollectorDashboardPage meCollector={meCollector} onNavigate={go} store={store} updateStore={updateStore} />}
       {view.page === "collector"           && <CollectorProfilePage collectorId={view.id} meCollector={meCollector} store={store} onNavigate={go} />}
+      {view.page === "artists"             && <ArtistBrowsePage onNavigate={go} store={store} updateStore={updateStore} me={me} meCollector={meCollector} />}
       {view.page === "invites"             && isLoggedIn  && <InvitePage user={me || meCollector} store={store} updateStore={updateStore} onNavigate={go} />}
     </>
   );

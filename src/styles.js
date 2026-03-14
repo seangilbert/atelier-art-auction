@@ -697,6 +697,39 @@ const STYLES = `
     .edit-profile-avatar-row { flex-direction:column; align-items:stretch; }
     .edit-profile-avatar-preview { align-self:center; }
   }
+
+  /* ── Artist browse page ─────────────────────────────────────────────────── */
+  .artist-browse-page { max-width:1200px; margin:0 auto; padding:2rem; }
+  .artist-browse-header { display:flex; align-items:center; justify-content:space-between; margin-bottom:1.5rem; flex-wrap:wrap; gap:1rem; }
+  .artist-browse-title { font-size:1.5rem; font-weight:700; color:var(--ink); letter-spacing:-0.02em; font-family:var(--font-display); }
+  .artist-browse-grid { display:flex; flex-direction:column; gap:1rem; }
+  .artist-browse-card { background:white; border:1px solid var(--border); border-radius:var(--radius-xl); padding:1.1rem 1.4rem; display:flex; align-items:center; gap:1.1rem; cursor:pointer; transition:all 0.2s; box-shadow:var(--shadow-card); }
+  .artist-browse-card:hover { transform:translateY(-2px); box-shadow:var(--shadow-md); }
+  .artist-browse-avatar { position:relative; width:52px; height:52px; border-radius:50%; background:var(--grad-accent); flex-shrink:0; overflow:visible; display:flex; align-items:center; justify-content:center; }
+  .artist-browse-live-badge { position:absolute; bottom:-7px; left:50%; transform:translateX(-50%); background:rgba(232,82,106,0.92); color:white; font-size:0.6rem; font-weight:700; padding:0.15rem 0.45rem; border-radius:100px; white-space:nowrap; display:flex; align-items:center; gap:0.2rem; }
+  .artist-browse-info { flex:1; min-width:0; }
+  .artist-browse-name { font-size:0.97rem; font-weight:700; color:var(--ink); margin-bottom:0.2rem; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+  .artist-browse-bio { font-size:0.76rem; color:var(--slate); line-height:1.45; display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical; overflow:hidden; margin-bottom:0.35rem; }
+  .artist-browse-stats { display:flex; gap:0.75rem; font-size:0.72rem; color:var(--mist); font-weight:600; }
+  .artist-browse-stats i { margin-right:0.18rem; }
+  .artist-browse-follow { flex-shrink:0; }
+  @media (max-width:768px) {
+    .artist-browse-page { padding:1.25rem; }
+    .artist-browse-header { flex-direction:column; align-items:flex-start; }
+  }
+
+  /* ── Coming Soon strip ───────────────────────────────────────────────────── */
+  .coming-soon-section { margin-bottom:1.75rem; }
+  .coming-soon-scroll { display:flex; gap:0.85rem; overflow-x:auto; -webkit-overflow-scrolling:touch; scrollbar-width:none; padding-bottom:4px; }
+  .coming-soon-scroll::-webkit-scrollbar { display:none; }
+  .coming-soon-card { flex-shrink:0; width:155px; background:white; border:1px solid var(--border); border-radius:var(--radius-lg); overflow:hidden; cursor:pointer; transition:all 0.2s; box-shadow:var(--shadow-sm); }
+  .coming-soon-card:hover { transform:translateY(-3px); box-shadow:var(--shadow-md); }
+  .coming-soon-img { position:relative; aspect-ratio:1/1; background:var(--parchment); display:flex; align-items:center; justify-content:center; overflow:hidden; }
+  .coming-soon-img img { width:100%; height:100%; object-fit:cover; filter:blur(4px) brightness(0.7); transform:scale(1.05); }
+  .coming-soon-img-overlay { position:absolute; inset:0; background:rgba(26,26,46,0.3); }
+  .coming-soon-body { padding:0.65rem 0.75rem; }
+  .coming-soon-timer { font-size:0.7rem; font-weight:600; color:var(--slate); margin-top:0.25rem; }
+  .coming-soon-price { font-size:0.72rem; color:var(--mist); margin-top:0.2rem; }
 `;
 
 export default STYLES;
