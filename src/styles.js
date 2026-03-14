@@ -51,8 +51,7 @@ const STYLES = `
     color-scheme: dark;
   }
 
-  html, body { overflow-x: hidden; }
-  html { scroll-behavior: auto; }
+  html { scroll-behavior: auto; overflow-x: hidden; }
   body { font-family: var(--font-body); background: var(--cream); color: var(--ink); font-size: 16px; line-height: 1.6; min-height: 100vh; }
   #root { min-height: 100vh; }
   .app-loading-screen { min-height: 100vh; background: var(--cream); }
