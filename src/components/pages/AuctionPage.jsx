@@ -310,7 +310,7 @@ const AuctionPage = ({ auctionId, onNavigate, store, updateStore, loadAuctionDet
         )}
 
         {/* Countdown to startDate */}
-        <div style={{ background:"white", border:"1px solid var(--border)", borderRadius:"var(--radius-lg)", padding:"1.25rem", textAlign:"center", marginBottom:"1.25rem" }}>
+        <div style={{ background:"var(--surface)", border:"1px solid var(--border)", borderRadius:"var(--radius-lg)", padding:"1.25rem", textAlign:"center", marginBottom:"1.25rem" }}>
           <div style={{ color:"var(--mist)", fontSize:"0.7rem", textTransform:"uppercase", letterSpacing:"0.08em", marginBottom:"0.5rem" }}>Goes live in</div>
           <Countdown endDate={auction.startDate} label="This drop is now live!" />
           <div style={{ color:"var(--mist)", fontSize:"0.78rem", marginTop:"0.5rem" }}>{fmtDate(auction.startDate)}</div>

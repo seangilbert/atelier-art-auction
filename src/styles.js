@@ -892,6 +892,7 @@ const STYLES = `
   .search-image-placeholder { width:100%; height:100%; display:flex; align-items:center; justify-content:center; color:var(--mist); font-size:1.5rem; }
   .search-cell-live { position:absolute; top:5px; right:5px; width:10px; height:10px; display:flex; align-items:center; justify-content:center; }
   .search-cell-sold { position:absolute; top:4px; left:4px; background:rgba(26,26,46,0.75); color:white; font-size:0.6rem; font-weight:700; padding:0.15rem 0.4rem; border-radius:100px; letter-spacing:0.04em; text-transform:uppercase; }
+  .search-cell-soon { position:absolute; top:4px; left:4px; background:rgba(26,26,46,0.75); color:rgba(255,255,255,0.85); font-size:0.6rem; font-weight:600; padding:0.15rem 0.4rem; border-radius:100px; display:flex; align-items:center; gap:0.25rem; }
 
   @media (max-width:768px) {
     .search-page { padding:1.25rem 1.25rem 4rem; }

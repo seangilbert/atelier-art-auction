@@ -147,8 +147,9 @@ const SearchPage = ({ onNavigate, store, updateStore, me, meCollector }) => {
                   {auction.imageUrl
                     ? <img src={auction.imageUrl} alt={auction.title} />
                     : <div className="search-image-placeholder"><i className="fa-solid fa-palette"></i></div>}
-                  {status === "live"   && <div className="search-cell-live"><div className="pulse" style={{ background:"white", width:"6px", height:"6px", minWidth:"6px" }} /></div>}
-                  {status === "ended" && <div className="search-cell-sold">Sold</div>}
+                  {status === "live"      && <div className="search-cell-live"><div className="pulse" style={{ background:"white", width:"6px", height:"6px", minWidth:"6px" }} /></div>}
+                  {status === "ended"    && <div className="search-cell-sold">Sold</div>}
+                  {status === "scheduled" && <div className="search-cell-soon"><i className="fa-regular fa-clock"></i> Soon</div>}
                 </div>
               );
             })}
