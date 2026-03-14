@@ -3,3 +3,6 @@ dist/
 .DS_Store
 *.local
 .env.local
+
+# Capacitor iOS — generated native project (run `npx cap add ios` to recreate)
+ios/
