@@ -175,7 +175,7 @@ const STYLES = `
   .empty-state h3 { font-size: 1.6rem; margin-bottom: 0.75rem; color: var(--ink); font-weight: 700; letter-spacing: -0.02em; }
 
   /* Dashboard */
-  .dashboard { max-width: 1000px; margin: 0 auto; padding: 3rem 2rem 5rem; }
+  .dashboard { max-width: 1000px; margin: 0 auto; padding: 3rem 2rem 5rem; overflow-x: hidden; }
   .dash-greeting { font-size: 2rem; font-weight: 700; margin-bottom: 0.3rem; letter-spacing: -0.03em; }
   .dash-greeting em { font-style: normal; background: var(--grad-primary); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text; }
   .dash-subtitle { color: var(--mist); font-size: 0.88rem; margin-bottom: 2.5rem; }
@@ -478,7 +478,7 @@ const STYLES = `
   .auth-type-tab.active { background:white; color:var(--ink); box-shadow:var(--shadow-sm); }
 
   /* ── Feed page ───────────────────────────────────────────────────────────── */
-  .feed-page { max-width:1200px; margin:0 auto; padding:2rem; }
+  .feed-page { max-width:1200px; margin:0 auto; padding:2rem; overflow-x:hidden; }
   .feed-header { display:flex; align-items:center; justify-content:space-between; margin-bottom:1.5rem; flex-wrap:wrap; gap:1rem; }
   .feed-title { font-size:1.5rem; font-weight:700; color:var(--ink); letter-spacing:-0.02em; }
   .sort-tabs { display:flex; gap:0.4rem; overflow-x:auto; flex-wrap:nowrap; -webkit-overflow-scrolling:touch; scrollbar-width:none; padding-bottom:2px; width:100%; min-width:0; }
