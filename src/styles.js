@@ -484,7 +484,7 @@ const STYLES = `
   .auth-type-tab.active { background:white; color:var(--ink); box-shadow:var(--shadow-sm); }
 
   /* ── Feed page ───────────────────────────────────────────────────────────── */
-  .feed-page { max-width:1200px; margin:0 auto; padding:1.25rem 2rem 2rem; overflow-x:hidden; }
+  .feed-page { max-width:1200px; margin:0 auto; margin-top:-68px; padding:1.25rem 2rem 2rem; overflow-x:hidden; }
   .feed-header { display:flex; align-items:center; justify-content:space-between; margin-bottom:1.5rem; flex-wrap:wrap; gap:1rem; }
   .feed-title { font-size:1.5rem; font-weight:700; color:var(--ink); letter-spacing:-0.02em; }
   .sort-tabs { display:flex; gap:0.4rem; overflow-x:auto; flex-wrap:nowrap; -webkit-overflow-scrolling:touch; scrollbar-width:none; padding-bottom:2px; width:100%; min-width:0; }
@@ -622,7 +622,7 @@ const STYLES = `
     .artist-profile-card { flex-direction:column; }
     .cdash-bid-card { flex-wrap:wrap; }
     .cdash-bid-status { flex-direction:row; align-items:center; }
-    .sticky-bid-bar { display:flex; }
+    .sticky-bid-bar { display:flex; bottom:calc(56px + env(safe-area-inset-bottom, 0px)); }
     .auction-detail { padding-bottom: 6rem; }
   }
 
