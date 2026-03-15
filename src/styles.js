@@ -767,13 +767,7 @@ const STYLES = `
   /* Sticky frosted-glass headers on mobile */
   @media (max-width:768px) {
     .feed-header {
-      position:sticky; top:calc(44px + env(safe-area-inset-top, 0px)); z-index:100;
-      background:rgba(248,246,243,0.92);
-      backdrop-filter:saturate(180%) blur(16px);
-      -webkit-backdrop-filter:saturate(180%) blur(16px);
-      box-shadow:0 1px 0 rgba(0,0,0,0.06);
-      margin:-0.375rem -1.25rem 1rem;
-      padding:0.375rem 1.25rem 0.75rem;
+      margin:0 0 1rem;
     }
     .artist-browse-header {
       position:sticky; top:calc(44px + env(safe-area-inset-top, 0px)); z-index:100;
