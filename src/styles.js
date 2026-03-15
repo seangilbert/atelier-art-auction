@@ -913,17 +913,17 @@ const STYLES = `
   .search-cell-soon { position:absolute; top:4px; left:4px; background:rgba(26,26,46,0.75); color:rgba(255,255,255,0.85); font-size:0.6rem; font-weight:600; padding:0.15rem 0.4rem; border-radius:100px; display:flex; align-items:center; gap:0.25rem; }
 
   @media (max-width:768px) {
-    .search-page { padding-top:0.375rem; padding-left:1.25rem; padding-right:1.25rem; }
+    .search-page { padding-top:0; padding-left:1.25rem; padding-right:1.25rem; }
     .search-header {
       position:sticky; top:calc(44px + env(safe-area-inset-top, 0px)); z-index:100;
       background:rgba(248,246,243,0.92);
       backdrop-filter:saturate(180%) blur(16px);
       -webkit-backdrop-filter:saturate(180%) blur(16px);
       box-shadow:0 1px 0 rgba(0,0,0,0.06);
-      margin:-0.375rem -1.25rem 0;
+      margin:0 -1.25rem 0;
       padding:0.75rem 1.25rem 0.75rem;
     }
-    .search-image-grid { margin:0 -1.25rem; }
+    .search-image-grid { margin:0 -1.25rem; padding-bottom:calc(56px + env(safe-area-inset-bottom,0px) + 1rem); }
   }
 
   [data-theme="dark"] .search-chip { background:var(--parchment); border-color:var(--border); color:var(--slate); }
