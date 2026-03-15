@@ -66,7 +66,7 @@ const STYLES = `
   .nav-logo span { color: var(--mist); font-style: normal; font-weight: 400; font-size: 0.78rem; letter-spacing: 0.04em; display: block; line-height: 1; margin-top: 1px; }
   .nav-actions { display: flex; gap: 0.5rem; align-items: center; }
   .content-shell { padding-top: calc(44px + env(safe-area-inset-top, 0px)); }
-  .content-shell::before { content:''; position:fixed; top:0; left:0; right:0; height:env(safe-area-inset-top, 0px); background:var(--bg); z-index:199; pointer-events:none; }
+  .content-shell::before { content:''; position:fixed; top:0; left:0; right:0; height:env(safe-area-inset-top, 0px); background:var(--cream); z-index:199; pointer-events:none; }
   .nav-link { color: var(--slate); font-size: 0.88rem; font-weight: 500; cursor: pointer; transition: color 0.2s; background: none; border: none; font-family: var(--font-body); padding: 0.5rem 0.75rem; border-radius: 10px; }
   .nav-link:hover { color: var(--ink); background: var(--parchment); }
   .live-pip { font-family: var(--font-mono); font-size: 0.72rem; color: var(--rouge); display: flex; align-items: center; gap: 0.35rem; background: var(--gold-light); padding: 0.3rem 0.7rem; border-radius: 100px; }
