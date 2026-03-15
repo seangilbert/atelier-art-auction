@@ -402,15 +402,16 @@ const STYLES = `
     .auction-layout { grid-template-columns: 1fr; }
     .auction-art-frame { position: static; max-width: 100%; overflow: hidden; }
     .dash-stats { grid-template-columns: 1fr 1fr; }
-    .dashboard { padding: 2rem 1.25rem 4rem; }
-    .collector-dashboard { padding: 2rem 1.25rem 4rem; }
-    .artist-page { padding: 2rem 1.25rem 4rem; }
+    .dashboard { padding: 0.375rem 1.25rem 4rem; }
+    .collector-dashboard { padding: 0.375rem 1.25rem 4rem; }
+    .artist-page { padding: 0.375rem 1.25rem 4rem; }
     .form-row { grid-template-columns: 1fr; }
     .payment-options { grid-template-columns: 1fr; }
     .mgmt-card { flex-wrap: wrap; }
-    .page-container { padding: 2rem 1.25rem 4rem; }
-    .auction-detail { padding: 1.5rem 1.25rem 4rem; overflow-x: hidden; }
-    .payment-page { padding: 2rem 1.25rem 4rem; }
+    .page-container { padding: 0.375rem 1.25rem 4rem; }
+    .auction-detail { padding: 0.375rem 1.25rem 4rem; overflow-x: hidden; }
+    .payment-page { padding: 0.375rem 1.25rem 4rem; }
+    .invite-page { padding: 0.375rem 1.25rem 4rem; }
     .auth-card { padding: 1.75rem 1.5rem; }
     .artist-mgmt-actions { gap: 0.35rem; }
     .artist-mgmt-bar { flex-direction: column; align-items: flex-start; gap: 0.6rem; }
@@ -518,7 +519,7 @@ const STYLES = `
   .collector-avatar-btn { background:var(--grad-cool) !important; box-shadow:0 2px 10px rgba(102,126,234,0.35) !important; }
 
   @media (max-width: 768px) {
-    .feed-page { padding:0.75rem 1.25rem 1.25rem; }
+    .feed-page { padding:0.375rem 1.25rem 1.25rem; }
     .feed-header { flex-direction:column; align-items:flex-start; }
   }
 
@@ -737,7 +738,7 @@ const STYLES = `
   .artist-browse-stats i { margin-right:0.18rem; }
   .artist-browse-follow { flex-shrink:0; }
   @media (max-width:768px) {
-    .artist-browse-page { padding:1.25rem; }
+    .artist-browse-page { padding:0.375rem 1.25rem 1.25rem; }
     .artist-browse-header { flex-direction:column; align-items:flex-start; }
   }
 
@@ -900,7 +901,7 @@ const STYLES = `
   .search-cell-soon { position:absolute; top:4px; left:4px; background:rgba(26,26,46,0.75); color:rgba(255,255,255,0.85); font-size:0.6rem; font-weight:600; padding:0.15rem 0.4rem; border-radius:100px; display:flex; align-items:center; gap:0.25rem; }
 
   @media (max-width:768px) {
-    .search-page { padding:1.25rem 1.25rem 4rem; }
+    .search-page { padding:0.375rem 1.25rem 4rem; }
     .search-header {
       position:sticky; top:68px; z-index:100;
       background:rgba(248,246,243,0.92);
