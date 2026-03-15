@@ -428,6 +428,7 @@ const STYLES = `
     .form-actions { justify-content: stretch; flex-direction: column-reverse; }
     .form-actions .btn { width: 100%; justify-content: center; }
     .countdown-block { padding: 1rem 1.1rem; }
+    input, textarea, select, .form-input, .form-textarea, .form-select, .message-input, .feed-search-input, .feed-filter-input, .comment-input, .tracking-input { font-size: 16px !important; }
   }
 
   @media (max-width: 550px) {
