@@ -201,11 +201,26 @@ const AuctionPage = ({ auctionId, onNavigate, store, updateStore, loadAuctionDet
       await supabase.from("auctions").update({ end_date: new Date(Date.now() - 1000).toISOString(), paused: false }).eq("id", auctionId);
       setIsBuyNow(false);
     }
-    loadAuctionDetail(auctionId, currentUserId); // refresh bids for this auction
+    loadAuctionDetail(auctionId, currentUserId);
+    updateStore(); // refresh auction status so winner card appears
     setTimeout(() => setBidMsg(null), 4000);
-    // Fire-and-forget bid notification email to the artist
     const artistProfile = store.artists[auction.artistId];
-    if (artistProfile?.email) {
+    // Buy Now: notify artist their auction ended with a winner
+    if (isBuyNow && artistProfile?.email) {
+      supabase.functions.invoke("send-auction-ended", {
+        body: {
+          auctionId,
+          auctionTitle: auction.title,
+          winnerName: trimmedName,
+          winnerEmail: trimmedEmail,
+          winningAmount: parseFloat(bidAmt),
+          artistEmail: artistProfile.email,
+          artistName: auction.artistName,
+        }
+      }).catch(() => {});
+    }
+    // Fire-and-forget bid notification email to the artist
+    if (!isBuyNow && artistProfile?.email) {
       supabase.functions.invoke("send-bid-notification", {
         body: {
           auctionId,
@@ -694,17 +709,19 @@ const AuctionPage = ({ auctionId, onNavigate, store, updateStore, loadAuctionDet
         <div className="modal-overlay" onClick={() => { setShowModal(false); setIsBuyNow(false); }}>
           <div className="modal" onClick={(e) => e.stopPropagation()}>
             <button className="modal-close" onClick={() => { setShowModal(false); setIsBuyNow(false); }}><i className="fa-solid fa-xmark"></i></button>
-            <div className="modal-title">{isBuyNow ? "Buy It Now — Confirm Purchase" : "Confirm Your Bid"}</div>
-            <div className="modal-sub">{isBuyNow ? "Purchasing" : "Bidding"} <strong style={{ color:"var(--gold-dark)", fontFamily:"var(--font-display)", fontSize:"1.1rem" }}>{fmt$(bidAmt)}</strong> on <em>{auction.title}</em></div>
-            {meCollector && (
-              <div className="alert alert-info" style={{ fontSize:"0.81rem", marginBottom:"0.5rem" }}>
-                Bidding as <strong>{meCollector.name}</strong> · {meCollector.email}
-              </div>
-            )}
-            <div className="form-group"><label className="form-label">Your Name *</label><input className="form-input" placeholder="Full name" value={localName} onChange={(e) => { if (!meCollector) setLocalName(e.target.value); }} readOnly={!!meCollector} style={meCollector ? { opacity: 0.7, cursor: "default" } : {}} /></div>
-            <div className="form-group"><label className="form-label">Email *</label><input className="form-input" type="email" placeholder="your@email.com" value={bidEmail} onChange={(e) => { if (!meCollector) setBidEmail(e.target.value); }} readOnly={!!meCollector} style={meCollector ? { opacity: 0.7, cursor: "default" } : {}} /><p className="form-hint">{meCollector ? "Bids are linked to your collector account." : "Only used to notify you if you win."}</p></div>
-            {bidMsg && <div className={`alert alert-${bidMsg.type}`}>{bidMsg.text}</div>}
-            <div className="alert alert-info" style={{ fontSize:"0.81rem" }}>By bidding, you agree to pay if you win. Payment required within 48 hours.</div>
+            <div className="modal-scroll-body">
+              <div className="modal-title">{isBuyNow ? "Buy It Now — Confirm Purchase" : "Confirm Your Bid"}</div>
+              <div className="modal-sub">{isBuyNow ? "Purchasing" : "Bidding"} <strong style={{ color:"var(--gold-dark)", fontFamily:"var(--font-display)", fontSize:"1.1rem" }}>{fmt$(bidAmt)}</strong> on <em>{auction.title}</em></div>
+              {meCollector && (
+                <div className="alert alert-info" style={{ fontSize:"0.81rem", marginBottom:"0.5rem" }}>
+                  Bidding as <strong>{meCollector.name}</strong> · {meCollector.email}
+                </div>
+              )}
+              <div className="form-group"><label className="form-label">Your Name *</label><input className="form-input" placeholder="Full name" value={localName} onChange={(e) => { if (!meCollector) setLocalName(e.target.value); }} readOnly={!!meCollector} style={meCollector ? { opacity: 0.7, cursor: "default" } : {}} /></div>
+              <div className="form-group"><label className="form-label">Email *</label><input className="form-input" type="email" placeholder="your@email.com" value={bidEmail} onChange={(e) => { if (!meCollector) setBidEmail(e.target.value); }} readOnly={!!meCollector} style={meCollector ? { opacity: 0.7, cursor: "default" } : {}} /><p className="form-hint">{meCollector ? "Bids are linked to your collector account." : "Only used to notify you if you win."}</p></div>
+              {bidMsg && <div className={`alert alert-${bidMsg.type}`}>{bidMsg.text}</div>}
+              <div className="alert alert-info" style={{ fontSize:"0.81rem" }}>By bidding, you agree to pay if you win. Payment required within 48 hours.</div>
+            </div>
             <div className="modal-actions"><button className="btn btn-ghost" style={{ flex:1 }} onClick={() => { setShowModal(false); setIsBuyNow(false); }}>Cancel</button><button className="btn btn-primary" style={{ flex:2 }} onClick={placeBid}><i className="fa-solid fa-check"></i> {isBuyNow ? `Buy Now · ${fmt$(bidAmt)}` : `Confirm ${fmt$(bidAmt)}`}</button></div>
           </div>
         </div>

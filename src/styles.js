@@ -445,6 +445,8 @@ const STYLES = `
     .mgmt-actions { flex-wrap: wrap; gap: 0.35rem; }
     .artist-mgmt-bar { padding: 0.75rem 1rem; }
     .modal { padding: 1.5rem 1.25rem; }
+    .modal-scroll-body { padding: 0 1.25rem 0.5rem; }
+    .modal-actions { padding: 0.75rem 1.25rem max(env(safe-area-inset-bottom,0px),1rem); }
     .countdown-sep { font-size: 1.2rem; }
     .section-title { font-size: 1.6rem; }
     .page-title { font-size: 1.9rem; }
@@ -796,14 +798,26 @@ const STYLES = `
     .modal {
       width:100%; max-width:100%; margin:0;
       border-radius:20px 20px 0 0;
-      max-height:90vh; overflow-y:auto;
-      padding-bottom:max(env(safe-area-inset-bottom,0px),1rem);
+      max-height:90dvh; max-height:90vh;
+      display:flex; flex-direction:column; overflow:hidden;
+      padding-bottom:0;
     }
     .modal::before {
-      content:''; display:block;
+      content:''; display:block; flex-shrink:0;
       width:36px; height:4px;
       background:rgba(0,0,0,0.13); border-radius:2px;
       margin:0.6rem auto 0.5rem;
+    }
+    .modal-scroll-body {
+      overflow-y:auto; -webkit-overflow-scrolling:touch;
+      flex:1; min-height:0;
+      padding:0 1.5rem 0.5rem;
+    }
+    .modal-actions {
+      flex-shrink:0; margin-top:0;
+      padding:0.75rem 1.5rem max(env(safe-area-inset-bottom,0px),1rem);
+      border-top:1px solid var(--border);
+      background:inherit;
     }
   }
 
