@@ -73,10 +73,6 @@ const ArtistPage = ({ artistId, onNavigate, store, updateStore, me, meCollector 
 
   return (
     <div className="artist-page">
-      <button className="btn btn-ghost btn-sm" style={{ marginBottom:"1.5rem" }} onClick={() => onNavigate("back")}>
-        <i className="fa-solid fa-arrow-left"></i> Back
-      </button>
-
       <div className="artist-profile-card">
         <div className="artist-profile-avatar"><AvatarImg avatar={artist.avatar} alt={artist.name} /></div>
         <div className="artist-profile-info">

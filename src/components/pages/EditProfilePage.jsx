@@ -50,9 +50,6 @@ const EditProfilePage = ({ user, userType, onNavigate, updateStore, onProfileSav
 
   return (
     <div className="page-container">
-      <button className="btn btn-ghost btn-sm" style={{ marginBottom:"1.5rem" }} onClick={() => onNavigate(backPage)}>
-        <i className="fa-solid fa-arrow-left"></i> Back
-      </button>
       <h1 className="page-title">Edit <em>Profile</em></h1>
       <p className="page-subtitle">Update your display name, bio, and profile photo.</p>
 

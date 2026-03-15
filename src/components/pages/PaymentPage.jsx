@@ -82,7 +82,6 @@ const PaymentPage = ({ auctionId, onNavigate, store, updateStore, loadAuctionDet
 
   return (
     <div className="payment-page">
-      <button className="btn btn-ghost btn-sm" style={{ marginBottom:"2rem" }} onClick={() => onNavigate("auction", auctionId)}><i className="fa-solid fa-arrow-left"></i> Back</button>
       <div className="winner-banner"><div className="winner-crown"><i className="fa-solid fa-trophy"></i></div><div className="winner-title">You won!</div><div className="winner-sub">"{auction.title}" by {auction.artistName}</div></div>
       <div style={{ background:"var(--surface)", border:"1px solid var(--border)", borderRadius:"var(--radius-lg)", padding:"1.25rem 1.5rem", marginBottom:"1.75rem" }}>
         <div className="winner-summary-row">

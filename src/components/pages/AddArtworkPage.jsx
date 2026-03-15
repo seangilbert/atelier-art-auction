@@ -37,9 +37,6 @@ const AddArtworkPage = ({ artist, store, updateStore, onNavigate, editItemId }) 
 
   return (
     <div className="page-container">
-      <button className="btn btn-ghost btn-sm" style={{ marginBottom:"1.5rem" }} onClick={() => onNavigate("dashboard")}>
-        <i className="fa-solid fa-arrow-left"></i> Back
-      </button>
       <h1 className="page-title">{editItemId ? "Edit" : "Add"} <em>Artwork</em></h1>
       <p className="page-subtitle">Add artwork to your gallery — set drop details later when you're ready to go live.</p>
       <div className="form-group">

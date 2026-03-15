@@ -127,6 +127,27 @@ export default function App() {
   const [returnToAuction, setReturnToAuction] = useState(null);
   const [navHistory, setNavHistory] = useState([]);
 
+  // Auto-hide nav on scroll down, reveal on scroll up
+  const navRef = useRef(null);
+  const lastScrollY = useRef(0);
+  const navHiddenRef = useRef(false);
+  useEffect(() => {
+    const handleScroll = () => {
+      const currentY = window.scrollY;
+      const delta = currentY - lastScrollY.current;
+      if (delta > 6 && currentY > 80 && !navHiddenRef.current) {
+        navRef.current?.classList.add("nav-hidden");
+        navHiddenRef.current = true;
+      } else if (delta < -6 && navHiddenRef.current) {
+        navRef.current?.classList.remove("nav-hidden");
+        navHiddenRef.current = false;
+      }
+      lastScrollY.current = currentY;
+    };
+    window.addEventListener("scroll", handleScroll, { passive: true });
+    return () => window.removeEventListener("scroll", handleScroll);
+  }, []);
+
   // Internal: change view without touching history
   const navigate = (page, id = null) => {
     if ((page === "create" || page === "dashboard") && !artist) { setView({ page: "login", id: null }); return; }
@@ -212,8 +233,15 @@ export default function App() {
     <>
       <style>{STYLES}</style>
 
-      <nav className="nav">
-        <div className="nav-logo" onClick={() => go("home")}>ArtDrop<span>Art Drop House</span></div>
+      <nav className="nav" ref={navRef}>
+        <div className="nav-left">
+          {navHistory.length > 0 && (
+            <button className="nav-back-btn" onClick={() => go("back")} aria-label="Back">
+              <i className="fa-solid fa-chevron-left" />
+            </button>
+          )}
+          <div className="nav-logo" onClick={() => go("home")}>ArtDrop<span>Art Drop House</span></div>
+        </div>
         <div className="nav-actions">
           {liveCount > 0 && <span className="live-pip"><span className="pulse" style={{ background:"var(--rouge)" }} />{liveCount} live</span>}
           <button className="nav-link" onClick={() => go("home")}>{isLoggedIn ? "Drops" : "Browse"}</button>
@@ -277,6 +305,7 @@ export default function App() {
         onNavigate={go}
         onClearHistory={() => setNavHistory([])}
       />
+      <div className="content-shell">
       {meCollector && outbidCount > 0 && !bannerDismissed && (
         <div className="outbid-banner">
           <i className="fa-solid fa-triangle-exclamation"></i>
@@ -316,6 +345,7 @@ export default function App() {
       {view.page === "artists"             && <ArtistBrowsePage onNavigate={go} store={store} updateStore={updateStore} me={me} meCollector={meCollector} />}
       {view.page === "search"              && <SearchPage onNavigate={go} store={store} updateStore={updateStore} me={me} meCollector={meCollector} />}
       {view.page === "invites"             && isLoggedIn  && <InvitePage user={me || meCollector} store={store} updateStore={updateStore} onNavigate={go} />}
+      </div>
       </div>
     </>
   );
