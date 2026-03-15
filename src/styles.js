@@ -625,6 +625,7 @@ const STYLES = `
 
   @media (max-width:768px) {
     .artist-profile-card { flex-direction:column; }
+    .artist-profile-stats { flex-wrap:wrap; gap:1rem 1.5rem; }
     .cdash-bid-card { flex-wrap:wrap; }
     .cdash-bid-status { flex-direction:row; align-items:center; }
     .sticky-bid-bar { display:flex; bottom:calc(56px + env(safe-area-inset-bottom, 0px)); }
