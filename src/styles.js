@@ -773,7 +773,7 @@ const STYLES = `
       -webkit-backdrop-filter:saturate(180%) blur(16px);
       box-shadow:0 1px 0 rgba(0,0,0,0.06);
       margin:-0.375rem -1.25rem 1rem;
-      padding:0.75rem 1.25rem 0.75rem;
+      padding:0.375rem 1.25rem 0.75rem;
     }
     .artist-browse-header {
       position:sticky; top:calc(44px + env(safe-area-inset-top, 0px)); z-index:100;
