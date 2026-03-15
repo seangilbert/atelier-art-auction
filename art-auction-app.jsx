@@ -148,8 +148,13 @@ export default function App() {
     return () => window.removeEventListener("scroll", handleScroll);
   }, []);
 
-  // Reset scroll to absolute top after every page transition (runs after DOM commit)
+  // Disable browser scroll restoration so WKWebView never reopens mid-page
+  useEffect(() => { history.scrollRestoration = "manual"; }, []);
+
+  // Reset scroll to absolute top after every page transition (runs after DOM commit).
+  // Also fires when authReady flips true so the initial full-page render starts at top.
   useEffect(() => {
+    if (!authReady) return;
     window.scrollTo(0, 0);
     document.documentElement.scrollTop = 0;
     document.body.scrollTop = 0;
@@ -157,7 +162,7 @@ export default function App() {
     navRef.current?.classList.remove("nav-hidden");
     navHiddenRef.current = false;
     lastScrollY.current = 0;
-  }, [view]);
+  }, [view, authReady]);
 
   // Internal: change view without touching history
   const navigate = (page, id = null) => {
