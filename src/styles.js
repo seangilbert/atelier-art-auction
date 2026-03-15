@@ -238,10 +238,10 @@ const STYLES = `
   .form-actions { display: flex; gap: 0.75rem; margin-top: 2.5rem; justify-content: flex-end; align-items: center; }
 
   /* Auction detail */
-  .auction-detail { max-width: 1100px; margin: 0 auto; padding: 2.5rem 2rem 5rem; }
+  .auction-detail { max-width: 1100px; margin: 0 auto; padding: 3rem 2rem 5rem; }
   .auction-layout { display: grid; grid-template-columns: 1.2fr 1fr; gap: 3rem; align-items: start; margin-top: 1.5rem; }
   .auction-layout > div { min-width: 0; }
-  .auction-art-frame { border-radius: var(--radius-xl); box-shadow: var(--shadow-lg); position: sticky; top: 84px; background: var(--parchment); overflow: hidden; }
+  .auction-art-frame { border-radius: var(--radius-xl); box-shadow: var(--shadow-lg); position: sticky; top: calc(44px + env(safe-area-inset-top, 0px) + 1rem); background: var(--parchment); overflow: hidden; }
   .auction-art-frame img { width: 100%; max-width: 100%; height: auto; display: block; }
   .auction-art-placeholder { aspect-ratio: 4/5; display: flex; align-items: center; justify-content: center; font-size: 6rem; background: var(--parchment); }
   .auction-eyebrow { font-size: 0.72rem; font-weight: 600; color: var(--mist); letter-spacing: 0.06em; text-transform: uppercase; margin-bottom: 0.5rem; }
@@ -484,7 +484,7 @@ const STYLES = `
   .auth-type-tab.active { background:white; color:var(--ink); box-shadow:var(--shadow-sm); }
 
   /* ── Feed page ───────────────────────────────────────────────────────────── */
-  .feed-page { max-width:1200px; margin:0 auto; margin-top:-68px; padding:1.25rem 2rem 2rem; overflow-x:hidden; }
+  .feed-page { max-width:1200px; margin:0 auto; padding:1.5rem 2rem 3rem; overflow-x:hidden; }
   .feed-header { display:flex; align-items:center; justify-content:space-between; margin-bottom:1.5rem; flex-wrap:wrap; gap:1rem; }
   .feed-title { font-size:1.5rem; font-weight:700; color:var(--ink); letter-spacing:-0.02em; }
   .sort-tabs { display:flex; gap:0.4rem; overflow-x:auto; flex-wrap:nowrap; -webkit-overflow-scrolling:touch; scrollbar-width:none; padding-bottom:2px; width:100%; min-width:0; }
@@ -623,7 +623,6 @@ const STYLES = `
     .cdash-bid-card { flex-wrap:wrap; }
     .cdash-bid-status { flex-direction:row; align-items:center; }
     .sticky-bid-bar { display:flex; bottom:calc(56px + env(safe-area-inset-bottom, 0px)); }
-    .auction-detail { padding-bottom: 6rem; }
   }
 
   /* ── Sticky bid bar (mobile only) ───────────────────────────────────────── */
@@ -723,7 +722,7 @@ const STYLES = `
   }
 
   /* ── Artist browse page ─────────────────────────────────────────────────── */
-  .artist-browse-page { max-width:1200px; margin:0 auto; padding:2rem; }
+  .artist-browse-page { max-width:1200px; margin:0 auto; padding:1.5rem 2rem 3rem; }
   .artist-browse-header { display:flex; align-items:center; justify-content:space-between; margin-bottom:1.5rem; flex-wrap:wrap; gap:1rem; }
   .artist-browse-title { font-size:1.5rem; font-weight:700; color:var(--ink); letter-spacing:-0.02em; font-family:var(--font-display); }
   .artist-browse-grid { display:flex; flex-direction:column; gap:1rem; }
@@ -822,7 +821,6 @@ const STYLES = `
   [data-theme="dark"] .nav { background: rgba(19,20,31,0.88); }
   [data-theme="dark"] .modal,
   [data-theme="dark"] .artist-dropdown { background: var(--surface); border-color: var(--border); }
-  [data-theme="dark"] .feed-header,
   [data-theme="dark"] .artist-browse-header { background: rgba(19,20,31,0.92); }
   [data-theme="dark"] input,
   [data-theme="dark"] textarea,
@@ -876,7 +874,7 @@ const STYLES = `
   [data-theme="dark"] .step-num { background: var(--parchment); border-color: var(--border); color: var(--ink); }
 
   /* ── Search Page ─────────────────────────────────────────────────────────── */
-  .search-page { max-width:1200px; margin:0 auto; padding:2rem; overflow-x:clip; }
+  .search-page { max-width:1200px; margin:0 auto; padding:1.5rem 2rem 3rem; overflow-x:clip; }
   .search-header { margin-bottom:1rem; }
   .search-filter-chips { display:flex; gap:0.5rem; flex-wrap:wrap; margin-bottom:0.5rem; align-items:center; }
 
