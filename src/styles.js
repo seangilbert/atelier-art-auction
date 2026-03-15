@@ -303,6 +303,11 @@ const STYLES = `
   .step-body { flex: 1; }
   .step-label { font-weight: 700; font-size: 0.9rem; color: var(--ink); margin-bottom: 0.15rem; }
   .step-desc { font-size: 0.8rem; color: var(--mist); line-height: 1.4; }
+  .win-share-section { margin-top: 1.25rem; padding-top: 1.1rem; border-top: 1px solid rgba(232,82,106,0.15); }
+  .win-share-section--confirm { margin-top: 0; padding-top: 0; border-top: none; margin-bottom: 1.5rem; }
+  .win-share-label { font-size: 0.78rem; font-weight: 700; color: var(--gold-dark); text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 0.3rem; display: flex; align-items: center; gap: 0.35rem; }
+  .win-share-hint { font-size: 0.8rem; color: var(--mist); margin-bottom: 0.75rem; line-height: 1.4; }
+  .win-share-native-btn { width: 100%; justify-content: center; }
 
   /* Artist winner info */
   .artist-winner-info { background: var(--parchment); border: 1.5px solid var(--border); border-radius: var(--radius-lg); padding: 1rem 1.25rem; display: flex; flex-direction: column; gap: 0.2rem; }

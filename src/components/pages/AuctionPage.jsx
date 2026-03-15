@@ -37,6 +37,8 @@ const AuctionPage = ({ auctionId, onNavigate, store, updateStore, loadAuctionDet
   const [confirm, setConfirm] = useState(null);
   const [showReviewModal, setShowReviewModal] = useState(false);
   const [reviewBusy, setReviewBusy] = useState(false);
+  const [winShareCopied, setWinShareCopied] = useState(false);
+  const [winShareBusy, setWinShareBusy] = useState(false);
   const endedEmailSent = useRef(false);
 
   // ── Comments state ────────────────────────────────────────────────────────
@@ -136,6 +138,38 @@ const AuctionPage = ({ auctionId, onNavigate, store, updateStore, loadAuctionDet
   const msgSenderName = isOwner ? (artist?.name || auction.artistName) : (meCollector?.name || bidderName || topBid?.bidder || "");
   const msgSenderId   = isOwner ? artist?.id : meCollector?.id || null;
   const showMsgThread = (isWinner || isOwner) && !isLive && topBid && reserveMet;
+
+  const winShareText = `I just won "${auction.title}" by ${auction.artistName} on ArtDrop! 🎨🏆 ${shareUrl}`;
+  const isMobile = typeof navigator !== "undefined" && !!navigator.share;
+
+  const shareWin = async () => {
+    if (!navigator.share) return;
+    setWinShareBusy(true);
+    try {
+      const shareData = { title: `I won "${auction.title}"!`, text: winShareText, url: shareUrl };
+      if (auction.imageUrl && navigator.canShare) {
+        try {
+          const resp = await fetch(auction.imageUrl);
+          const blob = await resp.blob();
+          const ext = blob.type.includes("png") ? "png" : "jpg";
+          const file = new File([blob], `${auction.title}.${ext}`, { type: blob.type });
+          if (navigator.canShare({ files: [file] })) shareData.files = [file];
+        } catch (_) {}
+      }
+      await navigator.share(shareData);
+    } catch (err) {
+      if (err.name !== "AbortError") console.error("Share failed:", err);
+    } finally {
+      setWinShareBusy(false);
+    }
+  };
+
+  const shareWinVia = (m) => {
+    if (m === "email") window.open(`mailto:?subject=I won art on ArtDrop!&body=${encodeURIComponent(winShareText)}`);
+    if (m === "sms") window.open(`sms:?body=${encodeURIComponent(winShareText)}`);
+    if (m === "twitter") window.open(`https://twitter.com/intent/tweet?text=${encodeURIComponent(winShareText)}`);
+    if (m === "copy") navigator.clipboard.writeText(winShareText).then(() => { setWinShareCopied(true); setTimeout(() => setWinShareCopied(false), 2500); });
+  };
 
   const copyLink = () => { navigator.clipboard.writeText(shareUrl).then(() => { setCopied(true); setTimeout(() => setCopied(false), 2500); }); };
   const shareVia = (m) => {
@@ -405,6 +439,22 @@ const AuctionPage = ({ auctionId, onNavigate, store, updateStore, loadAuctionDet
                 )}
               </div>
             </div>
+          </div>
+          {/* ── Share your win ── */}
+          <div className="win-share-section">
+            <div className="win-share-label"><i className="fa-solid fa-share-nodes"></i> Share your win</div>
+            <p className="win-share-hint">Let people know you own this piece.</p>
+            {isMobile ? (
+              <button className="btn btn-primary btn-sm win-share-native-btn" onClick={shareWin} disabled={winShareBusy}>
+                {winShareBusy ? <><i className="fa-solid fa-spinner fa-spin"></i> Sharing…</> : <><i className="fa-solid fa-share-nodes"></i> Share</>}
+              </button>
+            ) : (
+              <div className="share-buttons">
+                {[["fa-envelope","Email","email"],["fa-comment-sms","Text","sms"],["fa-brands fa-x-twitter","Twitter","twitter"],["fa-link", winShareCopied?"Copied!":"Copy","copy"]].map(([icon,label,m]) => (
+                  <button key={m} className="share-btn" onClick={() => shareWinVia(m)}><i className={`${icon.startsWith("fa-brands") ? icon : `fa-solid ${icon}`}`}/> {label}</button>
+                ))}
+              </div>
+            )}
           </div>
         </div>
       )}
