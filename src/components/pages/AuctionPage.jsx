@@ -276,7 +276,7 @@ const AuctionPage = ({ auctionId, onNavigate, store, updateStore, loadAuctionDet
   // ── Scheduled drop: full teaser layout ────────────────────────────────────
   if (status === "scheduled") {
     return (
-      <div className="page-container" style={{ maxWidth:640, margin:"0 auto", padding:"1.5rem 1rem" }}>
+      <div className="page-container" style={{ maxWidth:640, margin:"0 auto" }}>
         {isOwner && (
           <div className="artist-mgmt-bar" style={{ marginBottom:"1.5rem" }}>
             <div className="artist-mgmt-label"><i className="fa-solid fa-palette"></i> Your Listing &nbsp;·&nbsp; <StatusPill status="scheduled" /></div>
