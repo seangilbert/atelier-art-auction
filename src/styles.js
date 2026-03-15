@@ -409,6 +409,10 @@ const STYLES = `
     .payment-options { grid-template-columns: 1fr; }
     .mgmt-card { flex-wrap: wrap; }
     .page-container { padding-top:0.375rem; padding-left:1.25rem; padding-right:1.25rem; }
+    .step-indicator { margin-bottom: 2rem; gap: 0; }
+    .step-label { display: none; }
+    .step-label.active { display: inline; }
+    .step-line { margin: 0 0.35rem; min-width: 8px; }
     .auction-detail { padding-top:0.375rem; padding-left:1.25rem; padding-right:1.25rem; overflow-x:hidden; }
     .payment-page { padding-top:0.375rem; padding-left:1.25rem; padding-right:1.25rem; }
     .invite-page { padding-top:0.375rem; padding-left:1.25rem; padding-right:1.25rem; }
@@ -850,6 +854,7 @@ const STYLES = `
   [data-theme="dark"] .cdash-artist-row,
   [data-theme="dark"] .artist-profile-card,
   [data-theme="dark"] .pending-payment-card,
+  [data-theme="dark"] .invite-code-box { background: var(--surface); border: 1.5px solid var(--border); }
   [data-theme="dark"] .invite-send-section,
   [data-theme="dark"] .artist-mgmt-bar,
   [data-theme="dark"] .payment-opt,
