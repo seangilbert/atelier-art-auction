@@ -915,14 +915,16 @@ const STYLES = `
   @media (max-width:768px) {
     .search-page { padding-top:0; padding-left:1.25rem; padding-right:1.25rem; }
     .search-header {
-      position:sticky; top:calc(44px + env(safe-area-inset-top, 0px)); z-index:100;
+      position:sticky; top:env(safe-area-inset-top, 0px); z-index:100;
       background:rgba(248,246,243,0.92);
       backdrop-filter:saturate(180%) blur(16px);
       -webkit-backdrop-filter:saturate(180%) blur(16px);
       box-shadow:0 1px 0 rgba(0,0,0,0.06);
       margin:0 -1.25rem 0;
       padding:0.75rem 1.25rem 0.75rem;
+      transition:top 0.28s cubic-bezier(0.4,0,0.2,1);
     }
+    .nav:not(.nav-hidden) ~ .content-shell .search-header { top:calc(44px + env(safe-area-inset-top, 0px)); }
     .search-image-grid { margin:0 -1.25rem; padding-bottom:calc(56px + env(safe-area-inset-bottom,0px) + 1rem); }
   }
 
