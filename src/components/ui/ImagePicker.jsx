@@ -22,7 +22,8 @@ const ImagePicker = ({ imageUrl, emoji, onImageUrl, onEmoji }) => {
       try {
         const res = await fetch(compressed);
         const blob = await res.blob();
-        const path = `${Date.now()}-${file.name.replace(/[^a-zA-Z0-9._-]/g, "_")}`;
+        const safeName = (file.name || "photo.jpg").replace(/[^a-zA-Z0-9._-]/g, "_");
+        const path = `${Date.now()}-${safeName}`;
         const { error: uploadErr } = await supabase.storage.from("artworks").upload(path, blob, { contentType: "image/jpeg", upsert: true });
         if (!uploadErr) {
           const { data: { publicUrl } } = supabase.storage.from("artworks").getPublicUrl(path);

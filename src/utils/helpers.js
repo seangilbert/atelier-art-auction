@@ -24,22 +24,48 @@ export const timeAgo = (iso) => {
 export const AVATARS = ["🎨", "🖌️", "🌊", "🌿", "🦋", "🌙", "🏔️", "🌺", "🦚", "✨"];
 
 const MAX_IMG_DIM = 1200;
-export const compressImage = (file) =>
+
+// Read a file as a base64 data URL (reliable fallback for HEIC and other formats)
+const fileToDataUrl = (file) =>
   new Promise((resolve, reject) => {
+    const r = new FileReader();
+    r.onload = (e) => resolve(e.target.result);
+    r.onerror = reject;
+    r.readAsDataURL(file);
+  });
+
+export const compressImage = async (file) => {
+  // HEIC/HEIF (common on iOS camera) can't be drawn on Canvas in WKWebView —
+  // skip compression and return the raw data URL instead.
+  const isHeic = file.type === "image/heic" || file.type === "image/heif" ||
+    file.name?.toLowerCase().endsWith(".heic") || file.name?.toLowerCase().endsWith(".heif");
+  if (isHeic) return fileToDataUrl(file);
+
+  return new Promise((resolve, reject) => {
     const img = new Image();
     const url = URL.createObjectURL(file);
     img.onload = () => {
       URL.revokeObjectURL(url);
-      const scale = Math.min(1, MAX_IMG_DIM / Math.max(img.naturalWidth, img.naturalHeight));
-      const canvas = document.createElement("canvas");
-      canvas.width  = Math.round(img.naturalWidth  * scale);
-      canvas.height = Math.round(img.naturalHeight * scale);
-      canvas.getContext("2d").drawImage(img, 0, 0, canvas.width, canvas.height);
-      resolve(canvas.toDataURL("image/jpeg", 0.8));
+      try {
+        const scale = Math.min(1, MAX_IMG_DIM / Math.max(img.naturalWidth, img.naturalHeight));
+        const canvas = document.createElement("canvas");
+        canvas.width  = Math.round(img.naturalWidth  * scale);
+        canvas.height = Math.round(img.naturalHeight * scale);
+        canvas.getContext("2d").drawImage(img, 0, 0, canvas.width, canvas.height);
+        resolve(canvas.toDataURL("image/jpeg", 0.8));
+      } catch {
+        // Canvas failed (e.g. tainted or unsupported format) — fall back to raw data URL
+        fileToDataUrl(file).then(resolve).catch(reject);
+      }
     };
-    img.onerror = reject;
+    img.onerror = () => {
+      URL.revokeObjectURL(url);
+      // Image couldn't be decoded by the browser — fall back to raw data URL
+      fileToDataUrl(file).then(resolve).catch(reject);
+    };
     img.src = url;
   });
+};
 
 export const getStatus = (a) => {
   if (a.removed) return "removed";
