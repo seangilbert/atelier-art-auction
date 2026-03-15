@@ -446,7 +446,7 @@ const STYLES = `
     .artist-mgmt-bar { padding: 0.75rem 1rem; }
     .modal { padding: 1.5rem 1.25rem; }
     .modal-scroll-body { padding: 0 1.25rem 0.5rem; }
-    .modal-actions { padding: 0.75rem 1.25rem max(env(safe-area-inset-bottom,0px),1rem); }
+    .modal-actions { padding: 0.75rem 1.25rem 1rem; }
     .countdown-sep { font-size: 1.2rem; }
     .section-title { font-size: 1.6rem; }
     .page-title { font-size: 1.9rem; }
@@ -792,22 +792,17 @@ const STYLES = `
     }
   }
 
-  /* Bottom sheet modals on mobile */
+  /* Centered modal on mobile */
   @media (max-width:768px) {
-    .modal-overlay { align-items:flex-end; }
+    .modal-overlay { align-items:center; padding:1rem; }
     .modal {
-      width:100%; max-width:100%; margin:0;
-      border-radius:20px 20px 0 0;
-      max-height:90dvh; max-height:90vh;
+      width:calc(100% - 2rem); max-width:420px; margin:0;
+      border-radius:var(--radius-xl);
+      max-height:80vh; max-height:80dvh;
       display:flex; flex-direction:column; overflow:hidden;
       padding-bottom:0;
     }
-    .modal::before {
-      content:''; display:block; flex-shrink:0;
-      width:36px; height:4px;
-      background:rgba(0,0,0,0.13); border-radius:2px;
-      margin:0.6rem auto 0.5rem;
-    }
+    .modal::before { display:none; }
     .modal-scroll-body {
       overflow-y:auto; -webkit-overflow-scrolling:touch;
       flex:1; min-height:0;
@@ -815,7 +810,7 @@ const STYLES = `
     }
     .modal-actions {
       flex-shrink:0; margin-top:0;
-      padding:0.75rem 1.5rem max(env(safe-area-inset-bottom,0px),1rem);
+      padding:0.75rem 1.5rem 1rem;
       border-top:1px solid var(--border);
       background:inherit;
     }
@@ -850,7 +845,6 @@ const STYLES = `
   [data-theme="dark"] input,
   [data-theme="dark"] textarea,
   [data-theme="dark"] select { background: var(--parchment); color: var(--ink); border-color: var(--border); }
-  [data-theme="dark"] .modal::before { background: rgba(255,255,255,0.15); }
   [data-theme="dark"] .dropdown-divider { border-color: var(--border); }
   [data-theme="dark"] .countdown-block { background: #0d0f1a; }
   [data-theme="dark"] .btn-dark { background: var(--parchment); color: var(--ink); border: 1.5px solid var(--border); }
