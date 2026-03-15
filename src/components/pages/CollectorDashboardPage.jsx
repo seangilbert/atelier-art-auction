@@ -38,7 +38,7 @@ const CollectorDashboardPage = ({ meCollector, onNavigate, store, updateStore })
     .map((a) => {
       const bids = store.bids[a.id] || [];
       const myBids = bids.filter((b) => b.email === meCollector.email);
-      const myTop = Math.max(...myBids.map((b) => b.amount));
+      const myTop = myBids.length ? Math.max(...myBids.map((b) => b.amount)) : 0;
       const allSorted = [...bids].sort((x, y) => y.amount - x.amount);
       const topBid = allSorted[0] || null;
       const status = getStatus(a);

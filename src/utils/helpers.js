@@ -2,7 +2,7 @@
 // HELPERS & CONSTANTS
 // ─────────────────────────────────────────────────────────────────────────────
 
-export const fmt$ = (n) => "$" + Number(n).toLocaleString("en-US", { minimumFractionDigits: 0, maximumFractionDigits: 0 });
+export const fmt$ = (n) => { const v = Number(n); return "$" + (Number.isFinite(v) ? v : 0).toLocaleString("en-US", { minimumFractionDigits: 0, maximumFractionDigits: 0 }); };
 export const fmtDate = (d) => new Date(d).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric", hour: "2-digit", minute: "2-digit" });
 export const timeLeft = (endDate) => {
   const diff = new Date(endDate) - new Date();
