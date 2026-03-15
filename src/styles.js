@@ -65,7 +65,7 @@ const STYLES = `
   .nav-logo { font-family: var(--font-display); font-size: 1.4rem; font-weight: 700; color: var(--ink); cursor: pointer; letter-spacing: -0.02em; }
   .nav-logo span { color: var(--mist); font-style: normal; font-weight: 400; font-size: 0.78rem; letter-spacing: 0.04em; display: block; line-height: 1; margin-top: 1px; }
   .nav-actions { display: flex; gap: 0.5rem; align-items: center; }
-  .content-shell { padding-top: 44px; }
+  .content-shell { padding-top: calc(44px + env(safe-area-inset-top, 0px)); }
   .nav-link { color: var(--slate); font-size: 0.88rem; font-weight: 500; cursor: pointer; transition: color 0.2s; background: none; border: none; font-family: var(--font-body); padding: 0.5rem 0.75rem; border-radius: 10px; }
   .nav-link:hover { color: var(--ink); background: var(--parchment); }
   .live-pip { font-family: var(--font-mono); font-size: 0.72rem; color: var(--rouge); display: flex; align-items: center; gap: 0.35rem; background: var(--gold-light); padding: 0.3rem 0.7rem; border-radius: 100px; }
@@ -767,7 +767,7 @@ const STYLES = `
   /* Sticky frosted-glass headers on mobile */
   @media (max-width:768px) {
     .feed-header {
-      position:sticky; top:44px; z-index:100;
+      position:sticky; top:calc(44px + env(safe-area-inset-top, 0px)); z-index:100;
       background:rgba(248,246,243,0.92);
       backdrop-filter:saturate(180%) blur(16px);
       -webkit-backdrop-filter:saturate(180%) blur(16px);
@@ -776,7 +776,7 @@ const STYLES = `
       padding:0.75rem 1.25rem 0.75rem;
     }
     .artist-browse-header {
-      position:sticky; top:44px; z-index:100;
+      position:sticky; top:calc(44px + env(safe-area-inset-top, 0px)); z-index:100;
       background:rgba(248,246,243,0.92);
       backdrop-filter:saturate(180%) blur(16px);
       -webkit-backdrop-filter:saturate(180%) blur(16px);
@@ -903,7 +903,7 @@ const STYLES = `
   @media (max-width:768px) {
     .search-page { padding:0.375rem 1.25rem 4rem; }
     .search-header {
-      position:sticky; top:44px; z-index:100;
+      position:sticky; top:calc(44px + env(safe-area-inset-top, 0px)); z-index:100;
       background:rgba(248,246,243,0.92);
       backdrop-filter:saturate(180%) blur(16px);
       -webkit-backdrop-filter:saturate(180%) blur(16px);
