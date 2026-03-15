@@ -684,8 +684,8 @@ const STYLES = `
   @media (max-width:768px) {
     .mobile-bottom-nav { display:block; }
     .nav-new-btn { display:none; }
-    .page-shell, .feed-shell, .dashboard-shell, .collector-dash-shell, .create-shell, .auth-shell { padding-bottom:calc(56px + env(safe-area-inset-bottom,0px) + 1rem); }
-    .auction-detail { padding-bottom:calc(6rem + 56px); }
+    .feed-page, .dashboard, .page-container, .search-page, .artist-page, .artist-browse-page, .collector-dashboard, .payment-page, .invite-page, .auth-page { padding-bottom:calc(56px + env(safe-area-inset-bottom,0px) + 1rem); }
+    .auction-detail { padding-bottom:calc(6rem + 56px + env(safe-area-inset-bottom,0px)); }
   }
 
   /* ── Gallery ───────────────────────────────────────────────────────────── */
