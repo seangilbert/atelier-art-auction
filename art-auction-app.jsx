@@ -148,6 +148,17 @@ export default function App() {
     return () => window.removeEventListener("scroll", handleScroll);
   }, []);
 
+  // Reset scroll to absolute top after every page transition (runs after DOM commit)
+  useEffect(() => {
+    window.scrollTo(0, 0);
+    document.documentElement.scrollTop = 0;
+    document.body.scrollTop = 0;
+    // Ensure nav is always visible when arriving at a new page
+    navRef.current?.classList.remove("nav-hidden");
+    navHiddenRef.current = false;
+    lastScrollY.current = 0;
+  }, [view]);
+
   // Internal: change view without touching history
   const navigate = (page, id = null) => {
     if ((page === "create" || page === "dashboard") && !artist) { setView({ page: "login", id: null }); return; }
@@ -159,7 +170,6 @@ export default function App() {
     setView({ page, id });
     setDropOpen(false);
     setCollectorDropOpen(false);
-    window.scrollTo({ top: 0, behavior: "instant" });
     if (page === "auction" && id) window.history.pushState(null, "", `${window.location.pathname}#auction-${id}`);
     else window.history.pushState(null, "", window.location.pathname);
   };
