@@ -5,7 +5,7 @@ const config: CapacitorConfig = {
   appName: 'ArtDrop',
   webDir: 'dist',
   ios: {
-    contentInset: 'never',
+    contentInset: 'automatic',
   },
   plugins: {
     SplashScreen: {
