@@ -179,11 +179,21 @@ const CreatePage = ({ artist, onNavigate, store, updateStore, galleryItemId, edi
       {step === 3 && (
         <div>
           <p style={{ color: "var(--mist)", fontSize: "0.88rem", marginBottom: "1rem" }}>Choose which payment methods you'll accept from the winning bidder.</p>
-          <div className="alert alert-info" style={{ marginBottom: "1.25rem", fontSize: "0.84rem" }}>
-            <i className="fa-solid fa-circle-info"></i>{" "}
-            <strong>ArtDrop service fee: {feeRate}%</strong> — added as a buyer's premium at checkout.
-            You keep <strong>100%</strong> of the winning bid.
-            {subscriptionTier !== 'pro' && <> <button className="btn-follow-hint" onClick={() => {}}>Upgrade to Pro</button> to reduce your buyers' fee to 4%.</>}
+          <div className="fee-info-card">
+            <div className="fee-info-header">
+              <div className="fee-info-badge">{feeRate}%</div>
+              <div>
+                <div className="fee-info-title">Buyer's premium</div>
+                <div className="fee-info-sub">Added at checkout — you keep 100%</div>
+              </div>
+            </div>
+            <p className="fee-info-desc">Collectors pay a small service fee on top of the winning bid. You receive the full auction price directly.</p>
+            {subscriptionTier !== 'pro' && (
+              <button className="fee-info-upgrade" onClick={() => {}}>
+                <span><i className="fa-solid fa-bolt"></i> Upgrade to Pro — 4% fee</span>
+                <span className="fee-info-price">$12/mo</span>
+              </button>
+            )}
           </div>
           {[
             { key: "venmo",   label: "Venmo",          icon: <i className="fa-brands fa-venmo" style={{color:"#008CFF"}}></i>, field: "venmoHandle",   ph: "@your-venmo" },

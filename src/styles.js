@@ -347,6 +347,17 @@ const STYLES = `
   .bid-fee-line { display: flex; justify-content: space-between; font-size: 0.88rem; padding: 0.2rem 0; }
   .bid-fee-line.muted { color: var(--slate); }
   .bid-fee-line.total { font-weight: 700; border-top: 1px solid var(--border); padding-top: 0.5rem; margin-top: 0.35rem; }
+
+  .fee-info-card { background: var(--surface); border: 1.5px solid var(--border); border-radius: var(--radius-lg); padding: 1.15rem 1.25rem; margin-bottom: 1.25rem; }
+  .fee-info-header { display: flex; align-items: center; gap: 0.85rem; margin-bottom: 0.65rem; }
+  .fee-info-badge { background: var(--grad-primary); color: white; font-weight: 800; font-size: 1.05rem; border-radius: 10px; min-width: 3rem; height: 2.5rem; display: flex; align-items: center; justify-content: center; letter-spacing: -0.02em; flex-shrink: 0; }
+  .fee-info-title { font-weight: 700; font-size: 0.95rem; line-height: 1.2; }
+  .fee-info-sub { font-size: 0.78rem; color: var(--mist); margin-top: 0.1rem; }
+  .fee-info-desc { font-size: 0.82rem; color: var(--slate); line-height: 1.5; margin-bottom: 0.85rem; }
+  .fee-info-upgrade { display: flex; align-items: center; justify-content: space-between; width: 100%; padding: 0.7rem 1rem; border-radius: var(--radius); border: 1.5px solid var(--gold); background: var(--gold-light); color: var(--gold-dark); font-weight: 600; font-size: 0.85rem; cursor: pointer; transition: all 0.15s; }
+  .fee-info-upgrade:hover { background: var(--gold); color: white; }
+  .fee-info-price { font-size: 0.78rem; font-weight: 500; opacity: 0.8; }
+
   .winner-banner { background: var(--grad-primary); border-radius: var(--radius-xl); padding: 2rem; margin-bottom: 2rem; text-align: center; box-shadow: 0 8px 32px rgba(232,82,106,0.35); }
   .winner-crown { font-size: 2.5rem; margin-bottom: 0.65rem; }
   .winner-title { font-size: 1.6rem; font-weight: 700; color: white; margin-bottom: 0.35rem; letter-spacing: -0.02em; }
