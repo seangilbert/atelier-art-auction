@@ -34,6 +34,19 @@ const CreatePage = ({ artist, onNavigate, store, updateStore, galleryItemId, edi
   const [showSchedulePicker, setShowSchedulePicker] = useState(false);
   const [scheduleInput, setScheduleInput] = useState("");
 
+  const subscriptionTier = artist?.subscriptionTier || 'free';
+  const feeRate = subscriptionTier === 'pro' ? 4 : 8;
+
+  // Drop limit gate: free artists can publish up to 5 drops/month
+  const now = new Date();
+  const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
+  const dropsThisMonth = store.auctions.filter(a =>
+    a.artistId === artist.id &&
+    a.startDate !== null &&
+    new Date(a.createdAt || a.startDate) >= startOfMonth
+  ).length;
+  const atDropLimit = subscriptionTier !== 'pro' && dropsThisMonth >= 5;
+
   const set = (k, v) => setF((p) => ({ ...p, [k]: v }));
   const togglePay = (m) => set("paymentMethods", f.paymentMethods.includes(m) ? f.paymentMethods.filter((x) => x !== m) : [...f.paymentMethods, m]);
 
@@ -62,6 +75,8 @@ const CreatePage = ({ artist, onNavigate, store, updateStore, galleryItemId, edi
       teaser_text:   f.teaserText   || null,
       paused: false, removed: false,
       gallery_item_id: galleryItemId || draftAuction?.galleryItemId || null,
+      fee_model: 'collector',
+      fee_rate: feeRate,
     };
     let saveErr;
     if (editDraftId) {
@@ -163,7 +178,13 @@ const CreatePage = ({ artist, onNavigate, store, updateStore, galleryItemId, edi
 
       {step === 3 && (
         <div>
-          <p style={{ color: "var(--mist)", fontSize: "0.88rem", marginBottom: "1.5rem" }}>Choose which payment methods you'll accept from the winning bidder.</p>
+          <p style={{ color: "var(--mist)", fontSize: "0.88rem", marginBottom: "1rem" }}>Choose which payment methods you'll accept from the winning bidder.</p>
+          <div className="alert alert-info" style={{ marginBottom: "1.25rem", fontSize: "0.84rem" }}>
+            <i className="fa-solid fa-circle-info"></i>{" "}
+            <strong>ArtDrop service fee: {feeRate}%</strong> — added as a buyer's premium at checkout.
+            You keep <strong>100%</strong> of the winning bid.
+            {subscriptionTier !== 'pro' && <> <button className="btn-follow-hint" onClick={() => {}}>Upgrade to Pro</button> to reduce your buyers' fee to 4%.</>}
+          </div>
           {[
             { key: "venmo",   label: "Venmo",          icon: <i className="fa-brands fa-venmo" style={{color:"#008CFF"}}></i>, field: "venmoHandle",   ph: "@your-venmo" },
             { key: "paypal",  label: "PayPal",          icon: <i className="fa-brands fa-paypal" style={{color:"#003087"}}></i>, field: "paypalEmail",   ph: "your@email.com" },
@@ -223,6 +244,15 @@ const CreatePage = ({ artist, onNavigate, store, updateStore, galleryItemId, edi
               : "Save as a draft to finish later, schedule for a specific date, or go live now."}
           </div>
 
+          {/* Drop limit warning for free tier */}
+          {atDropLimit && !editDraftId && (
+            <div className="alert alert-warning" style={{ marginBottom:"1rem" }}>
+              <i className="fa-solid fa-triangle-exclamation"></i>{" "}
+              You've published <strong>5 drops</strong> this month — the free tier limit.
+              Upgrade to <strong>Pro ($12/mo)</strong> to publish unlimited drops and reduce your buyers' fee to 4%.
+            </div>
+          )}
+
           {/* Inline schedule picker */}
           {showSchedulePicker && (
             <div style={{ background:"var(--surface)", border:"1px solid var(--border)", borderRadius:"var(--radius)", padding:"1.25rem", marginBottom:"1rem" }}>
@@ -265,7 +295,7 @@ const CreatePage = ({ artist, onNavigate, store, updateStore, galleryItemId, edi
               >
                 <i className="fa-solid fa-calendar"></i> Schedule
               </button>
-              <button className="btn btn-primary btn-lg" onClick={() => save("now")} disabled={busy}>
+              <button className="btn btn-primary btn-lg" onClick={() => save("now")} disabled={busy || (atDropLimit && !editDraftId)}>
                 {busy ? "Publishing…" : <><i className="fa-solid fa-rocket"></i> Publish Now</>}
               </button>
             </div>

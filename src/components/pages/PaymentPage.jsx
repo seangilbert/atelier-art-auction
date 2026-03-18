@@ -22,6 +22,9 @@ const PaymentPage = ({ auctionId, onNavigate, store, updateStore, loadAuctionDet
 
   if (!auction) return null;
   const topBid = bids.length ? bids.reduce((a,b) => a.amount>b.amount?a:b) : null;
+  const feeRate = auction.feeRate ?? 8;
+  const feeAmount = topBid ? Math.round(topBid.amount * feeRate) / 100 : 0;
+  const totalAmount = topBid ? topBid.amount + feeAmount : 0;
   const shareUrl = `${window.location.origin}${window.location.pathname}#auction-${auctionId}`;
   const winShareText = `I just won "${auction.title}" by ${auction.artistName} on ArtDrop! 🎨🏆 ${shareUrl}`;
   const isMobile = typeof navigator !== "undefined" && !!navigator.share;
@@ -56,7 +59,7 @@ const PaymentPage = ({ auctionId, onNavigate, store, updateStore, loadAuctionDet
   };
 
   const pmInfo = {
-    venmo:   { name:"Venmo",          icon:<i className="fa-brands fa-venmo" style={{color:"#008CFF"}}></i>, instruction:`Send ${fmt$(topBid?.amount)} to ${auction.venmoHandle||"@artist"} on Venmo. Note: "${auction.title} — Art Auction"` },
+    venmo:   { name:"Venmo",          icon:<i className="fa-brands fa-venmo" style={{color:"#008CFF"}}></i>, instruction:`Send ${fmt$(topBid?.amount)} to ${auction.venmoHandle||"@artist"} on Venmo. Note: "${auction.title}"` },
     paypal:  { name:"PayPal",         icon:<i className="fa-brands fa-paypal" style={{color:"#003087"}}></i>, instruction:`Send ${fmt$(topBid?.amount)} to ${auction.paypalEmail||"artist@email.com"} on PayPal.` },
     cashapp: { name:"Cash App",       icon:<i className="fa-solid fa-dollar-sign" style={{color:"#00C244"}}></i>, instruction:`Send ${fmt$(topBid?.amount)} to ${auction.cashappHandle||"$artist"} on Cash App.` },
     zelle:   { name:"Zelle",          icon:<i className="fa-solid fa-bolt" style={{color:"#6D1ED4"}}></i>, instruction:"Contact the artist for their Zelle details." },
@@ -74,6 +77,19 @@ const PaymentPage = ({ auctionId, onNavigate, store, updateStore, loadAuctionDet
       country: sh.country, notes: sh.notes,
     }, { onConflict: "auction_id" });
     if (payErr) { console.error("payment error:", payErr); setBusy(false); return; }
+    // Track platform fee (fire-and-forget; no Stripe charge yet)
+    if (topBid) {
+      supabase.from("platform_fees").insert({
+        auction_id: auctionId,
+        winning_bid: topBid.amount,
+        fee_rate: feeRate,
+        fee_amount: feeAmount,
+        fee_model: auction.feeModel || 'collector',
+        artist_id: auction.artistId,
+        collector_email: sh.email || null,
+        collected: false,
+      }).then(({ error }) => { if (error) console.warn("fee tracking error:", error); });
+    }
     updateStore();
     setSubmitted(true);
     setBusy(false);
@@ -133,9 +149,25 @@ const PaymentPage = ({ auctionId, onNavigate, store, updateStore, loadAuctionDet
     <div className="payment-page">
       <div className="winner-banner"><div className="winner-crown"><i className="fa-solid fa-trophy"></i></div><div className="winner-title">You won!</div><div className="winner-sub">"{auction.title}" by {auction.artistName}</div></div>
       <div style={{ background:"var(--surface)", border:"1px solid var(--border)", borderRadius:"var(--radius-lg)", padding:"1.25rem 1.5rem", marginBottom:"1.75rem" }}>
-        <div className="winner-summary-row">
-          <div><div style={{ fontSize:"0.7rem", color:"var(--mist)", textTransform:"uppercase", letterSpacing:"0.06em" }}>Winning Bid</div><div style={{ fontFamily:"var(--font-display)", fontSize:"2rem", fontWeight:700, color:"var(--gold-dark)" }}>{fmt$(topBid?.amount)}</div></div>
-          <div style={{ textAlign:"right" }}><div style={{ fontSize:"0.7rem", color:"var(--mist)", textTransform:"uppercase", letterSpacing:"0.06em" }}>Pay Within</div><div style={{ fontWeight:600, color:"var(--rouge)" }}>48 hours</div></div>
+        <div className="payment-breakdown">
+          <div className="payment-line">
+            <span>Winning bid (pay artist directly)</span>
+            <span style={{ fontWeight:600 }}>{fmt$(topBid?.amount)}</span>
+          </div>
+          <div className="payment-line fee-line">
+            <span>ArtDrop service fee ({feeRate}%)</span>
+            <span>+{fmt$(feeAmount)}</span>
+          </div>
+          <div className="payment-line total">
+            <span>Total</span>
+            <span>{fmt$(totalAmount)}</span>
+          </div>
+        </div>
+        <p style={{ fontSize:"0.76rem", color:"var(--mist)", marginTop:"0.5rem" }}>
+          Pay the artist directly via your chosen method below. The ArtDrop service fee will be collected separately.
+        </p>
+        <div style={{ display:"flex", justifyContent:"flex-end", marginTop:"0.5rem" }}>
+          <div style={{ fontSize:"0.7rem", color:"var(--rouge)", fontWeight:600, textTransform:"uppercase", letterSpacing:"0.06em" }}>Pay within 48 hours</div>
         </div>
       </div>
       <h3 style={{ fontFamily:"var(--font-display)", fontSize:"1.25rem", marginBottom:"0.9rem" }}>Step 1 — Choose Payment</h3>

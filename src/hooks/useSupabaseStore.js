@@ -72,7 +72,7 @@ const useSupabaseStore = () => {
       const artistsMap = {};
       const collectorsMap = {};
       (profiles || []).forEach(p => {
-        const user = { id: p.id, name: p.name, avatar: p.avatar, bio: p.bio, email: p.email, createdAt: p.created_at, following: p.following || [] };
+        const user = { id: p.id, name: p.name, avatar: p.avatar, bio: p.bio, email: p.email, createdAt: p.created_at, following: p.following || [], subscriptionTier: p.subscription_tier || 'free' };
         if (p.type === "artist") artistsMap[p.id] = { ...user, galleryPublic: p.gallery_public || false };
         else collectorsMap[p.id] = user;
       });
@@ -95,6 +95,8 @@ const useSupabaseStore = () => {
           reservePrice: a.reserve_price ? Number(a.reserve_price) : null,
           buyNowPrice:  a.buy_now_price  ? Number(a.buy_now_price)  : null,
           teaserText:   a.teaser_text    || null,
+          feeModel:     a.fee_model      || 'collector',
+          feeRate:      a.fee_rate       != null ? Number(a.fee_rate) : 8,
         }));
 
       // Fetch this user's personal invite row + watchlist (if logged in)

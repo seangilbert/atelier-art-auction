@@ -339,6 +339,14 @@ const STYLES = `
 
   /* Payment */
   .payment-page { max-width: 620px; margin: 0 auto; padding: 3rem 2rem 5rem; }
+  .payment-breakdown { display: flex; flex-direction: column; }
+  .payment-line { display: flex; justify-content: space-between; align-items: center; padding: 0.3rem 0; font-size: 0.9rem; }
+  .payment-line.fee-line { color: var(--slate); }
+  .payment-line.total { font-weight: 700; border-top: 1px solid var(--border); padding-top: 0.6rem; margin-top: 0.35rem; font-size: 1rem; }
+  .bid-fee-breakdown { margin-top: 0.75rem; padding: 0.75rem; background: var(--parchment); border-radius: var(--radius); border: 1px solid var(--border); }
+  .bid-fee-line { display: flex; justify-content: space-between; font-size: 0.88rem; padding: 0.2rem 0; }
+  .bid-fee-line.muted { color: var(--slate); }
+  .bid-fee-line.total { font-weight: 700; border-top: 1px solid var(--border); padding-top: 0.5rem; margin-top: 0.35rem; }
   .winner-banner { background: var(--grad-primary); border-radius: var(--radius-xl); padding: 2rem; margin-bottom: 2rem; text-align: center; box-shadow: 0 8px 32px rgba(232,82,106,0.35); }
   .winner-crown { font-size: 2.5rem; margin-bottom: 0.65rem; }
   .winner-title { font-size: 1.6rem; font-weight: 700; color: white; margin-bottom: 0.35rem; letter-spacing: -0.02em; }

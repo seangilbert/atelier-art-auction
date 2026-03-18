@@ -720,6 +720,13 @@ const AuctionPage = ({ auctionId, onNavigate, store, updateStore, loadAuctionDet
               <div className="form-group"><label className="form-label">Your Name *</label><input className="form-input" placeholder="Full name" value={localName} onChange={(e) => { if (!meCollector) setLocalName(e.target.value); }} readOnly={!!meCollector} style={meCollector ? { opacity: 0.7, cursor: "default" } : {}} /></div>
               <div className="form-group"><label className="form-label">Email *</label><input className="form-input" type="email" placeholder="your@email.com" value={bidEmail} onChange={(e) => { if (!meCollector) setBidEmail(e.target.value); }} readOnly={!!meCollector} style={meCollector ? { opacity: 0.7, cursor: "default" } : {}} /><p className="form-hint">{meCollector ? "Bids are linked to your collector account." : "Only used to notify you if you win."}</p></div>
               {bidMsg && <div className={`alert alert-${bidMsg.type}`}>{bidMsg.text}</div>}
+              {parseFloat(bidAmt) > 0 && (
+                <div className="bid-fee-breakdown">
+                  <div className="bid-fee-line"><span>{isBuyNow ? "Buy Now price" : "Your bid"}</span><span>{fmt$(bidAmt)}</span></div>
+                  <div className="bid-fee-line muted"><span>Buyer's premium ({auction.feeRate ?? 8}%)</span><span>+{fmt$(parseFloat(bidAmt) * (auction.feeRate ?? 8) / 100)}</span></div>
+                  <div className="bid-fee-line total"><span>Total you pay</span><span>{fmt$(parseFloat(bidAmt) * (1 + (auction.feeRate ?? 8) / 100))}</span></div>
+                </div>
+              )}
               <div className="alert alert-info" style={{ fontSize:"0.81rem" }}>By bidding, you agree to pay if you win. Payment required within 48 hours.</div>
             </div>
             <div className="modal-actions"><button className="btn btn-ghost" style={{ flex:1 }} onClick={() => { setShowModal(false); setIsBuyNow(false); }}>Cancel</button><button className="btn btn-primary" style={{ flex:2 }} onClick={placeBid}><i className="fa-solid fa-check"></i> {isBuyNow ? `Buy Now · ${fmt$(bidAmt)}` : `Confirm ${fmt$(bidAmt)}`}</button></div>
