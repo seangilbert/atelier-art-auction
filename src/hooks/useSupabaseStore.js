@@ -18,6 +18,9 @@ const useSupabaseStore = () => {
   const loadAll = useCallback(async (userId = lastUserIdRef.current) => {
     if (userId !== null) lastUserIdRef.current = userId;
     try {
+      // Only fetch auctions that are active or ended within the last 30 days
+      const thirtyDaysAgo = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString();
+
       // Tier-1 fetch: lightweight queries only — full bids/comments/reactions loaded per-auction
       const [
         { data: auctions },
@@ -29,7 +32,7 @@ const useSupabaseStore = () => {
         { data: galleryRows },
         { data: ratingRows },
       ] = await Promise.all([
-        supabase.from("auctions").select("*").order("created_at", { ascending: false }),
+        supabase.from("auctions").select("*").or(`end_date.is.null,end_date.gte.${thirtyDaysAgo}`).order("created_at", { ascending: false }).limit(200),
         supabase.from("oohs").select("*"),
         supabase.from("payments").select("*"),                          // small table, keep full
         supabase.from("profiles").select("*"),
@@ -233,9 +236,17 @@ const useSupabaseStore = () => {
     }
   }, []);
 
+  // Granular store patch — update a single key without refetching everything
+  const patchStore = useCallback((key, updater) => {
+    setStoreState(prev => ({
+      ...prev,
+      [key]: typeof updater === 'function' ? updater(prev[key]) : updater,
+    }));
+  }, []);
+
   useEffect(() => { loadAll(); }, [loadAll]);
 
-  return [store, loadAll, loadAuctionDetail];
+  return [store, loadAll, loadAuctionDetail, patchStore];
 };
 
 export default useSupabaseStore;

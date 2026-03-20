@@ -1,9 +1,9 @@
-import { useState } from "react";
+import { useState, memo } from "react";
 import { supabase } from "../../supabase.js";
 import { hasOohed, saveOoh, getOohCount } from "../../utils/storage.js";
 import RollingNumber from "./RollingNumber.jsx";
 
-const OohButton = ({ auctionId, store, updateStore }) => {
+const OohButton = memo(({ auctionId, store, patchStore }) => {
   const [oohed, setOohed]         = useState(() => hasOohed(auctionId));
   const [justOohed, setJustOohed] = useState(false);
   const count = getOohCount(store, auctionId);
@@ -16,9 +16,12 @@ const OohButton = ({ auctionId, store, updateStore }) => {
     setJustOohed(true);
     setTimeout(() => setJustOohed(false), 500);
     const newCount = (store.oohs?.[auctionId] || 0) + 1;
+    // Optimistic patch — only update oohs slice, no full refetch
+    if (patchStore) {
+      patchStore('oohs', prev => ({ ...prev, [auctionId]: newCount }));
+    }
     try {
       await supabase.from("oohs").upsert({ auction_id: auctionId, count: newCount }, { onConflict: "auction_id" });
-      updateStore(); // refresh store from Supabase
     } catch {
       // Optimistic update fallback already shown via local state
     }
@@ -34,6 +37,6 @@ const OohButton = ({ auctionId, store, updateStore }) => {
       <span>Ooh{count > 0 && <> · <RollingNumber value={count} /></>}</span>
     </button>
   );
-};
+});
 
 export default OohButton;

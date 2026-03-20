@@ -1,9 +1,16 @@
-import { useState } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { getStatus, fmt$ } from "../../utils/helpers.js";
 
-const SearchPage = ({ onNavigate, store, updateStore, me, meCollector }) => {
+const SearchPage = ({ onNavigate, store, updateStore, patchStore, me, meCollector }) => {
   const PAGE_SIZE = 30;
+  const [rawQuery, setRawQuery] = useState("");
   const [query, setQuery]       = useState("");
+
+  // Debounce search input — filter only after 300ms pause
+  useEffect(() => {
+    const t = setTimeout(() => setQuery(rawQuery), 300);
+    return () => clearTimeout(t);
+  }, [rawQuery]);
   const [medium, setMedium]     = useState("");
   const [minPrice, setMinPrice] = useState("");
   const [maxPrice, setMaxPrice] = useState("");
@@ -11,12 +18,18 @@ const SearchPage = ({ onNavigate, store, updateStore, me, meCollector }) => {
   const [openChip, setOpenChip] = useState(null);
   const [visibleCount, setVisibleCount] = useState(PAGE_SIZE);
 
-  const allAuctions = store.auctions.filter(a => a.published && !a.removed && a.startDate !== null);
-  const mediums = [...new Set(allAuctions.filter(a => a.medium).map(a => a.medium))].sort();
+  const allAuctions = useMemo(
+    () => store.auctions.filter(a => a.published && !a.removed && a.startDate !== null),
+    [store.auctions]
+  );
+  const mediums = useMemo(
+    () => [...new Set(allAuctions.filter(a => a.medium).map(a => a.medium))].sort(),
+    [allAuctions]
+  );
 
-  const hasFilters = query.trim() !== "" || medium !== "" || minPrice !== "" || maxPrice !== "";
+  const hasFilters = rawQuery.trim() !== "" || medium !== "" || minPrice !== "" || maxPrice !== "";
 
-  const filtered = allAuctions.filter(a => {
+  const filtered = useMemo(() => allAuctions.filter(a => {
     if (query.trim()) {
       const q = query.trim().toLowerCase();
       if (!a.title.toLowerCase().includes(q) && !a.artistName.toLowerCase().includes(q)) return false;
@@ -26,21 +39,21 @@ const SearchPage = ({ onNavigate, store, updateStore, me, meCollector }) => {
     if (maxPrice !== "" && price > parseFloat(maxPrice)) return false;
     if (medium && a.medium !== medium) return false;
     return true;
-  });
+  }), [allAuctions, query, minPrice, maxPrice, medium, store.bidSummaries]);
 
   const sortTabs = [
     ["newest", "Newest"], ["ending", "Ending Soon"], ["oohs", "Most Loved"],
     ["bids", "Most Bids"], ["price-asc", "Price ↑"], ["price-desc", "Price ↓"],
   ];
 
-  const sorted = [...filtered].sort((a, b) => {
+  const sorted = useMemo(() => [...filtered].sort((a, b) => {
     if (sort === "ending")     return new Date(a.endDate) - new Date(b.endDate);
     if (sort === "oohs")       return (store.oohs[b.id] || 0) - (store.oohs[a.id] || 0);
     if (sort === "bids")       return (store.bidSummaries[b.id]?.count || 0) - (store.bidSummaries[a.id]?.count || 0);
     if (sort === "price-asc")  return (store.bidSummaries[a.id]?.topAmount || a.startingPrice) - (store.bidSummaries[b.id]?.topAmount || b.startingPrice);
     if (sort === "price-desc") return (store.bidSummaries[b.id]?.topAmount || b.startingPrice) - (store.bidSummaries[a.id]?.topAmount || a.startingPrice);
     return new Date(b.createdAt) - new Date(a.createdAt);
-  });
+  }), [filtered, sort, store.oohs, store.bidSummaries]);
 
   const visible = sorted.slice(0, visibleCount);
   const hasMore = sorted.length > visibleCount;
@@ -60,12 +73,12 @@ const SearchPage = ({ onNavigate, store, updateStore, me, meCollector }) => {
               className="feed-search-input"
               type="text"
               placeholder="Search drops, artists…"
-              value={query}
-              onChange={e => { setQuery(e.target.value); setVisibleCount(PAGE_SIZE); }}
+              value={rawQuery}
+              onChange={e => { setRawQuery(e.target.value); setVisibleCount(PAGE_SIZE); }}
             />
-            {query && (
+            {rawQuery && (
               <button
-                onClick={() => setQuery("")}
+                onClick={() => { setRawQuery(""); setQuery(""); }}
                 style={{ position:"absolute", right:"0.85rem", top:"50%", transform:"translateY(-50%)", background:"none", border:"none", cursor:"pointer", color:"var(--mist)", fontSize:"0.85rem" }}
               >
                 <i className="fa-solid fa-xmark"></i>
@@ -132,7 +145,7 @@ const SearchPage = ({ onNavigate, store, updateStore, me, meCollector }) => {
             {hasFilters ? "Try adjusting your filters or search term." : "No drops yet — check back soon."}
           </p>
           {hasFilters && (
-            <button className="btn btn-ghost" onClick={() => { setQuery(""); setMedium(""); setMinPrice(""); setMaxPrice(""); setSort("newest"); }}>
+            <button className="btn btn-ghost" onClick={() => { setRawQuery(""); setQuery(""); setMedium(""); setMinPrice(""); setMaxPrice(""); setSort("newest"); }}>
               <i className="fa-solid fa-xmark"></i> Clear all
             </button>
           )}
@@ -145,7 +158,7 @@ const SearchPage = ({ onNavigate, store, updateStore, me, meCollector }) => {
               return (
                 <div key={auction.id} className="search-image-cell" onClick={() => onNavigate("auction", auction.id)}>
                   {auction.imageUrl
-                    ? <img src={auction.imageUrl} alt={auction.title} />
+                    ? <img src={auction.imageUrl} alt={auction.title} loading="lazy" />
                     : <div className="search-image-placeholder"><i className="fa-solid fa-palette"></i></div>}
                   {status === "live"      && <div className="search-cell-live"><div className="pulse" style={{ background:"white", width:"6px", height:"6px", minWidth:"6px" }} /></div>}
                   {status === "ended"    && <div className="search-cell-sold">Sold</div>}

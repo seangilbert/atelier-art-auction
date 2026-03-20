@@ -2,7 +2,7 @@ import { getStatus, fmt$ } from "../../utils/helpers.js";
 import { CardTimer } from "../ui/Countdown.jsx";
 import OohButton from "../ui/OohButton.jsx";
 
-const HomePage = ({ onNavigate, store, updateStore }) => {
+const HomePage = ({ onNavigate, store, patchStore }) => {
   const liveAuctions = store.auctions.filter((a) => !a.removed && a.published && getStatus(a) === "live");
   const topOohs = [...liveAuctions]
     .sort((a, b) => (store.oohs[b.id] || 0) - (store.oohs[a.id] || 0))
@@ -56,7 +56,7 @@ const HomePage = ({ onNavigate, store, updateStore }) => {
                 return (
                   <div key={auction.id} className="auction-card" onClick={() => onNavigate("auction", auction.id)}>
                     <div className="card-image">
-                      {auction.imageUrl ? <img src={auction.imageUrl} alt={auction.title} /> : <span>{auction.emoji || <i className="fa-solid fa-palette"></i>}</span>}
+                      {auction.imageUrl ? <img src={auction.imageUrl} alt={auction.title} loading="lazy" /> : <span>{auction.emoji || <i className="fa-solid fa-palette"></i>}</span>}
                       <div className="badge" style={{ background:"var(--rouge)", color:"white" }}><i className="fa-solid fa-fire"></i> Ending Soon</div>
                     </div>
                     <div className="card-body">
@@ -67,7 +67,7 @@ const HomePage = ({ onNavigate, store, updateStore }) => {
                         <div><div className="card-timer-label" style={{ color:"var(--rouge)" }}>Closes</div><div className="card-timer-val" style={{ color:"var(--rouge)" }}><CardTimer endDate={auction.endDate} /></div></div>
                       </div>
                       <div className="card-ooh-row">
-                        <OohButton auctionId={auction.id} store={store} updateStore={updateStore} />
+                        <OohButton auctionId={auction.id} store={store} patchStore={patchStore} />
                       </div>
                     </div>
                   </div>
@@ -97,7 +97,7 @@ const HomePage = ({ onNavigate, store, updateStore }) => {
                 return (
                   <div key={auction.id} className="auction-card" onClick={() => onNavigate("auction", auction.id)}>
                     <div className="card-image">
-                      {auction.imageUrl ? <img src={auction.imageUrl} alt={auction.title} /> : <span>{auction.emoji || <i className="fa-solid fa-palette"></i>}</span>}
+                      {auction.imageUrl ? <img src={auction.imageUrl} alt={auction.title} loading="lazy" /> : <span>{auction.emoji || <i className="fa-solid fa-palette"></i>}</span>}
                       <div className="badge badge-live"><div className="pulse" style={{ background: "white" }} /> Live</div>
                     </div>
                     <div className="card-body">
@@ -108,7 +108,7 @@ const HomePage = ({ onNavigate, store, updateStore }) => {
                         <div><div className="card-timer-label">Closes</div><div className="card-timer-val"><CardTimer endDate={auction.endDate} /></div></div>
                       </div>
                       <div className="card-ooh-row">
-                        <OohButton auctionId={auction.id} store={store} updateStore={updateStore} />
+                        <OohButton auctionId={auction.id} store={store} patchStore={patchStore} />
                       </div>
                     </div>
                   </div>

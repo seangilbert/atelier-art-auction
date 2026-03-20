@@ -1,26 +1,29 @@
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, lazy, Suspense } from "react";
 import { supabase } from "./src/supabase.js";
 import STYLES from "./src/styles.js";
 import { getStatus } from "./src/utils/helpers.js";
 import { getBidderIdentity } from "./src/utils/storage.js";
 import useSupabaseStore from "./src/hooks/useSupabaseStore.js";
 import AvatarImg from "./src/components/ui/AvatarImg.jsx";
+
+// Critical pages — always in main bundle (first paint)
 import AuthPage from "./src/components/pages/AuthPage.jsx";
-import HomePage from "./src/components/pages/HomePage.jsx";
 import FeedPage from "./src/components/pages/FeedPage.jsx";
-import ArtistPage from "./src/components/pages/ArtistPage.jsx";
-import CollectorDashboardPage from "./src/components/pages/CollectorDashboardPage.jsx";
-import InvitePage from "./src/components/pages/InvitePage.jsx";
-import EditProfilePage from "./src/components/pages/EditProfilePage.jsx";
-import DashboardPage from "./src/components/pages/DashboardPage.jsx";
-import AddArtworkPage from "./src/components/pages/AddArtworkPage.jsx";
-import CreatePage from "./src/components/pages/CreatePage.jsx";
-import AuctionPage from "./src/components/pages/AuctionPage.jsx";
-import PaymentPage from "./src/components/pages/PaymentPage.jsx";
-import EditPage from "./src/components/pages/EditPage.jsx";
-import CollectorProfilePage from "./src/components/pages/CollectorProfilePage.jsx";
-import ArtistBrowsePage from "./src/components/pages/ArtistBrowsePage.jsx";
-import SearchPage from "./src/components/pages/SearchPage.jsx";
+
+// Lazy-loaded pages — downloaded on demand
+const ArtistPage = lazy(() => import("./src/components/pages/ArtistPage.jsx"));
+const CollectorDashboardPage = lazy(() => import("./src/components/pages/CollectorDashboardPage.jsx"));
+const InvitePage = lazy(() => import("./src/components/pages/InvitePage.jsx"));
+const EditProfilePage = lazy(() => import("./src/components/pages/EditProfilePage.jsx"));
+const DashboardPage = lazy(() => import("./src/components/pages/DashboardPage.jsx"));
+const AddArtworkPage = lazy(() => import("./src/components/pages/AddArtworkPage.jsx"));
+const CreatePage = lazy(() => import("./src/components/pages/CreatePage.jsx"));
+const AuctionPage = lazy(() => import("./src/components/pages/AuctionPage.jsx"));
+const PaymentPage = lazy(() => import("./src/components/pages/PaymentPage.jsx"));
+const EditPage = lazy(() => import("./src/components/pages/EditPage.jsx"));
+const CollectorProfilePage = lazy(() => import("./src/components/pages/CollectorProfilePage.jsx"));
+const ArtistBrowsePage = lazy(() => import("./src/components/pages/ArtistBrowsePage.jsx"));
+const SearchPage = lazy(() => import("./src/components/pages/SearchPage.jsx"));
 
 // ─────────────────────────────────────────────────────────────────────────────
 // MOBILE BOTTOM NAV
@@ -67,7 +70,7 @@ function MobileBottomNav({ page, isArtist, isCollector, onNavigate, onClearHisto
 // APP SHELL
 // ─────────────────────────────────────────────────────────────────────────────
 export default function App() {
-  const [store, updateStore, loadAuctionDetail] = useSupabaseStore();
+  const [store, updateStore, loadAuctionDetail, patchStore] = useSupabaseStore();
   const [authReady, setAuthReady] = useState(false);
   const [artist, setArtist] = useState(null);
   const [collector, setCollector] = useState(null);
@@ -333,16 +336,17 @@ export default function App() {
       <div key={`${view.page}-${view.id || ''}`} className="page-transition">
       {view.page === "home" && (
         isLoggedIn
-          ? <FeedPage onNavigate={go} store={store} updateStore={updateStore} me={me} meCollector={meCollector} />
+          ? <FeedPage onNavigate={go} store={store} updateStore={updateStore} patchStore={patchStore} me={me} meCollector={meCollector} />
           : <AuthPage store={store} updateStore={updateStore} onLogin={onLogin} onCollectorLogin={onCollectorLogin} initialMode="login" initialInviteCode={pendingInviteCode} />
       )}
       {(view.page === "login" || view.page === "signup" || view.page === "collector-signup") && (
         isLoggedIn
-          ? <FeedPage onNavigate={go} store={store} updateStore={updateStore} me={me} meCollector={meCollector} />
+          ? <FeedPage onNavigate={go} store={store} updateStore={updateStore} patchStore={patchStore} me={me} meCollector={meCollector} />
           : <AuthPage store={store} updateStore={updateStore} onLogin={onLogin} onCollectorLogin={onCollectorLogin}
               initialMode={view.page === "signup" ? "signup" : view.page === "collector-signup" ? "collector-signup" : "login"}
               initialInviteCode={pendingInviteCode} />
       )}
+      <Suspense fallback={<div className="page-container" style={{ textAlign:"center", paddingTop:"6rem" }}><div className="loading-spinner" /></div>}>
       {view.page === "dashboard"           && me          && <DashboardPage artist={me} onNavigate={go} store={store} updateStore={updateStore} />}
       {view.page === "create"              && me          && <CreatePage    artist={me} onNavigate={go} store={store} updateStore={updateStore} galleryItemId={view.id || null} />}
       {view.page === "edit-draft"          && me          && <CreatePage    artist={me} onNavigate={go} store={store} updateStore={updateStore} editDraftId={view.id} />}
@@ -351,15 +355,16 @@ export default function App() {
       {view.page === "edit-artwork"        && me          && <AddArtworkPage artist={me} store={store} updateStore={updateStore} onNavigate={go} editItemId={view.id} />}
       {view.page === "edit-profile"        && me          && <EditProfilePage user={me} userType="artist" onNavigate={go} updateStore={updateStore} onProfileSaved={onArtistProfileSaved} />}
       {view.page === "edit-profile"        && meCollector && !me && <EditProfilePage user={meCollector} userType="collector" onNavigate={go} updateStore={updateStore} onProfileSaved={onCollectorProfileSaved} />}
-      {view.page === "auction"             && <AuctionPage auctionId={view.id} onNavigate={go} store={store} updateStore={updateStore} loadAuctionDetail={loadAuctionDetail} artist={me} meCollector={meCollector} bidderName={bidderName} setBidderName={setBidderName} bidderEmail={bidderEmail} setBidderEmail={setBidderEmail} />}
+      {view.page === "auction"             && <AuctionPage auctionId={view.id} onNavigate={go} store={store} updateStore={updateStore} patchStore={patchStore} loadAuctionDetail={loadAuctionDetail} artist={me} meCollector={meCollector} bidderName={bidderName} setBidderName={setBidderName} bidderEmail={bidderEmail} setBidderEmail={setBidderEmail} />}
       {view.page === "payment"             && (isLoggedIn ? <PaymentPage auctionId={view.id} onNavigate={go} store={store} updateStore={updateStore} loadAuctionDetail={loadAuctionDetail} bidderName={bidderName} bidderEmail={bidderEmail} meCollector={meCollector} /> : <AuthPage store={store} updateStore={updateStore} onLogin={onLogin} onCollectorLogin={onCollectorLogin} initialMode="login" initialInviteCode={pendingInviteCode} />)}
       {view.page === "edit"                && me          && <EditPage auctionId={view.id} artist={me} onNavigate={go} store={store} updateStore={updateStore} />}
       {view.page === "artist"              && (isLoggedIn ? <ArtistPage artistId={view.id} onNavigate={go} store={store} updateStore={updateStore} me={me} meCollector={meCollector} /> : <AuthPage store={store} updateStore={updateStore} onLogin={onLogin} onCollectorLogin={onCollectorLogin} initialMode="login" initialInviteCode={pendingInviteCode} />)}
-      {view.page === "collector-dashboard" && meCollector && <CollectorDashboardPage meCollector={meCollector} onNavigate={go} store={store} updateStore={updateStore} />}
+      {view.page === "collector-dashboard" && meCollector && <CollectorDashboardPage meCollector={meCollector} onNavigate={go} store={store} updateStore={updateStore} patchStore={patchStore} />}
       {view.page === "collector"           && <CollectorProfilePage collectorId={view.id} meCollector={meCollector} store={store} onNavigate={go} />}
       {view.page === "artists"             && <ArtistBrowsePage onNavigate={go} store={store} updateStore={updateStore} me={me} meCollector={meCollector} />}
-      {view.page === "search"              && <SearchPage onNavigate={go} store={store} updateStore={updateStore} me={me} meCollector={meCollector} />}
+      {view.page === "search"              && <SearchPage onNavigate={go} store={store} updateStore={updateStore} patchStore={patchStore} me={me} meCollector={meCollector} />}
       {view.page === "invites"             && isLoggedIn  && <InvitePage user={me || meCollector} store={store} updateStore={updateStore} onNavigate={go} />}
+      </Suspense>
       </div>
       </div>
     </>

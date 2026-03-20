@@ -6,7 +6,7 @@ import AvatarImg from "../ui/AvatarImg.jsx";
 import WatchButton from "../ui/WatchButton.jsx";
 import { RatingModal } from "../ui/StarPicker.jsx";
 
-const CollectorDashboardPage = ({ meCollector, onNavigate, store, updateStore }) => {
+const CollectorDashboardPage = ({ meCollector, onNavigate, store, updateStore, patchStore }) => {
   if (!meCollector) return null;
 
   const [ratingModal, setRatingModal]          = useState(null); // { auctionId, artistName, rateeId }
@@ -105,7 +105,7 @@ const CollectorDashboardPage = ({ meCollector, onNavigate, store, updateStore })
               return (
                 <div key={auction.id} className="cdash-bid-card" onClick={() => onNavigate("auction", auction.id)}>
                   <div className="cdash-bid-thumb">
-                    {auction.imageUrl ? <img src={auction.imageUrl} alt="" /> : (auction.emoji || <i className="fa-solid fa-palette"></i>)}
+                    {auction.imageUrl ? <img src={auction.imageUrl} alt="" loading="lazy" /> : (auction.emoji || <i className="fa-solid fa-palette"></i>)}
                   </div>
                   <div className="cdash-bid-info">
                     <div className="cdash-bid-title">{auction.title}</div>
@@ -143,7 +143,7 @@ const CollectorDashboardPage = ({ meCollector, onNavigate, store, updateStore })
             {oohedAuctions.map((auction) => (
               <div key={auction.id} className="cdash-ooh-card" onClick={() => onNavigate("auction", auction.id)}>
                 <div className="cdash-ooh-thumb">
-                  {auction.imageUrl ? <img src={auction.imageUrl} alt={auction.title} /> : (auction.emoji || <i className="fa-solid fa-palette"></i>)}
+                  {auction.imageUrl ? <img src={auction.imageUrl} alt={auction.title} loading="lazy" /> : (auction.emoji || <i className="fa-solid fa-palette"></i>)}
                 </div>
                 <div className="cdash-ooh-body">
                   <div className="cdash-ooh-title">{auction.title}</div>
@@ -168,7 +168,7 @@ const CollectorDashboardPage = ({ meCollector, onNavigate, store, updateStore })
               return (
                 <div key={auction.id} className="cdash-bid-card">
                   <div className="cdash-bid-thumb" onClick={() => onNavigate("auction", auction.id)} style={{ cursor:"pointer" }}>
-                    {auction.imageUrl ? <img src={auction.imageUrl} alt="" /> : (auction.emoji || <i className="fa-solid fa-palette"></i>)}
+                    {auction.imageUrl ? <img src={auction.imageUrl} alt="" loading="lazy" /> : (auction.emoji || <i className="fa-solid fa-palette"></i>)}
                   </div>
                   <div className="cdash-bid-info" onClick={() => onNavigate("auction", auction.id)} style={{ cursor:"pointer" }}>
                     <div className="cdash-bid-title">{auction.title}</div>
@@ -178,7 +178,7 @@ const CollectorDashboardPage = ({ meCollector, onNavigate, store, updateStore })
                     {status === "live"
                       ? <span className="bid-badge bid-badge-winning">Live</span>
                       : <span className="bid-badge bid-badge-lost">Ended</span>}
-                    <WatchButton auctionId={auction.id} store={store} updateStore={updateStore}
+                    <WatchButton auctionId={auction.id} store={store} patchStore={patchStore}
                       meUser={meCollector} onNavigate={onNavigate} />
                   </div>
                 </div>

@@ -196,7 +196,7 @@ const DashboardPage = ({ artist, onNavigate, store, updateStore }) => {
           <div className="auction-mgmt-list">
             {scheduled.map((auction) => (
               <div key={auction.id} className="mgmt-card st-scheduled">
-                <div className="mgmt-thumb">{auction.imageUrl ? <img src={auction.imageUrl} alt="" /> : (auction.emoji || <i className="fa-solid fa-palette"></i>)}</div>
+                <div className="mgmt-thumb">{auction.imageUrl ? <img src={auction.imageUrl} alt="" loading="lazy" /> : (auction.emoji || <i className="fa-solid fa-palette"></i>)}</div>
                 <div className="mgmt-info">
                   <div style={{ display:"flex", alignItems:"center", gap:"0.6rem", flexWrap:"wrap", marginBottom:"0.2rem" }}>
                     <div className="mgmt-title">{auction.title}</div>
@@ -225,7 +225,7 @@ const DashboardPage = ({ artist, onNavigate, store, updateStore }) => {
           <div className="auction-mgmt-list">
             {drafts.map((auction) => (
               <div key={auction.id} className="mgmt-card st-draft">
-                <div className="mgmt-thumb">{auction.imageUrl ? <img src={auction.imageUrl} alt="" /> : (auction.emoji || <i className="fa-solid fa-palette"></i>)}</div>
+                <div className="mgmt-thumb">{auction.imageUrl ? <img src={auction.imageUrl} alt="" loading="lazy" /> : (auction.emoji || <i className="fa-solid fa-palette"></i>)}</div>
                 <div className="mgmt-info">
                   <div style={{ display:"flex", alignItems:"center", gap:"0.6rem", flexWrap:"wrap", marginBottom:"0.2rem" }}>
                     <div className="mgmt-title">{auction.title || <em style={{ color:"var(--mist)" }}>Untitled draft</em>}</div>
@@ -254,7 +254,7 @@ const DashboardPage = ({ artist, onNavigate, store, updateStore }) => {
             <div key={auction.id} className="pending-payment-card">
               <div className="pending-payment-header">
                 <div className="pending-payment-thumb">
-                  {auction.imageUrl ? <img src={auction.imageUrl} alt="" /> : (auction.emoji || <i className="fa-solid fa-palette"></i>)}
+                  {auction.imageUrl ? <img src={auction.imageUrl} alt="" loading="lazy" /> : (auction.emoji || <i className="fa-solid fa-palette"></i>)}
                 </div>
                 <div style={{ flex: 1, minWidth: 0 }}>
                   <div className="pending-payment-title">{auction.title}</div>
@@ -362,7 +362,7 @@ const DashboardPage = ({ artist, onNavigate, store, updateStore }) => {
                   return (
                     <div key={item.id} className="gallery-card">
                       <div className="gallery-card-image" onClick={() => onNavigate("edit-artwork", item.id)}>
-                        {item.imageUrl ? <img src={item.imageUrl} alt={item.title} /> : <span>{item.emoji}</span>}
+                        {item.imageUrl ? <img src={item.imageUrl} alt={item.title} loading="lazy" /> : <span>{item.emoji}</span>}
                         {isLive && <div className="badge badge-live"><div className="pulse" style={{ background:"white" }} /> Live</div>}
                       </div>
                       <div className="gallery-card-body">
@@ -424,7 +424,7 @@ const DashboardPage = ({ artist, onNavigate, store, updateStore }) => {
             const topBid = summary.topAmount || null;
             return (
               <div key={auction.id} className={`mgmt-card st-${status}`}>
-                <div className="mgmt-thumb">{auction.imageUrl ? <img src={auction.imageUrl} alt="" /> : (auction.emoji || <i className="fa-solid fa-palette"></i>)}</div>
+                <div className="mgmt-thumb">{auction.imageUrl ? <img src={auction.imageUrl} alt="" loading="lazy" /> : (auction.emoji || <i className="fa-solid fa-palette"></i>)}</div>
                 <div className="mgmt-info">
                   <div style={{ display: "flex", alignItems: "center", gap: "0.6rem", flexWrap: "wrap", marginBottom: "0.2rem" }}>
                     <div className="mgmt-title">{auction.title}</div>
@@ -528,7 +528,7 @@ const DashboardPage = ({ artist, onNavigate, store, updateStore }) => {
                 return (
                   <div key={auction.id} className="cdash-bid-card" onClick={() => onNavigate("auction", auction.id)}>
                     <div className="cdash-bid-thumb">
-                      {auction.imageUrl ? <img src={auction.imageUrl} alt="" /> : (auction.emoji || <i className="fa-solid fa-palette"></i>)}
+                      {auction.imageUrl ? <img src={auction.imageUrl} alt="" loading="lazy" /> : (auction.emoji || <i className="fa-solid fa-palette"></i>)}
                     </div>
                     <div className="cdash-bid-info">
                       <div className="cdash-bid-title">{auction.title}</div>

@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, useMemo, useCallback } from "react";
 import { supabase } from "../../supabase.js";
 import { getStatus, fmt$, fmtDate, timeAgo, shortName, generateId, REACTION_EMOJIS } from "../../utils/helpers.js";
 import { saveBidderIdentity, getOohCount } from "../../utils/storage.js";
@@ -11,7 +11,7 @@ import StatusPill from "../ui/StatusPill.jsx";
 import MessageThread from "../ui/MessageThread.jsx";
 import { RatingModal } from "../ui/StarPicker.jsx";
 
-const AuctionPage = ({ auctionId, onNavigate, store, updateStore, loadAuctionDetail, artist, meCollector, bidderName, setBidderName, bidderEmail, setBidderEmail }) => {
+const AuctionPage = ({ auctionId, onNavigate, store, updateStore, patchStore, loadAuctionDetail, artist, meCollector, bidderName, setBidderName, bidderEmail, setBidderEmail }) => {
   const auction = store.auctions.find((a) => a.id === auctionId);
   const bids = store.bids[auctionId] || [];
   const currentUserId = artist?.id || meCollector?.id || null;
@@ -51,32 +51,67 @@ const AuctionPage = ({ auctionId, onNavigate, store, updateStore, loadAuctionDet
   // currentUserId declared above (before mount effect)
   const currentUserName   = artist?.name || meCollector?.name || "";
   const currentUserAvatar = artist?.avatar || meCollector?.avatar || "";
-  const comments = store.comments?.[auctionId] || [];
+  const comments = useMemo(() => store.comments?.[auctionId] || [], [store.comments, auctionId]);
   const getMyReactionsForComment = (commentId) => {
     const serverSet = store.myReactions?.[commentId] || new Set();
     const localSet  = localMyReactions[commentId]    || new Set();
     return new Set([...serverSet, ...localSet]);
   };
 
-  // Realtime: refresh per-auction data when bids/comments change; oohs use global refresh
+  // Realtime: patch store directly from payload instead of refetching
   useEffect(() => {
     const channel = supabase
       .channel(`auction-${auctionId}`)
-      .on("postgres_changes", { event: "INSERT", schema: "public", table: "bids",     filter: `auction_id=eq.${auctionId}` }, () => loadAuctionDetail(auctionId, currentUserId))
-      .on("postgres_changes", { event: "*",      schema: "public", table: "oohs",     filter: `auction_id=eq.${auctionId}` }, () => updateStore())
-      .on("postgres_changes", { event: "INSERT", schema: "public", table: "comments", filter: `auction_id=eq.${auctionId}` }, () => loadAuctionDetail(auctionId, currentUserId))
-      .on("postgres_changes", { event: "DELETE", schema: "public", table: "comments", filter: `auction_id=eq.${auctionId}` }, () => loadAuctionDetail(auctionId, currentUserId))
-      .on("postgres_changes", { event: "*",      schema: "public", table: "watchlist", filter: `auction_id=eq.${auctionId}` }, () => {
-        supabase.from("watchlist").select("id", { count: "exact", head: true }).eq("auction_id", auctionId)
-          .then(({ count }) => setWatcherCount(count ?? 0));
+      .on("postgres_changes", { event: "INSERT", schema: "public", table: "bids", filter: `auction_id=eq.${auctionId}` }, (payload) => {
+        const b = payload.new;
+        if (!b) return;
+        patchStore('bids', prev => ({
+          ...prev,
+          [auctionId]: [...(prev[auctionId] || []),
+            { id: b.id, bidder: b.bidder, email: b.email, amount: b.amount, placedAt: b.placed_at }]
+        }));
+        patchStore('bidSummaries', prev => {
+          const s = prev[auctionId] || { count: 0, topAmount: 0 };
+          return { ...prev, [auctionId]: { count: s.count + 1, topAmount: Math.max(s.topAmount, b.amount) } };
+        });
+      })
+      .on("postgres_changes", { event: "*", schema: "public", table: "oohs", filter: `auction_id=eq.${auctionId}` }, (payload) => {
+        const row = payload.new;
+        if (row && row.auction_id && patchStore) {
+          patchStore('oohs', prev => ({ ...prev, [row.auction_id]: Number(row.count) }));
+        }
+      })
+      .on("postgres_changes", { event: "INSERT", schema: "public", table: "comments", filter: `auction_id=eq.${auctionId}` }, (payload) => {
+        const c = payload.new;
+        if (!c) return;
+        patchStore('comments', prev => ({
+          ...prev,
+          [auctionId]: [...(prev[auctionId] || []),
+            { id: c.id, auctionId: c.auction_id, authorId: c.author_id,
+              authorName: c.author_name, authorAvatar: c.author_avatar,
+              body: c.body, createdAt: c.created_at }]
+        }));
+        patchStore('commentCounts', prev => ({ ...prev, [auctionId]: (prev[auctionId] || 0) + 1 }));
+      })
+      .on("postgres_changes", { event: "DELETE", schema: "public", table: "comments", filter: `auction_id=eq.${auctionId}` }, (payload) => {
+        const id = payload.old?.id;
+        if (!id) return;
+        patchStore('comments', prev => ({
+          ...prev,
+          [auctionId]: (prev[auctionId] || []).filter(c => c.id !== id)
+        }));
+        patchStore('commentCounts', prev => ({ ...prev, [auctionId]: Math.max(0, (prev[auctionId] || 1) - 1) }));
+      })
+      .on("postgres_changes", { event: "*", schema: "public", table: "watchlist", filter: `auction_id=eq.${auctionId}` }, (payload) => {
+        setWatcherCount(prev => payload.eventType === 'INSERT' ? (prev ?? 0) + 1 : Math.max(0, (prev ?? 1) - 1));
       })
       .subscribe();
     return () => { supabase.removeChannel(channel); };
-  }, [auctionId, updateStore, loadAuctionDetail, currentUserId]);
+  }, [auctionId, patchStore]);
 
   // Auction-ended email: fire once when the owner is watching and the auction ends
   const status = getStatus(auction || { startDate: new Date(0).toISOString(), endDate: new Date(0).toISOString(), paused: false });
-  const sortedBids = [...bids].sort((a, b) => b.amount - a.amount);
+  const sortedBids = useMemo(() => [...bids].sort((a, b) => b.amount - a.amount), [bids]);
   const topBid = sortedBids[0] || null;
   const isOwner = artist?.id === auction?.artistId;
   useEffect(() => {
@@ -201,8 +236,8 @@ const AuctionPage = ({ auctionId, onNavigate, store, updateStore, loadAuctionDet
       await supabase.from("auctions").update({ end_date: new Date(Date.now() - 1000).toISOString(), paused: false }).eq("id", auctionId);
       setIsBuyNow(false);
     }
-    loadAuctionDetail(auctionId, currentUserId);
-    updateStore(); // refresh auction status so winner card appears
+    // Realtime subscription will patch the new bid into store
+    if (isBuyNow) updateStore(); // refresh auction status so winner card appears
     setTimeout(() => setBidMsg(null), 4000);
     const artistProfile = store.artists[auction.artistId];
     // Buy Now: notify artist their auction ended with a winner
@@ -272,7 +307,7 @@ const AuctionPage = ({ auctionId, onNavigate, store, updateStore, loadAuctionDet
   };
 
   // ── Comment actions ───────────────────────────────────────────────────────
-  const postComment = async () => {
+  const postComment = useCallback(async () => {
     const body = commentText.trim();
     if (!body || !currentUserId) return;
     const { error } = await supabase.from("comments").insert({
@@ -283,15 +318,15 @@ const AuctionPage = ({ auctionId, onNavigate, store, updateStore, loadAuctionDet
     setCommentText("");
     setCommentMsg({ type:"success", text:"Comment posted!" });
     setTimeout(() => setCommentMsg(null), 3000);
-    loadAuctionDetail(auctionId, currentUserId);
-  };
+    // Realtime subscription will patch the comment into store
+  }, [commentText, auctionId, currentUserId, currentUserName, currentUserAvatar]);
 
-  const deleteComment = async (commentId) => {
+  const deleteComment = useCallback(async (commentId) => {
     setDeletingId(commentId);
-    const { error } = await supabase.from("comments").delete().eq("id", commentId);
-    if (!error) loadAuctionDetail(auctionId, currentUserId);
+    await supabase.from("comments").delete().eq("id", commentId);
+    // Realtime subscription will remove the comment from store
     setDeletingId(null);
-  };
+  }, []);
 
   const reportComment = async (commentId) => {
     if (!currentUserId || reportedIds.has(commentId)) return;
@@ -304,7 +339,7 @@ const AuctionPage = ({ auctionId, onNavigate, store, updateStore, loadAuctionDet
     setReportingId(null);
   };
 
-  const toggleReaction = async (commentId, emoji) => {
+  const toggleReaction = useCallback(async (commentId, emoji) => {
     if (!currentUserId) return;
     const already = getMyReactionsForComment(commentId).has(emoji);
     setLocalMyReactions(prev => {
@@ -319,8 +354,8 @@ const AuctionPage = ({ auctionId, onNavigate, store, updateStore, loadAuctionDet
       await supabase.from("comment_reactions")
         .upsert({ comment_id: commentId, user_id: currentUserId, emoji }, { onConflict: "comment_id,user_id,emoji" });
     }
-    loadAuctionDetail(auctionId, currentUserId);
-  };
+    // Optimistic update already applied via setLocalMyReactions; no refetch needed
+  }, [currentUserId]);
 
   // ── Scheduled drop: full teaser layout ────────────────────────────────────
   if (status === "scheduled") {
@@ -339,7 +374,7 @@ const AuctionPage = ({ auctionId, onNavigate, store, updateStore, loadAuctionDet
         {/* Blurred artwork reveal */}
         <div style={{ borderRadius:"var(--radius-lg)", overflow:"hidden", aspectRatio:"1/1", position:"relative", marginBottom:"1.5rem", background:"var(--parchment)", display:"flex", alignItems:"center", justifyContent:"center" }}>
           <div style={{ position:"absolute", inset:0, filter:"blur(20px)", transform:"scale(1.06)", display:"flex", alignItems:"center", justifyContent:"center", fontSize:"8rem" }}>
-            {auction.imageUrl ? <img src={auction.imageUrl} alt="" style={{ width:"100%", height:"100%", objectFit:"cover" }} /> : <span>{auction.emoji || <i className="fa-solid fa-palette"></i>}</span>}
+            {auction.imageUrl ? <img src={auction.imageUrl} alt="" style={{ width:"100%", height:"100%", objectFit:"cover" }} loading="lazy" /> : <span>{auction.emoji || <i className="fa-solid fa-palette"></i>}</span>}
           </div>
           <div style={{ position:"absolute", inset:0, background:"rgba(0,0,0,0.38)", display:"flex", flexDirection:"column", alignItems:"center", justifyContent:"center", gap:"0.75rem" }}>
             <div style={{ color:"white", fontFamily:"var(--font-display)", fontSize:"1.5rem", fontWeight:800, letterSpacing:"0.01em", textAlign:"center", padding:"0 1rem" }}>Dropping Soon</div>
@@ -373,7 +408,7 @@ const AuctionPage = ({ auctionId, onNavigate, store, updateStore, loadAuctionDet
         {/* CTA */}
         {!isOwner ? (
           <div className="ooh-detail-wrap">
-            <WatchButton auctionId={auctionId} store={store} updateStore={updateStore}
+            <WatchButton auctionId={auctionId} store={store} patchStore={patchStore}
               meUser={meCollector || artist} onNavigate={onNavigate} />
           </div>
         ) : (
@@ -491,7 +526,7 @@ const AuctionPage = ({ auctionId, onNavigate, store, updateStore, loadAuctionDet
       <div className="auction-layout">
         <div>
           <div className="auction-art-frame">
-            {auction.imageUrl ? <img src={auction.imageUrl} alt={auction.title} /> : <div className="auction-art-placeholder">{auction.emoji || <i className="fa-solid fa-palette"></i>}</div>}
+            {auction.imageUrl ? <img src={auction.imageUrl} alt={auction.title} loading="lazy" /> : <div className="auction-art-placeholder">{auction.emoji || <i className="fa-solid fa-palette"></i>}</div>}
           </div>
           <div style={{ padding:"0.75rem 0.25rem", display:"flex", gap:"0.5rem", flexWrap:"wrap" }}>
             {auction.medium && <span className="tag"><i className="fa-solid fa-paintbrush"></i> {auction.medium}</span>}
@@ -510,7 +545,7 @@ const AuctionPage = ({ auctionId, onNavigate, store, updateStore, loadAuctionDet
           {auction.description && <p className="auction-desc">{auction.description}</p>}
 
           <div className="ooh-detail-wrap">
-            <OohButton auctionId={auctionId} store={store} updateStore={updateStore} />
+            <OohButton auctionId={auctionId} store={store} patchStore={patchStore} />
             <span className="ooh-count-label">
               {getOohCount(store, auctionId) === 0
                 ? "Be the first to Ooh this piece"
@@ -519,7 +554,7 @@ const AuctionPage = ({ auctionId, onNavigate, store, updateStore, loadAuctionDet
           </div>
           {!isOwner && (
             <div className="ooh-detail-wrap" style={{ marginTop:"0.5rem" }}>
-              <WatchButton auctionId={auctionId} store={store} updateStore={updateStore}
+              <WatchButton auctionId={auctionId} store={store} patchStore={patchStore}
                 meUser={meCollector || artist} onNavigate={onNavigate} />
             </div>
           )}

@@ -1,7 +1,7 @@
-import { useState } from "react";
+import { useState, memo } from "react";
 import { supabase } from "../../supabase.js";
 
-const WatchButton = ({ auctionId, store, updateStore, meUser, onNavigate }) => {
+const WatchButton = memo(({ auctionId, store, patchStore, meUser, onNavigate }) => {
   const [loading, setLoading] = useState(false);
   const isWatching = !!store.watchlist?.[auctionId];
 
@@ -15,11 +15,25 @@ const WatchButton = ({ auctionId, store, updateStore, meUser, onNavigate }) => {
           .delete()
           .eq("user_id", meUser.id)
           .eq("auction_id", auctionId);
+        // Optimistic patch — remove from watchlist slice
+        if (patchStore) {
+          patchStore('watchlist', prev => {
+            const next = { ...prev };
+            delete next[auctionId];
+            return next;
+          });
+        }
       } else {
         await supabase.from("watchlist")
           .insert({ user_id: meUser.id, auction_id: auctionId });
+        // Optimistic patch — add to watchlist slice
+        if (patchStore) {
+          patchStore('watchlist', prev => ({
+            ...prev,
+            [auctionId]: { reminderSent: false },
+          }));
+        }
       }
-      updateStore(meUser.id);
     } finally {
       setLoading(false);
     }
@@ -49,6 +63,6 @@ const WatchButton = ({ auctionId, store, updateStore, meUser, onNavigate }) => {
       <span>{loading ? "…" : isWatching ? "Watching" : "Watch"}</span>
     </button>
   );
-};
+});
 
 export default WatchButton;
