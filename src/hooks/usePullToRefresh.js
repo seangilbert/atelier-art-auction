@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 
 const THRESHOLD = 60;   // px drag needed to trigger refresh
-const SETTLE = 48;      // px where spinner sits while refreshing
+const SETTLE = 52;      // px where spinner sits while refreshing
 const MAX_PULL = 110;   // max visual drag distance
 
 // Rubber-band: starts easy, gets harder — like pulling a rubber band

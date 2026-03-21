@@ -383,7 +383,7 @@ const STYLES = `
 
   /* Pull-to-refresh */
   .ptr-page { position:relative; z-index:1; min-height:100dvh; background:var(--cream); }
-  .ptr-indicator { position:fixed; top:calc(env(safe-area-inset-top,0px) + 10px); left:50%; transform:translateX(-50%); width:28px; height:28px; z-index:0; pointer-events:none; opacity:0; transition:opacity 0.18s ease; }
+  .ptr-indicator { position:fixed; top:12px; left:50%; transform:translateX(-50%); width:28px; height:28px; z-index:0; pointer-events:none; opacity:0; transition:opacity 0.18s ease; }
   .ptr-indicator.visible { opacity:1; }
   .ptr-spinner { display:block; width:100%; height:100%; border-radius:50%; border:2.5px solid var(--border); border-top-color:var(--slate); transform:rotate(var(--ptr-rotate,0deg)); }
   .ptr-indicator.refreshing .ptr-spinner { border-top-color:var(--rouge); animation:ptr-spin 0.6s linear infinite; }
