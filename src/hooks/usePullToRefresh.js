@@ -1,8 +1,21 @@
 import { useEffect, useRef, useState } from "react";
 
 const THRESHOLD = 60;   // px drag needed to trigger refresh
-const SETTLE = 52;      // px where spinner sits while refreshing
+const BASE_SETTLE = 52; // px below safe-area where spinner sits while refreshing
 const MAX_PULL = 110;   // max visual drag distance
+
+// Read safe-area-inset-top so SETTLE clears the notch / Dynamic Island
+let _settle = null;
+function getSettle() {
+  if (_settle !== null) return _settle;
+  const probe = document.createElement("div");
+  probe.style.cssText = "position:fixed;top:0;height:env(safe-area-inset-top,0px);pointer-events:none;visibility:hidden";
+  document.body.appendChild(probe);
+  const sat = probe.offsetHeight;
+  document.body.removeChild(probe);
+  _settle = sat + BASE_SETTLE;
+  return _settle;
+}
 
 // Rubber-band: starts easy, gets harder — like pulling a rubber band
 function rubberBand(delta) {
@@ -72,7 +85,7 @@ export default function usePullToRefresh(onRefresh) {
         refreshingRef.current = true;
         setRefreshing(true);
         // Spring to settled refresh position
-        springTo(SETTLE, async () => {
+        springTo(getSettle(), async () => {
           await onRefresh();
           refreshingRef.current = false;
           setRefreshing(false);
