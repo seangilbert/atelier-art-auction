@@ -139,18 +139,27 @@ const CollectorDashboardPage = ({ meCollector, onNavigate, store, updateStore, p
         {oohedAuctions.length === 0 ? (
           <p style={{ color:"var(--mist)", fontSize:"0.88rem" }}>Tap Ooh on any artwork to save it here.</p>
         ) : (
-          <div className="cdash-ooh-grid">
-            {oohedAuctions.map((auction) => (
-              <div key={auction.id} className="cdash-ooh-card" onClick={() => onNavigate("auction", auction.id)}>
-                <div className="cdash-ooh-thumb">
-                  {auction.imageUrl ? <img src={auction.imageUrl} alt={auction.title} loading="lazy" /> : (auction.emoji || <i className="fa-solid fa-palette"></i>)}
+          <div className="cdash-bid-list">
+            {oohedAuctions.map((auction) => {
+              const status = getStatus(auction);
+              const oohCount = store.oohs?.[auction.id] || 0;
+              return (
+                <div key={auction.id} className="cdash-bid-card">
+                  <div className="cdash-bid-thumb" onClick={() => onNavigate("auction", auction.id)} style={{ cursor:"pointer" }}>
+                    {auction.imageUrl ? <img src={auction.imageUrl} alt="" loading="lazy" /> : (auction.emoji || <i className="fa-solid fa-palette"></i>)}
+                  </div>
+                  <div className="cdash-bid-info" onClick={() => onNavigate("auction", auction.id)} style={{ cursor:"pointer" }}>
+                    <div className="cdash-bid-title">{auction.title}</div>
+                    <div className="cdash-bid-meta">by {auction.artistName} · <i className="fa-solid fa-heart"></i> {oohCount} Ooh{oohCount !== 1 ? "s" : ""}</div>
+                  </div>
+                  <div className="cdash-bid-status">
+                    {status === "live"
+                      ? <span className="bid-badge bid-badge-winning">Live</span>
+                      : <span className="bid-badge bid-badge-lost">Ended</span>}
+                  </div>
                 </div>
-                <div className="cdash-ooh-body">
-                  <div className="cdash-ooh-title">{auction.title}</div>
-                  <div className="cdash-ooh-count"><i className="fa-solid fa-heart"></i> {store.oohs?.[auction.id] || 0} Ooh{(store.oohs?.[auction.id] || 0) !== 1 ? "s" : ""}</div>
-                </div>
-              </div>
-            ))}
+              );
+            })}
           </div>
         )}
       </div>
