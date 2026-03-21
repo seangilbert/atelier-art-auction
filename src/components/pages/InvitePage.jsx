@@ -1,11 +1,11 @@
 import { useState } from "react";
 import { supabase } from "../../supabase.js";
+import { showToast } from "../ui/Toast.jsx";
 
 const InvitePage = ({ user, store, updateStore, onNavigate }) => {
   const invite = store.myInvite;
   const [recipientEmail, setRecipientEmail] = useState("");
   const [sending, setSending] = useState(false);
-  const [sendMsg, setSendMsg] = useState(null);
   const [copied, setCopied] = useState(false);
 
   const appUrl = window.location.origin + window.location.pathname;
@@ -19,19 +19,18 @@ const InvitePage = ({ user, store, updateStore, onNavigate }) => {
   };
 
   const sendInviteEmail = async () => {
-    if (!recipientEmail.includes("@")) { setSendMsg({ type:"error", text:"Enter a valid email address." }); return; }
+    if (!recipientEmail.includes("@")) { showToast("error", "Enter a valid email address."); return; }
     setSending(true);
-    setSendMsg(null);
     try {
       const { error } = await supabase.functions.invoke("send-invite-email", {
         body: { recipientEmail: recipientEmail.trim(), senderName: user.name, inviteCode: invite.code }
       });
       if (error) throw error;
-      setSendMsg({ type:"success", text:`Invite sent to ${recipientEmail.trim()}!` });
+      showToast("success", `Invite sent to ${recipientEmail.trim()}!`);
       setRecipientEmail("");
       updateStore(user.id);
     } catch (e) {
-      setSendMsg({ type:"error", text:"Failed to send invite. Try again." });
+      showToast("error", "Failed to send invite. Try again.");
     }
     setSending(false);
   };
@@ -67,7 +66,6 @@ const InvitePage = ({ user, store, updateStore, onNavigate }) => {
             <div className="invite-send-section">
               <div className="invite-send-title">Send an email invite</div>
               <div className="invite-send-sub">Enter a friend's email and we'll send them a personalised invite from you.</div>
-              {sendMsg && <div className={`alert alert-${sendMsg.type}`}>{sendMsg.text}</div>}
               <div className="invite-send-row">
                 <input
                   className="form-input"

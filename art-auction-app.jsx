@@ -6,6 +6,7 @@ import { getBidderIdentity } from "./src/utils/storage.js";
 import useSupabaseStore from "./src/hooks/useSupabaseStore.js";
 import usePullToRefresh from "./src/hooks/usePullToRefresh.js";
 import AvatarImg from "./src/components/ui/AvatarImg.jsx";
+import ToastContainer from "./src/components/ui/Toast.jsx";
 
 // Critical pages — always in main bundle (first paint)
 import AuthPage from "./src/components/pages/AuthPage.jsx";
@@ -261,6 +262,7 @@ export default function App() {
   return (
     <>
       <style>{STYLES}</style>
+      <ToastContainer />
 
       <div
         className={`ptr-indicator${pull > 0 || refreshing ? " visible" : ""}${refreshing ? " refreshing" : ""}`}

@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { supabase } from "../../supabase.js";
 import ImagePicker from "../ui/ImagePicker.jsx";
+import { showToast } from "../ui/Toast.jsx";
 
 const EditPage = ({ auctionId, artist, onNavigate, store, updateStore }) => {
   const auction = store.auctions.find((a) => a.id === auctionId);
@@ -21,7 +22,6 @@ const EditPage = ({ auctionId, artist, onNavigate, store, updateStore }) => {
     emoji: auction.emoji || "🎨",
   });
   const [busy, setBusy] = useState(false);
-  const [saved, setSaved] = useState(false);
   const set = (k, v) => setF((p) => ({ ...p, [k]: v }));
   const togglePay = (m) => set("paymentMethods", f.paymentMethods.includes(m) ? f.paymentMethods.filter((x) => x !== m) : [...f.paymentMethods, m]);
 
@@ -37,16 +37,14 @@ const EditPage = ({ auctionId, artist, onNavigate, store, updateStore }) => {
     if (saveErr) { console.error("save error:", saveErr); setBusy(false); return; }
     await updateStore();
     setBusy(false);
-    setSaved(true);
-    setTimeout(() => { setSaved(false); onNavigate("auction", auctionId); }, 1200);
+    showToast("success", "Saved! Redirecting…");
+    setTimeout(() => onNavigate("auction", auctionId), 1200);
   };
 
   return (
     <div className="page-container">
       <h1 className="page-title">Edit <em>Drop</em></h1>
       <p className="page-subtitle">Changes apply immediately. Bids and timer are unaffected.</p>
-
-      {saved && <div className="alert alert-success" style={{ marginBottom: "1.5rem" }}><i className="fa-solid fa-check"></i> Saved! Redirecting…</div>}
 
       <div className="form-group">
         <label className="form-label">Artwork Photo</label>

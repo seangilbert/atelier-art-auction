@@ -10,6 +10,7 @@ import ConfirmModal from "../ui/ConfirmModal.jsx";
 import StatusPill from "../ui/StatusPill.jsx";
 import MessageThread from "../ui/MessageThread.jsx";
 import { RatingModal } from "../ui/StarPicker.jsx";
+import { showToast } from "../ui/Toast.jsx";
 
 const AuctionPage = ({ auctionId, onNavigate, store, updateStore, patchStore, loadAuctionDetail, artist, meCollector, bidderName, setBidderName, bidderEmail, setBidderEmail }) => {
   const auction = store.auctions.find((a) => a.id === auctionId);
@@ -23,7 +24,6 @@ const AuctionPage = ({ auctionId, onNavigate, store, updateStore, patchStore, lo
   const [bidAmt, setBidAmt] = useState("");
   const [localName, setLocalName] = useState(meCollector?.name || bidderName || "");
   const [bidEmail, setBidEmail] = useState(meCollector?.email || bidderEmail || "");
-  const [bidMsg, setBidMsg] = useState(null);
   const [watcherCount, setWatcherCount] = useState(null);
 
   // Keep bid name/email in sync with collector account (in case store loads after mount)
@@ -43,7 +43,6 @@ const AuctionPage = ({ auctionId, onNavigate, store, updateStore, patchStore, lo
 
   // ── Comments state ────────────────────────────────────────────────────────
   const [commentText, setCommentText] = useState("");
-  const [commentMsg, setCommentMsg]   = useState(null);
   const [deletingId, setDeletingId]   = useState(null);
   const [reportingId, setReportingId] = useState(null);
   const [reportedIds, setReportedIds] = useState(new Set());
@@ -216,16 +215,16 @@ const AuctionPage = ({ auctionId, onNavigate, store, updateStore, patchStore, lo
   };
 
   const placeBid = async () => {
-    if (!localName.trim() || !bidEmail.trim()) { setBidMsg({ type:"error", text:"Enter your name and email." }); return; }
+    if (!localName.trim() || !bidEmail.trim()) { showToast("error","Enter your name and email."); return; }
     const amt = parseFloat(bidAmt);
-    if (!amt || amt < minBid) { setBidMsg({ type:"error", text:`Bid must be at least ${fmt$(minBid)}.` }); return; }
+    if (!amt || amt < minBid) { showToast("error",`Bid must be at least ${fmt$(minBid)}.`); return; }
     const trimmedName = localName.trim();
     const trimmedEmail = bidEmail.trim();
     const bidId = generateId();
     const { error: bidErr } = await supabase.from("bids").insert({
       id: bidId, auction_id: auctionId, bidder: trimmedName, email: trimmedEmail, amount: amt
     });
-    if (bidErr) { setBidMsg({ type:"error", text:"Failed to place bid. Please try again." }); return; }
+    if (bidErr) { showToast("error","Failed to place bid. Please try again."); return; }
     // Optimistic UI update — mark as seen so realtime doesn't duplicate
     seenBidIds.current.add(bidId);
     patchStore('bids', prev => ({
@@ -241,7 +240,7 @@ const AuctionPage = ({ auctionId, onNavigate, store, updateStore, patchStore, lo
     setBidderEmail(trimmedEmail);
     saveBidderIdentity(trimmedName, trimmedEmail);
     setBidAmt("");
-    setBidMsg({ type:"success", text:`Bid of ${fmt$(amt)} placed!` });
+    showToast("success",`Bid of ${fmt$(amt)} placed!`);
     setShowModal(false);
     // Buy It Now: end auction immediately
     if (isBuyNow) {
@@ -249,7 +248,6 @@ const AuctionPage = ({ auctionId, onNavigate, store, updateStore, patchStore, lo
       setIsBuyNow(false);
     }
     if (isBuyNow) updateStore(); // refresh auction status so winner card appears
-    setTimeout(() => setBidMsg(null), 4000);
     const artistProfile = store.artists[auction.artistId];
     // Buy Now: notify artist their auction ended with a winner
     if (isBuyNow && artistProfile?.email) {
@@ -325,7 +323,7 @@ const AuctionPage = ({ auctionId, onNavigate, store, updateStore, patchStore, lo
       auction_id: auctionId, author_id: currentUserId,
       author_name: currentUserName, author_avatar: currentUserAvatar, body,
     }).select().single();
-    if (error) { setCommentMsg({ type:"error", text:"Failed to post. Try again." }); return; }
+    if (error) { showToast("error", "Failed to post. Try again."); return; }
     // Optimistic UI update — mark as seen so realtime doesn't duplicate
     seenCommentIds.current.add(data.id);
     patchStore('comments', prev => ({
@@ -337,8 +335,7 @@ const AuctionPage = ({ auctionId, onNavigate, store, updateStore, patchStore, lo
     }));
     patchStore('commentCounts', prev => ({ ...prev, [auctionId]: (prev[auctionId] || 0) + 1 }));
     setCommentText("");
-    setCommentMsg({ type:"success", text:"Comment posted!" });
-    setTimeout(() => setCommentMsg(null), 3000);
+    showToast("success", "Comment posted!");
   }, [commentText, auctionId, currentUserId, currentUserName, currentUserAvatar]);
 
   const deleteComment = useCallback(async (commentId) => {
@@ -541,8 +538,6 @@ const AuctionPage = ({ auctionId, onNavigate, store, updateStore, patchStore, lo
 
       {!isLive && topBid && !reserveMet && <div className="alert" style={{ background:"var(--parchment)", border:"1px solid var(--border)", color:"var(--slate)", marginBottom:"1.5rem" }}>Drop ended — reserve of {fmt$(auction.reservePrice)} was not met.</div>}
       {!isLive && topBid && reserveMet && !isWinner && !isOwner && <div className="alert" style={{ background:"var(--parchment)", border:"1px solid var(--border)", color:"var(--slate)", marginBottom:"1.5rem" }}>Drop ended. Winner: <strong>{shortName(topBid.bidder)}</strong> · {fmt$(topBid.amount)}</div>}
-      {bidMsg && <div className={`alert alert-${bidMsg.type}`} style={{ marginBottom:"1rem" }}>{bidMsg.text}</div>}
-
       <div className="auction-layout">
         <div>
           <div className="auction-art-frame">
@@ -662,7 +657,6 @@ const AuctionPage = ({ auctionId, onNavigate, store, updateStore, patchStore, lo
             </div>
             {currentUserId ? (
               <>
-                {commentMsg && <div className={`alert alert-${commentMsg.type}`} style={{ marginBottom:"0.75rem" }}>{commentMsg.text}</div>}
                 <div className="comment-input-row">
                   <span style={{ width:"1.8rem", height:"1.8rem", borderRadius:"50%", overflow:"hidden", background:"var(--grad-accent)", display:"inline-flex", alignItems:"center", justifyContent:"center", fontSize:"1rem", flexShrink:0 }}><AvatarImg avatar={currentUserAvatar} alt="" /></span>
                   <input className="comment-input" type="text" placeholder="Leave a comment…"
@@ -774,7 +768,6 @@ const AuctionPage = ({ auctionId, onNavigate, store, updateStore, patchStore, lo
               )}
               <div className="form-group"><label className="form-label">Your Name *</label><input className="form-input" placeholder="Full name" value={localName} onChange={(e) => { if (!meCollector) setLocalName(e.target.value); }} readOnly={!!meCollector} style={meCollector ? { opacity: 0.7, cursor: "default" } : {}} /></div>
               <div className="form-group"><label className="form-label">Email *</label><input className="form-input" type="email" placeholder="your@email.com" value={bidEmail} onChange={(e) => { if (!meCollector) setBidEmail(e.target.value); }} readOnly={!!meCollector} style={meCollector ? { opacity: 0.7, cursor: "default" } : {}} /><p className="form-hint">{meCollector ? "Bids are linked to your collector account." : "Only used to notify you if you win."}</p></div>
-              {bidMsg && <div className={`alert alert-${bidMsg.type}`}>{bidMsg.text}</div>}
               {parseFloat(bidAmt) > 0 && (
                 <div className="bid-fee-breakdown">
                   <div className="bid-fee-line"><span>{isBuyNow ? "Buy Now price" : "Your bid"}</span><span>{fmt$(bidAmt)}</span></div>

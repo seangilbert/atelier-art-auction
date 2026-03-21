@@ -3,6 +3,7 @@ import { supabase } from "../../supabase.js";
 import { AVATARS } from "../../utils/helpers.js";
 import AvatarImg from "../ui/AvatarImg.jsx";
 import AvatarUploadZone from "../ui/AvatarUploadZone.jsx";
+import { showToast } from "../ui/Toast.jsx";
 
 const EditProfilePage = ({ user, userType, onNavigate, updateStore, onProfileSaved }) => {
   const isUrl = (s) => s && (s.startsWith("http") || s.startsWith("data:"));
@@ -13,15 +14,12 @@ const EditProfilePage = ({ user, userType, onNavigate, updateStore, onProfileSav
     emojiAvatar: !isUrl(user.avatar) ? (user.avatar || "🎨") : "🎨",
   });
   const [busy, setBusy] = useState(false);
-  const [saved, setSaved] = useState(false);
-  const [error, setError] = useState("");
   const set = (k, v) => setF((p) => ({ ...p, [k]: v }));
 
   const effectiveAvatar = f.photoUrl || f.emojiAvatar;
 
   const save = async () => {
-    if (!f.name.trim()) { setError("Display name is required."); return; }
-    setError("");
+    if (!f.name.trim()) { showToast("error", "Display name is required."); return; }
     setBusy(true);
     try {
       await supabase.from("profiles").update({
@@ -37,10 +35,9 @@ const EditProfilePage = ({ user, userType, onNavigate, updateStore, onProfileSav
 
       await updateStore(user.id);
       onProfileSaved({ ...user, name: f.name.trim(), bio: f.bio.trim(), avatar: effectiveAvatar });
-      setSaved(true);
-      setTimeout(() => setSaved(false), 2500);
+      showToast("success", "Profile saved!");
     } catch (err) {
-      setError("Failed to save. Please try again.");
+      showToast("error", "Failed to save. Please try again.");
       console.error("EditProfilePage save error:", err);
     }
     setBusy(false);
@@ -52,9 +49,6 @@ const EditProfilePage = ({ user, userType, onNavigate, updateStore, onProfileSav
     <div className="page-container">
       <h1 className="page-title">Edit <em>Profile</em></h1>
       <p className="page-subtitle">Update your display name, bio, and profile photo.</p>
-
-      {error && <div className="alert alert-error" style={{ marginBottom:"1rem" }}>{error}</div>}
-      {saved && <div className="alert alert-success" style={{ marginBottom:"1rem" }}><i className="fa-solid fa-check"></i> Profile saved!</div>}
 
       <div className="form-group">
         <label className="form-label">Profile Photo</label>
