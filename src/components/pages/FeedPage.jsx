@@ -77,6 +77,10 @@ const FeedPage = ({ onNavigate, store, updateStore, patchStore, me, meCollector 
     [store.auctions]
   );
 
+  // Intentionally exclude store.oohs and store.bidSummaries from deps:
+  // sort order stabilizes after initial render — cards don't jump around as
+  // real-time counts come in. Counts still display live via OohButton/RollingNumber.
+  // Re-sorts only when the user changes sort tab or new/removed auctions arrive.
   const sorted = useMemo(() => {
     const arr = [...live].sort((a, b) => {
       if (sort === "following")  return new Date(a.endDate) - new Date(b.endDate);
@@ -88,7 +92,8 @@ const FeedPage = ({ onNavigate, store, updateStore, patchStore, me, meCollector 
       return new Date(b.createdAt) - new Date(a.createdAt);
     });
     return arr;
-  }, [live, sort, store.oohs, store.bidSummaries]);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [live, sort]);
 
   const filtered = useMemo(() => {
     if (sort === "following") return sorted.filter(a => followingIds.has(a.artistId));

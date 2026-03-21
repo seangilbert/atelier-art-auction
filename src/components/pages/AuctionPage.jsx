@@ -65,15 +65,12 @@ const AuctionPage = ({ auctionId, onNavigate, store, updateStore, patchStore, lo
       .on("postgres_changes", { event: "INSERT", schema: "public", table: "bids", filter: `auction_id=eq.${auctionId}` }, (payload) => {
         const b = payload.new;
         if (!b) return;
+        // Only patch the full bids list here; bidSummaries is handled by the global subscription
         patchStore('bids', prev => ({
           ...prev,
           [auctionId]: [...(prev[auctionId] || []),
             { id: b.id, bidder: b.bidder, email: b.email, amount: b.amount, placedAt: b.placed_at }]
         }));
-        patchStore('bidSummaries', prev => {
-          const s = prev[auctionId] || { count: 0, topAmount: 0 };
-          return { ...prev, [auctionId]: { count: s.count + 1, topAmount: Math.max(s.topAmount, b.amount) } };
-        });
       })
       .on("postgres_changes", { event: "*", schema: "public", table: "oohs", filter: `auction_id=eq.${auctionId}` }, (payload) => {
         const row = payload.new;

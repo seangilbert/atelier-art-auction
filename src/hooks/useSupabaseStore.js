@@ -246,6 +246,27 @@ const useSupabaseStore = () => {
 
   useEffect(() => { loadAll(); }, [loadAll]);
 
+  // Global realtime: keep bidSummaries and oohs current on FeedPage/everywhere
+  useEffect(() => {
+    const channel = supabase
+      .channel('global-feed-updates')
+      .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'bids' }, (payload) => {
+        const b = payload.new;
+        if (!b) return;
+        patchStore('bidSummaries', prev => {
+          const s = prev[b.auction_id] || { count: 0, topAmount: 0 };
+          return { ...prev, [b.auction_id]: { count: s.count + 1, topAmount: Math.max(s.topAmount, b.amount) } };
+        });
+      })
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'oohs' }, (payload) => {
+        const row = payload.new;
+        if (!row) return;
+        patchStore('oohs', prev => ({ ...prev, [row.auction_id]: Number(row.count) }));
+      })
+      .subscribe();
+    return () => { supabase.removeChannel(channel); };
+  }, [patchStore]);
+
   return [store, loadAll, loadAuctionDetail, patchStore];
 };
 
