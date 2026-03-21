@@ -264,11 +264,12 @@ export default function App() {
 
       <div
         className={`ptr-indicator${pull > 0 || refreshing ? " visible" : ""}${refreshing ? " refreshing" : ""}`}
-        style={{ "--ptr-offset": `${pull - 60}px`, "--ptr-rotate": `${(pull / 110) * 540}deg` }}
+        style={{ "--ptr-rotate": `${(pull / 110) * 540}deg` }}
       >
         <span className="ptr-spinner" />
       </div>
 
+      <div className="ptr-page" style={pull > 0 || refreshing ? { transform: `translateY(${pull}px)`, willChange: "transform" } : undefined}>
       <nav className="nav" ref={navRef}>
         <div className="nav-left">
           {navHistory.length > 0 && (
@@ -383,6 +384,7 @@ export default function App() {
       {view.page === "search"              && <SearchPage onNavigate={go} store={store} updateStore={updateStore} patchStore={patchStore} me={me} meCollector={meCollector} />}
       {view.page === "invites"             && isLoggedIn  && <InvitePage user={me || meCollector} store={store} updateStore={updateStore} onNavigate={go} />}
       </Suspense>
+      </div>
       </div>
       </div>
     </>
