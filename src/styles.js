@@ -382,9 +382,10 @@ const STYLES = `
   .modal-actions { display: flex; gap: 0.75rem; margin-top: 1.5rem; }
 
   /* Pull-to-refresh indicator */
-  .ptr-indicator { position:fixed; top:calc(env(safe-area-inset-top,0px) + 8px); left:50%; transform:translateX(-50%) translateY(var(--ptr-offset,-60px)); width:36px; height:36px; background:var(--surface); border:1.5px solid var(--border); border-radius:50%; display:flex; align-items:center; justify-content:center; box-shadow:0 2px 8px rgba(0,0,0,0.12); z-index:198; pointer-events:none; }
-  .ptr-indicator i { font-size:0.9rem; color:var(--slate); }
-  .ptr-indicator.refreshing i { animation:ptr-spin 0.8s linear infinite; }
+  .ptr-indicator { position:fixed; top:calc(env(safe-area-inset-top,0px) + 8px); left:50%; transform:translateX(-50%) translateY(var(--ptr-offset,-60px)); width:28px; height:28px; z-index:198; pointer-events:none; opacity:0; transition:opacity 0.2s ease; }
+  .ptr-indicator.visible { opacity:1; }
+  .ptr-spinner { display:block; width:100%; height:100%; border-radius:50%; border:2.5px solid var(--border); border-top-color:var(--slate); transform:rotate(var(--ptr-rotate,0deg)); }
+  .ptr-indicator.refreshing .ptr-spinner { border-top-color:var(--rouge); animation:ptr-spin 0.6s linear infinite; }
   @keyframes ptr-spin { from{transform:rotate(0deg)} to{transform:rotate(360deg)} }
 
   @keyframes fadeIn { from{opacity:0} to{opacity:1} }

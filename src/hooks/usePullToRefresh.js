@@ -1,8 +1,15 @@
 import { useEffect, useRef, useState } from "react";
 
-const THRESHOLD = 72;  // px drag to trigger refresh
-const MAX_PULL = 90;   // max visual drag distance
-const RESIST = 0.45;   // rubber-band resistance factor
+const THRESHOLD = 60;   // px drag needed to trigger refresh
+const SETTLE = 48;      // px where spinner sits while refreshing
+const MAX_PULL = 110;   // max visual drag distance
+
+// Rubber-band: starts easy, gets harder — like pulling a rubber band
+function rubberBand(delta) {
+  const d = Math.max(0, delta);
+  // logarithmic resistance: fast at first, increasingly stiff
+  return MAX_PULL * (1 - Math.exp(-d / 180));
+}
 
 export default function usePullToRefresh(onRefresh) {
   const startY = useRef(null);
@@ -10,14 +17,44 @@ export default function usePullToRefresh(onRefresh) {
   const [refreshing, setRefreshing] = useState(false);
   const refreshingRef = useRef(false);
   const pullRef = useRef(0);
+  const animRef = useRef(null);
 
   // Keep pullRef in sync so touchend closure sees current value
   useEffect(() => { pullRef.current = pull; }, [pull]);
 
+  // Spring animation: animate pull from current value to target
+  const springTo = (target, onDone) => {
+    if (animRef.current) cancelAnimationFrame(animRef.current);
+    const start = pullRef.current;
+    const dist = target - start;
+    const duration = Math.min(400, Math.max(200, Math.abs(dist) * 3));
+    const t0 = performance.now();
+
+    const tick = (now) => {
+      const elapsed = now - t0;
+      const p = Math.min(1, elapsed / duration);
+      // Overdamped spring: ease-out with slight overshoot
+      const ease = 1 - Math.pow(1 - p, 3);
+      const val = start + dist * ease;
+      setPull(Math.max(0, val));
+      if (p < 1) {
+        animRef.current = requestAnimationFrame(tick);
+      } else {
+        setPull(target);
+        animRef.current = null;
+        if (onDone) onDone();
+      }
+    };
+    animRef.current = requestAnimationFrame(tick);
+  };
+
   useEffect(() => {
     const onTouchStart = (e) => {
-      if (window.scrollY === 0 && !refreshingRef.current)
+      if (window.scrollY === 0 && !refreshingRef.current) {
+        // Cancel any running snap-back animation
+        if (animRef.current) { cancelAnimationFrame(animRef.current); animRef.current = null; }
         startY.current = e.touches[0].clientY;
+      }
     };
 
     const onTouchMove = (e) => {
@@ -25,7 +62,7 @@ export default function usePullToRefresh(onRefresh) {
       const delta = e.touches[0].clientY - startY.current;
       if (delta <= 0) { startY.current = null; return; }
       e.preventDefault(); // block native iOS overscroll bounce
-      setPull(Math.min(delta * RESIST, MAX_PULL));
+      setPull(rubberBand(delta));
     };
 
     const onTouchEnd = async () => {
@@ -34,12 +71,18 @@ export default function usePullToRefresh(onRefresh) {
       if (pullRef.current >= THRESHOLD && !refreshingRef.current) {
         refreshingRef.current = true;
         setRefreshing(true);
-        setPull(MAX_PULL);
-        await onRefresh();
-        refreshingRef.current = false;
-        setRefreshing(false);
+        // Spring to settled refresh position
+        springTo(SETTLE, async () => {
+          await onRefresh();
+          refreshingRef.current = false;
+          setRefreshing(false);
+          // Spring back to zero after refresh completes
+          springTo(0);
+        });
+      } else {
+        // Elastic snap-back
+        springTo(0);
       }
-      setPull(0);
     };
 
     window.addEventListener("touchstart", onTouchStart, { passive: true });
@@ -49,8 +92,9 @@ export default function usePullToRefresh(onRefresh) {
       window.removeEventListener("touchstart", onTouchStart);
       window.removeEventListener("touchmove", onTouchMove);
       window.removeEventListener("touchend", onTouchEnd);
+      if (animRef.current) cancelAnimationFrame(animRef.current);
     };
   }, [onRefresh]);
 
-  return { pull, refreshing };
+  return { pull, refreshing, dragging: pull > 0 && !refreshing };
 }

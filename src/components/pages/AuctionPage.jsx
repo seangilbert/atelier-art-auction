@@ -58,14 +58,17 @@ const AuctionPage = ({ auctionId, onNavigate, store, updateStore, patchStore, lo
     return new Set([...serverSet, ...localSet]);
   };
 
+  // Track IDs we've already patched (optimistic) to prevent duplicates from realtime
+  const seenBidIds = useRef(new Set());
+  const seenCommentIds = useRef(new Set());
+
   // Realtime: patch store directly from payload instead of refetching
   useEffect(() => {
     const channel = supabase
       .channel(`auction-${auctionId}`)
       .on("postgres_changes", { event: "INSERT", schema: "public", table: "bids", filter: `auction_id=eq.${auctionId}` }, (payload) => {
         const b = payload.new;
-        if (!b) return;
-        // Only patch the full bids list here; bidSummaries is handled by the global subscription
+        if (!b || seenBidIds.current.has(b.id)) return;
         patchStore('bids', prev => ({
           ...prev,
           [auctionId]: [...(prev[auctionId] || []),
@@ -80,7 +83,7 @@ const AuctionPage = ({ auctionId, onNavigate, store, updateStore, patchStore, lo
       })
       .on("postgres_changes", { event: "INSERT", schema: "public", table: "comments", filter: `auction_id=eq.${auctionId}` }, (payload) => {
         const c = payload.new;
-        if (!c) return;
+        if (!c || seenCommentIds.current.has(c.id)) return;
         patchStore('comments', prev => ({
           ...prev,
           [auctionId]: [...(prev[auctionId] || []),
@@ -218,10 +221,22 @@ const AuctionPage = ({ auctionId, onNavigate, store, updateStore, patchStore, lo
     if (!amt || amt < minBid) { setBidMsg({ type:"error", text:`Bid must be at least ${fmt$(minBid)}.` }); return; }
     const trimmedName = localName.trim();
     const trimmedEmail = bidEmail.trim();
+    const bidId = generateId();
     const { error: bidErr } = await supabase.from("bids").insert({
-      id: generateId(), auction_id: auctionId, bidder: trimmedName, email: trimmedEmail, amount: amt
+      id: bidId, auction_id: auctionId, bidder: trimmedName, email: trimmedEmail, amount: amt
     });
     if (bidErr) { setBidMsg({ type:"error", text:"Failed to place bid. Please try again." }); return; }
+    // Optimistic UI update — mark as seen so realtime doesn't duplicate
+    seenBidIds.current.add(bidId);
+    patchStore('bids', prev => ({
+      ...prev,
+      [auctionId]: [...(prev[auctionId] || []),
+        { id: bidId, bidder: trimmedName, email: trimmedEmail, amount: amt, placedAt: new Date().toISOString() }]
+    }));
+    patchStore('bidSummaries', prev => {
+      const s = prev[auctionId] || { count: 0, topAmount: 0 };
+      return { ...prev, [auctionId]: { count: s.count + 1, topAmount: Math.max(s.topAmount, amt) } };
+    });
     setBidderName(trimmedName);
     setBidderEmail(trimmedEmail);
     saveBidderIdentity(trimmedName, trimmedEmail);
@@ -233,7 +248,6 @@ const AuctionPage = ({ auctionId, onNavigate, store, updateStore, patchStore, lo
       await supabase.from("auctions").update({ end_date: new Date(Date.now() - 1000).toISOString(), paused: false }).eq("id", auctionId);
       setIsBuyNow(false);
     }
-    // Realtime subscription will patch the new bid into store
     if (isBuyNow) updateStore(); // refresh auction status so winner card appears
     setTimeout(() => setBidMsg(null), 4000);
     const artistProfile = store.artists[auction.artistId];
@@ -307,15 +321,24 @@ const AuctionPage = ({ auctionId, onNavigate, store, updateStore, patchStore, lo
   const postComment = useCallback(async () => {
     const body = commentText.trim();
     if (!body || !currentUserId) return;
-    const { error } = await supabase.from("comments").insert({
+    const { data, error } = await supabase.from("comments").insert({
       auction_id: auctionId, author_id: currentUserId,
       author_name: currentUserName, author_avatar: currentUserAvatar, body,
-    });
+    }).select().single();
     if (error) { setCommentMsg({ type:"error", text:"Failed to post. Try again." }); return; }
+    // Optimistic UI update — mark as seen so realtime doesn't duplicate
+    seenCommentIds.current.add(data.id);
+    patchStore('comments', prev => ({
+      ...prev,
+      [auctionId]: [...(prev[auctionId] || []),
+        { id: data.id, auctionId, authorId: currentUserId,
+          authorName: currentUserName, authorAvatar: currentUserAvatar,
+          body, createdAt: data.created_at }]
+    }));
+    patchStore('commentCounts', prev => ({ ...prev, [auctionId]: (prev[auctionId] || 0) + 1 }));
     setCommentText("");
     setCommentMsg({ type:"success", text:"Comment posted!" });
     setTimeout(() => setCommentMsg(null), 3000);
-    // Realtime subscription will patch the comment into store
   }, [commentText, auctionId, currentUserId, currentUserName, currentUserAvatar]);
 
   const deleteComment = useCallback(async (commentId) => {

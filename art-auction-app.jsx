@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef, lazy, Suspense } from "react";
+import { useState, useEffect, useRef, useCallback, lazy, Suspense } from "react";
 import { supabase } from "./src/supabase.js";
 import STYLES from "./src/styles.js";
 import { getStatus } from "./src/utils/helpers.js";
@@ -72,11 +72,20 @@ function MobileBottomNav({ page, isArtist, isCollector, onNavigate, onClearHisto
 // ─────────────────────────────────────────────────────────────────────────────
 export default function App() {
   const [store, updateStore, loadAuctionDetail, patchStore] = useSupabaseStore();
-  const { pull, refreshing } = usePullToRefresh(updateStore);
   const [authReady, setAuthReady] = useState(false);
   const [artist, setArtist] = useState(null);
   const [collector, setCollector] = useState(null);
   const [view, setView] = useState({ page: "home", id: null });
+
+  // PTR refresh: reload all data + full auction detail when on an auction page
+  const handleRefresh = useCallback(async () => {
+    await updateStore();
+    if (view.page === "auction" && view.id) {
+      const userId = artist?.id || collector?.id || null;
+      await loadAuctionDetail(view.id, userId);
+    }
+  }, [updateStore, loadAuctionDetail, view.page, view.id, artist?.id, collector?.id]);
+  const { pull, refreshing, dragging } = usePullToRefresh(handleRefresh);
   const [bidderName, setBidderName] = useState(() => getBidderIdentity().name);
   const [bidderEmail, setBidderEmail] = useState(() => getBidderIdentity().email);
   const [dropOpen, setDropOpen] = useState(false);
@@ -253,14 +262,12 @@ export default function App() {
     <>
       <style>{STYLES}</style>
 
-      {(pull > 0 || refreshing) && (
-        <div
-          className={`ptr-indicator${refreshing ? " refreshing" : ""}`}
-          style={{ "--ptr-offset": `${pull - 60}px` }}
-        >
-          <i className={`fa-solid ${refreshing ? "fa-arrow-rotate-right" : "fa-arrow-down"}`} />
-        </div>
-      )}
+      <div
+        className={`ptr-indicator${pull > 0 || refreshing ? " visible" : ""}${refreshing ? " refreshing" : ""}`}
+        style={{ "--ptr-offset": `${pull - 60}px`, "--ptr-rotate": `${(pull / 110) * 540}deg` }}
+      >
+        <span className="ptr-spinner" />
+      </div>
 
       <nav className="nav" ref={navRef}>
         <div className="nav-left">
