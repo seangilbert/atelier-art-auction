@@ -4,6 +4,7 @@ import STYLES from "./src/styles.js";
 import { getStatus } from "./src/utils/helpers.js";
 import { getBidderIdentity } from "./src/utils/storage.js";
 import useSupabaseStore from "./src/hooks/useSupabaseStore.js";
+import usePullToRefresh from "./src/hooks/usePullToRefresh.js";
 import AvatarImg from "./src/components/ui/AvatarImg.jsx";
 
 // Critical pages — always in main bundle (first paint)
@@ -71,6 +72,7 @@ function MobileBottomNav({ page, isArtist, isCollector, onNavigate, onClearHisto
 // ─────────────────────────────────────────────────────────────────────────────
 export default function App() {
   const [store, updateStore, loadAuctionDetail, patchStore] = useSupabaseStore();
+  const { pull, refreshing } = usePullToRefresh(updateStore);
   const [authReady, setAuthReady] = useState(false);
   const [artist, setArtist] = useState(null);
   const [collector, setCollector] = useState(null);
@@ -250,6 +252,15 @@ export default function App() {
   return (
     <>
       <style>{STYLES}</style>
+
+      {(pull > 0 || refreshing) && (
+        <div
+          className={`ptr-indicator${refreshing ? " refreshing" : ""}`}
+          style={{ "--ptr-offset": `${pull - 60}px` }}
+        >
+          <i className={`fa-solid ${refreshing ? "fa-arrow-rotate-right" : "fa-arrow-down"}`} />
+        </div>
+      )}
 
       <nav className="nav" ref={navRef}>
         <div className="nav-left">
