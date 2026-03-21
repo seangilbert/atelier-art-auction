@@ -692,8 +692,8 @@ const STYLES = `
 
   /* ── Comments ─────────────────────────────────────────────────────────────── */
   .comments-block { background:white; border:1.5px solid var(--border); border-radius:var(--radius-lg); padding:1.4rem 1.6rem; margin-bottom:1.25rem; box-shadow:var(--shadow-sm); }
-  .comment-input-row { display:flex; gap:0.6rem; align-items:center; margin-bottom:0.75rem; }
-  .comment-input { flex:1; padding:0.7rem 1rem; background:white; border:1.5px solid var(--border); border-radius:var(--radius); font-family:var(--font-body); font-size:0.88rem; color:var(--ink); transition:border-color 0.2s,box-shadow 0.2s; }
+  .comment-input-row { display:flex; gap:0.6rem; align-items:center; margin-bottom:0.75rem; min-width:0; }
+  .comment-input { flex:1; min-width:0; padding:0.7rem 1rem; background:white; border:1.5px solid var(--border); border-radius:var(--radius); font-family:var(--font-body); font-size:0.88rem; color:var(--ink); transition:border-color 0.2s,box-shadow 0.2s; }
   .comment-input:focus { outline:none; border-color:var(--gold); box-shadow:0 0 0 4px rgba(232,82,106,0.1); }
   .comment-list { list-style:none; margin-top:0.75rem; }
   .comment-item { padding:0.9rem 0; border-bottom:1px solid var(--border); }
